@@ -1,0 +1,93 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="core">
+      <UniqueIdentifier>{e261f35b-dab1-44e0-ad04-f5db9313d4f6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="dependencies">
+      <UniqueIdentifier>{7f81f446-728f-4d27-862e-8e0bbe81facb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders">
+      <UniqueIdentifier>{8b5c4cd9-760d-474b-b225-8a8daaeb8c0e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="programs">
+      <UniqueIdentifier>{105b7fae-177f-443d-befc-1cf768e1669e}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="dependencies\glad\glad.c">
+      <Filter>dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Shader.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="programs\transformations.cpp">
+      <Filter>programs</Filter>
+    </ClCompile>
+    <ClCompile Include="programs\basicWindow.cpp">
+      <Filter>programs</Filter>
+    </ClCompile>
+    <ClCompile Include="programs\shaderTest.cpp">
+      <Filter>programs</Filter>
+    </ClCompile>
+    <ClCompile Include="programs\textures.cpp">
+      <Filter>programs</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="dependencies\stb\stb_image.cpp">
+      <Filter>dependencies</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="dependencies\glad\glad.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\GLFW\glfw3.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\GLFW\glfw3native.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\KHR\khrplatform.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Shader.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\stb\stb_image.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shaders\basicFrag.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\basicVertex.vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\loopbackTexture.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\loopbackTexture.vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\shaderTest.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\shaderTest.vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\textureQuad.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\textureQuad.vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\transforms.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\transforms.vs">
+      <Filter>shaders</Filter>
+    </None>
+  </ItemGroup>
+</Project>
