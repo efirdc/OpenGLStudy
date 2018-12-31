@@ -37,6 +37,51 @@
     <ClCompile Include="dependencies\stb\stb_image.cpp">
       <Filter>dependencies</Filter>
     </ClCompile>
+    <ClCompile Include="dependencies\imgui\imgui.cpp">
+      <Filter>dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\imgui\imgui_demo.cpp">
+      <Filter>dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\imgui\imgui_draw.cpp">
+      <Filter>dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\imgui\imgui_impl_glfw_gl3.cpp">
+      <Filter>dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\imgui\imgui_opgengl3_example.cpp">
+      <Filter>dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\imgui\stb_image.cpp">
+      <Filter>dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="core\SimpleCamera.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="programs\sphereParticles.cpp">
+      <Filter>programs</Filter>
+    </ClCompile>
+    <ClCompile Include="core\Camera.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\loopback.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\SpectrumAnalyzer.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\utilities.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\kissfft\kiss_fft.c">
+      <Filter>dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\kissfft\kiss_fftr.c">
+      <Filter>dependencies</Filter>
+    </ClCompile>
+    <ClCompile Include="core\SpectrumFilter.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\glad\glad.h">
@@ -56,6 +101,63 @@
     </ClInclude>
     <ClInclude Include="dependencies\stb\stb_image.h">
       <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imconfig.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imgui.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imgui_impl_glfw_gl3.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\imgui_internal.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\stb_image.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\stb_rect_pack.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\stb_textedit.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\imgui\stb_truetype.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="core\SimpleCamera.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Camera.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\loopback.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\SpectrumAnalyzer.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\utilities.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\kissfft\_kiss_fft_guts.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\kissfft\kiss_fft.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\kissfft\kiss_fftr.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\kissfft\kissfft.hh">
+      <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="core\SpectrumFilter.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\FrequencySpectrum.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

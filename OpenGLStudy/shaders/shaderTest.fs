@@ -8,5 +8,5 @@ uniform vec4 modulate;
 void main()
 {
 	float wave = sin(time) * 0.5 + 0.5;
-    FragColor = vec4(ourColor * modulate.rgb, 1.0);
+    FragColor = vec4(ourColor * wave, 1.0);
 }

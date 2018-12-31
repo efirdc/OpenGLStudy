@@ -138,21 +138,55 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="core\Camera.cpp" />
+    <ClCompile Include="core\loopback.cpp" />
+    <ClCompile Include="core\SimpleCamera.cpp" />
     <ClCompile Include="core\Shader.cpp" />
+    <ClCompile Include="core\SpectrumAnalyzer.cpp" />
+    <ClCompile Include="core\SpectrumFilter.cpp" />
+    <ClCompile Include="core\utilities.cpp" />
     <ClCompile Include="dependencies\glad\glad.c" />
+    <ClCompile Include="dependencies\imgui\imgui.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_demo.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_draw.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_impl_glfw_gl3.cpp" />
+    <ClCompile Include="dependencies\imgui\imgui_opgengl3_example.cpp" />
+    <ClCompile Include="dependencies\imgui\stb_image.cpp" />
+    <ClCompile Include="dependencies\kissfft\kiss_fft.c" />
+    <ClCompile Include="dependencies\kissfft\kiss_fftr.c" />
     <ClCompile Include="dependencies\stb\stb_image.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="programs\basicWindow.cpp" />
+    <ClCompile Include="programs\sphereParticles.cpp" />
     <ClCompile Include="programs\shaderTest.cpp" />
     <ClCompile Include="programs\textures.cpp" />
     <ClCompile Include="programs\transformations.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="core\Camera.h" />
+    <ClInclude Include="core\FrequencySpectrum.h" />
+    <ClInclude Include="core\loopback.h" />
+    <ClInclude Include="core\SimpleCamera.h" />
     <ClInclude Include="core\Shader.h" />
+    <ClInclude Include="core\SpectrumAnalyzer.h" />
+    <ClInclude Include="core\SpectrumFilter.h" />
+    <ClInclude Include="core\utilities.h" />
     <ClInclude Include="dependencies\glad\glad.h" />
     <ClInclude Include="dependencies\GLFW\glfw3.h" />
     <ClInclude Include="dependencies\GLFW\glfw3native.h" />
+    <ClInclude Include="dependencies\imgui\imconfig.h" />
+    <ClInclude Include="dependencies\imgui\imgui.h" />
+    <ClInclude Include="dependencies\imgui\imgui_impl_glfw_gl3.h" />
+    <ClInclude Include="dependencies\imgui\imgui_internal.h" />
+    <ClInclude Include="dependencies\imgui\stb_image.h" />
+    <ClInclude Include="dependencies\imgui\stb_rect_pack.h" />
+    <ClInclude Include="dependencies\imgui\stb_textedit.h" />
+    <ClInclude Include="dependencies\imgui\stb_truetype.h" />
     <ClInclude Include="dependencies\KHR\khrplatform.h" />
+    <ClInclude Include="dependencies\kissfft\kissfft.hh" />
+    <ClInclude Include="dependencies\kissfft\kiss_fft.h" />
+    <ClInclude Include="dependencies\kissfft\kiss_fftr.h" />
+    <ClInclude Include="dependencies\kissfft\_kiss_fft_guts.h" />
     <ClInclude Include="dependencies\stb\stb_image.h" />
   </ItemGroup>
   <ItemGroup>

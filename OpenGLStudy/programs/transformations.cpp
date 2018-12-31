@@ -1,4 +1,5 @@
 #include <iostream>
+#include <math.h>
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -158,18 +159,23 @@ int transformations()
 
 		glBindVertexArray(VAO);
 		ourShader.use();
-		glm::mat4 trans;
-		unsigned int transformLoc = glGetUniformLocation(ourShader.ID, "transform");
 
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-		trans = glm::scale(trans, glm::vec3(0.5f, 0.5f, 0.5f));
+		int numObjects = 200;
+		for (int i = 0; i < numObjects; i++)
+		{
+			float scale = 0.2f;
+			float x = (float)i / (float)numObjects;
+			float time = (float)glfwGetTime();
+
+			glm::mat4 trans;
+			trans = glm::scale(trans, glm::vec3(scale, scale, scale));
+			trans = glm::rotate(trans,  1.0f * time + x * 3.14159f * 2.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+			trans = glm::translate(trans, glm::vec3(1.0f, 0.0f, 0.0f) * 3.0f * sin(time + x * 40.0f));
+
+			ourShader.setMat4("transform", trans);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		}
 		
-		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-		
-		glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(trans));
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 		// check and call events and swap the buffers
 		glfwSwapBuffers(window);

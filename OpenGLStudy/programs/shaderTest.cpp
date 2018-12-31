@@ -23,7 +23,7 @@ int shaderTest()
 	// Make the window the curent context
 	// Bind the window resize callback function
 	//-------------------------
-	GLFWwindow* window = glfwCreateWindow(800, 600, "Window Name", NULL, NULL);
+	GLFWwindow * window = glfwCreateWindow(800, 600, "Window Name", NULL, NULL);
 	if (window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
@@ -76,10 +76,8 @@ int shaderTest()
 
 		basicShader.use();
 		basicShader.setFloat("time", (float)glfwGetTime());
-		float sound = 0.0;
-		sound += 0.5f;
 
-		basicShader.setVec4("modulate", sound, sound, sound, 1.0);
+		basicShader.setVec4("modulate", 1.0, 1.0, 1.0, 1.0);
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 

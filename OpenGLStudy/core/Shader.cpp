@@ -73,7 +73,7 @@ const char * Shader::getCode(const char * codePath, string & code)
 	}
 	catch (ifstream::failure e)
 	{
-		cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ" << endl;
+		cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ::" << codePath << endl;
 	}
 	
 	// Return as a c string
@@ -95,7 +95,7 @@ bool Shader::makeProgram(const char * vShaderCode, const char * fShaderCode, uns
 	if (!vSuccess)
 	{
 		glGetShaderInfoLog(vertex, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED::" << vertexPath << "\n" << infoLog << std::endl;
 	}
 
 	// Create anmd compile the fragment shader
@@ -106,7 +106,7 @@ bool Shader::makeProgram(const char * vShaderCode, const char * fShaderCode, uns
 	if (!fSuccess)
 	{
 		glGetShaderInfoLog(fragment, 512, NULL, infoLog);
-		cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << endl;
+		cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED::" << fragmentPath << "\n" << infoLog << endl;
 	}
 
 	// Link the vertex and fragment shader in a shader program
@@ -118,7 +118,7 @@ bool Shader::makeProgram(const char * vShaderCode, const char * fShaderCode, uns
 	if (!pSuccess)
 	{
 		glGetProgramInfoLog(newProgramID, 512, NULL, infoLog);
-		cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED\n" << infoLog << endl;
+		cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED::" << vertexPath << "\n" << infoLog << endl;
 	}
 
 	// Clean up
@@ -133,7 +133,7 @@ long long int Shader::getModificationTime(const char * filePath)
 {
 	struct stat result;
 	if (stat(filePath, &result) != 0)
-		cout << "ERROR::SHADER::CANT_READ_FILE_STATUS" << endl;
+		cout << "ERROR::SHADER::CANT_READ_FILE_STATUS::" << filePath << endl;
 	return result.st_mtime;
 }
 
