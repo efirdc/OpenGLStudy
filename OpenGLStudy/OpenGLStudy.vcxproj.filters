@@ -82,6 +82,9 @@
     <ClCompile Include="core\SpectrumFilter.cpp">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="core\FrequencySpectrum.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\glad\glad.h">

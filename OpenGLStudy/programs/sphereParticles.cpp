@@ -16,7 +16,12 @@
 
 #include "loopback.h"
 #include "SpectrumAnalyzer.h"
+#include "SpectrumFilter.h"
 #include "utilities.h"
+
+#define _CRTDBG_MAP_ALLOC
+#include <cstdlib>
+#include <crtdbg.h>
 
 struct SceneData
 {
@@ -72,6 +77,7 @@ int sphereParticles()
 	}
 
 	glEnable(GL_DEPTH_TEST);
+	_crtBreakAlloc = 18;
 
 	// Setup ImGui
 	ImGui::CreateContext();
@@ -154,13 +160,17 @@ int sphereParticles()
 	// Camera
 	//SimpleCamera camera(glm::vec3(0.0f, 0.0f, 1.5f), 0.0f, 0.0f);
 
-	SpectrumAnalyzer analyzer = SpectrumAnalyzer(4096, 18, 1024, 10.0f);
+	const int frameSize = 4096;
+	const int numSpectrumsInAverage = 18;
+	const int numFreqBins = 1024;
+	const float domainShiftFactor = 10.0f;
+
+	SpectrumAnalyzer analyzer(frameSize);
+	
 	loopback_init();
 	int frameGap = 128;
 	int numAudioSamples = analyzer.getFrameSize() * 2;
 	const int bezierCurveSize = 4096;
-	const int gradientSize = 256;
-	const int soundTextureSize = 2048;
 	float * audioBuffer = new float[numAudioSamples]();
 
 	// initialize frequency amplitude curve
@@ -169,18 +179,21 @@ int sphereParticles()
 	glm::vec2 frequencyAmplitudePoints[bezierCurveSize];
 	utl::bezierTable((glm::vec2 *)fAmpControlPoints, frequencyAmplitudePoints, bezierCurveSize);
 	utl::curve2Dto1D(frequencyAmplitudePoints, bezierCurveSize, frequencyAmplitudeCurve, bezierCurveSize);
-	analyzer.setAmplitudeCurve(frequencyAmplitudeCurve, bezierCurveSize);
-
+	
 	// initialize peak smoothing curve
 	float peakRadius = 0.05f;
-	int peakCurveSize = (int)((float)analyzer.getNumFreqBins() * peakRadius);
+	int peakCurveSize = (int)((float)numFreqBins * peakRadius);
 	float * peakCurve = new float[peakCurveSize]();
 	ImVec2 peakControlPoints[2] = { { 1.00f, 0.00f },{ 0.0f, 1.00f } };
 	glm::vec2 peakCurvePoints[bezierCurveSize];
 	utl::bezierTable((glm::vec2 *)peakControlPoints, peakCurvePoints, bezierCurveSize);
 	utl::curve2Dto1D(peakCurvePoints, bezierCurveSize, peakCurve, peakCurveSize);
-	//analyzer.setPeakCurve(peakCurve, peakCurveSize);
-	
+
+	AmplitudeFilter amplitudeFilter(frequencyAmplitudeCurve, bezierCurveSize);
+	DomainShiftFilter domainShiftFilter(domainShiftFactor, numFreqBins);
+	PeakFilter peakFilter(peakCurve, peakCurveSize);
+	AverageFilter averageFilter(numSpectrumsInAverage);
+
 	// View
 	View * view = new View;
 
@@ -261,6 +274,7 @@ int sphereParticles()
 		newSamples += loopback_getSound(audioBuffer, numAudioSamples);
 
 		// Main audio processing loop. This runs every time there is enough new audio samples to process the next audio frame.
+		static const FrequencySpectrum * frequencySpectrum = analyzer.getFrequencySpectrum();
 		while (newSamples >= frameGap)
 		{
 			newSamples -= frameGap;
@@ -273,8 +287,13 @@ int sphereParticles()
 				inputBuffer[i] = audioBuffer[frameStart + i];
 
 			analyzer.processFrame();
+			frequencySpectrum = analyzer.getFrequencySpectrum();
+			frequencySpectrum = amplitudeFilter.applyFilter(frequencySpectrum);
+			frequencySpectrum = domainShiftFilter.applyFilter(frequencySpectrum);
+			//frequencySpectrum = peakFilter.applyFilter(frequencySpectrum);
+			frequencySpectrum = averageFilter.applyFilter(frequencySpectrum);
 		}
-		float * frequencyData = analyzer.getFrequencySpectrum()->data;
+		float * frequencyData = frequencySpectrum->data;
 
 		// get view and projection matrices
 		updateView2(view, sceneData);
@@ -317,7 +336,7 @@ int sphereParticles()
 		{
 			float x = (float)i / (float)numObjects;
 			float time = (float)glfwGetTime() * timeScale;
-			float freq = utl::getValueLerp(frequencyData, analyzer.getNumFreqBins(), x);
+			float freq = utl::getValueLerp(frequencyData, numFreqBins, x);
 			freqAccumulation += freq;
 
 			glm::mat4 model;
@@ -341,6 +360,7 @@ int sphereParticles()
 	}
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
+	_CrtDumpMemoryLeaks();
 	glfwTerminate();
 	return 0;
 }

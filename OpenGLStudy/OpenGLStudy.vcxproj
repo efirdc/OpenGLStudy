@@ -139,6 +139,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="core\Camera.cpp" />
+    <ClCompile Include="core\FrequencySpectrum.cpp" />
     <ClCompile Include="core\loopback.cpp" />
     <ClCompile Include="core\SimpleCamera.cpp" />
     <ClCompile Include="core\Shader.cpp" />
