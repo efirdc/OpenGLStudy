@@ -1,8 +1,8 @@
 # OpenGLStudy
 This repository is a collection of experiments while learning openGL.
 
-https://streamable.com/h47mp
+[![Video 1](https://i.imgur.com/3YTtKpq.png)](https://streamable.com/h47mp)
 
-https://streamable.com/xaxff
+[![Video 2](https://i.imgur.com/kKemRzX.png)](https://streamable.com/xaxff)
 
-https://streamable.com/m9hro
+[![Video 3](https://i.imgur.com/3OjUIfk.png)](https://streamable.com/m9hro)
