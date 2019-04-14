@@ -49,7 +49,9 @@ static void updateView2(View * view, SceneData * sceneData);
 
 int sphereParticles()
 {
+	// Struct to hold scene data
 	SceneData * sceneData = new SceneData;
+
 	// Initialize GLFW, set version to 3.3, tell OpenGL that we want to use the core profile
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -58,7 +60,6 @@ int sphereParticles()
 
 	// Create window object and error check
 	// Make the window the curent context
-	// Bind the window resize callback function
 	sceneData->window = glfwCreateWindow(1600, 900, "Spherical particle system", NULL, NULL);
 	if (sceneData->window == NULL)
 	{
@@ -290,7 +291,7 @@ int sphereParticles()
 			frequencySpectrum = analyzer.getFrequencySpectrum();
 			frequencySpectrum = amplitudeFilter.applyFilter(frequencySpectrum);
 			frequencySpectrum = domainShiftFilter.applyFilter(frequencySpectrum);
-			//frequencySpectrum = peakFilter.applyFilter(frequencySpectrum);
+			frequencySpectrum = peakFilter.applyFilter(frequencySpectrum);
 			frequencySpectrum = averageFilter.applyFilter(frequencySpectrum);
 		}
 		float * frequencyData = frequencySpectrum->data;
