@@ -259,3 +259,8 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+
+# EXTRA STUFF
+
+# I dont know why Visual Studio created this folder?
+enc_temp_folder/
