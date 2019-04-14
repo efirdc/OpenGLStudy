@@ -262,7 +262,7 @@ int sphereParticles()
 
 		// Capture system audio, and keep track of the number of new samples
 		static int newSamples = 0;
-		newSamples += loopback_getSound(audioBuffer, numAudioSamples);
+		newSamples += loopback_getSound(audioBuffer, numAudioSamples); 
 
 		// Main audio processing loop. This runs every time there is enough new audio samples to process the next audio frame.
 		static const FrequencySpectrum * frequencySpectrum = analyzer.getFrequencySpectrum();
