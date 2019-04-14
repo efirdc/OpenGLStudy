@@ -131,7 +131,7 @@ int audioVisualizer()
 	utl::curve2Dto1D(frequencyAmplitudePoints, bezierCurveSize, frequencyAmplitudeCurve, bezierCurveSize);
 
 	// initialize peak smoothing curve
-	float peakRadius = 0.015f;
+	float peakRadius = 0.04f;
 	int peakCurveSize = (int)((float)numFreqBins * peakRadius);
 	float * peakCurve = new float[peakCurveSize]();
 	ImVec2 peakControlPoints[2] = { { 1.00f, 0.00f },{ 0.35f, 1.00f } };
@@ -274,7 +274,7 @@ int audioVisualizer()
 			if (changed)
 			{
 				delete[] peakCurve;
-				peakCurveSize = (int)((float)analyzer.getFrameSize() * peakRadius);
+				peakCurveSize = (int)((float)numFreqBins * peakRadius);
 				peakCurve = new float[peakCurveSize]();
 				utl::bezierTable((glm::vec2 *)peakControlPoints, peakCurvePoints, bezierCurveSize);
 				utl::curve2Dto1D(peakCurvePoints, bezierCurveSize, peakCurve, peakCurveSize);
