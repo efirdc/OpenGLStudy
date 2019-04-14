@@ -13,6 +13,9 @@
     <Filter Include="programs">
       <UniqueIdentifier>{105b7fae-177f-443d-befc-1cf768e1669e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="imgui_extensions">
+      <UniqueIdentifier>{1fff1072-c58b-46c9-ac43-417ade54da3a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dependencies\glad\glad.c">
@@ -84,6 +87,21 @@
     </ClCompile>
     <ClCompile Include="core\FrequencySpectrum.cpp">
       <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="programs\audioVisualizer.cpp">
+      <Filter>programs</Filter>
+    </ClCompile>
+    <ClCompile Include="core\StreamTexture.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_extensions\imgui_color_gradient.cpp">
+      <Filter>imgui_extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui_extensions\imgui_extras.cpp">
+      <Filter>imgui_extensions</Filter>
+    </ClCompile>
+    <ClCompile Include="dependencies\hsluv\hsluv.c">
+      <Filter>dependencies</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -161,6 +179,18 @@
     </ClInclude>
     <ClInclude Include="core\FrequencySpectrum.h">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\StreamTexture.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_extensions\imgui_color_gradient.h">
+      <Filter>imgui_extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_extensions\imgui_extras.h">
+      <Filter>imgui_extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\hsluv\hsluv.h">
+      <Filter>dependencies</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

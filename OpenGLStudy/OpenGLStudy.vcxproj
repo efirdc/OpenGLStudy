@@ -71,19 +71,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LibraryPath>$(ProjectDir)libraries;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LibraryPath>$(ProjectDir)libraries;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LibraryPath>$(ProjectDir)libraries;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LibraryPath>$(ProjectDir)libraries;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -145,8 +145,10 @@
     <ClCompile Include="core\Shader.cpp" />
     <ClCompile Include="core\SpectrumAnalyzer.cpp" />
     <ClCompile Include="core\SpectrumFilter.cpp" />
+    <ClCompile Include="core\StreamTexture.cpp" />
     <ClCompile Include="core\utilities.cpp" />
     <ClCompile Include="dependencies\glad\glad.c" />
+    <ClCompile Include="dependencies\hsluv\hsluv.c" />
     <ClCompile Include="dependencies\imgui\imgui.cpp" />
     <ClCompile Include="dependencies\imgui\imgui_demo.cpp" />
     <ClCompile Include="dependencies\imgui\imgui_draw.cpp" />
@@ -156,7 +158,10 @@
     <ClCompile Include="dependencies\kissfft\kiss_fft.c" />
     <ClCompile Include="dependencies\kissfft\kiss_fftr.c" />
     <ClCompile Include="dependencies\stb\stb_image.cpp" />
+    <ClCompile Include="imgui_extensions\imgui_color_gradient.cpp" />
+    <ClCompile Include="imgui_extensions\imgui_extras.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="programs\audioVisualizer.cpp" />
     <ClCompile Include="programs\basicWindow.cpp" />
     <ClCompile Include="programs\sphereParticles.cpp" />
     <ClCompile Include="programs\shaderTest.cpp" />
@@ -171,10 +176,12 @@
     <ClInclude Include="core\Shader.h" />
     <ClInclude Include="core\SpectrumAnalyzer.h" />
     <ClInclude Include="core\SpectrumFilter.h" />
+    <ClInclude Include="core\StreamTexture.h" />
     <ClInclude Include="core\utilities.h" />
     <ClInclude Include="dependencies\glad\glad.h" />
     <ClInclude Include="dependencies\GLFW\glfw3.h" />
     <ClInclude Include="dependencies\GLFW\glfw3native.h" />
+    <ClInclude Include="dependencies\hsluv\hsluv.h" />
     <ClInclude Include="dependencies\imgui\imconfig.h" />
     <ClInclude Include="dependencies\imgui\imgui.h" />
     <ClInclude Include="dependencies\imgui\imgui_impl_glfw_gl3.h" />
@@ -189,6 +196,8 @@
     <ClInclude Include="dependencies\kissfft\kiss_fftr.h" />
     <ClInclude Include="dependencies\kissfft\_kiss_fft_guts.h" />
     <ClInclude Include="dependencies\stb\stb_image.h" />
+    <ClInclude Include="imgui_extensions\imgui_color_gradient.h" />
+    <ClInclude Include="imgui_extensions\imgui_extras.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\basicFrag.fs" />
