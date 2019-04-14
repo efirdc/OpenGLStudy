@@ -103,6 +103,9 @@
     <ClCompile Include="dependencies\hsluv\hsluv.c">
       <Filter>dependencies</Filter>
     </ClCompile>
+    <ClCompile Include="core\SceneManager.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\glad\glad.h">
@@ -191,6 +194,9 @@
     </ClInclude>
     <ClInclude Include="dependencies\hsluv\hsluv.h">
       <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="core\SceneManager.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

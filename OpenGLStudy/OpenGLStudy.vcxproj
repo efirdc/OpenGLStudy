@@ -141,6 +141,7 @@
     <ClCompile Include="core\Camera.cpp" />
     <ClCompile Include="core\FrequencySpectrum.cpp" />
     <ClCompile Include="core\loopback.cpp" />
+    <ClCompile Include="core\SceneManager.cpp" />
     <ClCompile Include="core\SimpleCamera.cpp" />
     <ClCompile Include="core\Shader.cpp" />
     <ClCompile Include="core\SpectrumAnalyzer.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="core\Camera.h" />
     <ClInclude Include="core\FrequencySpectrum.h" />
     <ClInclude Include="core\loopback.h" />
+    <ClInclude Include="core\SceneManager.h" />
     <ClInclude Include="core\SimpleCamera.h" />
     <ClInclude Include="core\Shader.h" />
     <ClInclude Include="core\SpectrumAnalyzer.h" />

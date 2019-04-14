@@ -15,30 +15,17 @@
 
 #include "Shader.h"
 #include "StreamTexture.h"
+#include "SceneManager.h"
 
 #include "loopback.h"
 #include "SpectrumAnalyzer.h"
 #include "SpectrumFilter.h"
 
-struct SceneData
-{
-	GLFWwindow * window;
-	ImGuiIO * imguiIO;
-	glm::vec2 screenSize;
-	glm::vec2 mousePos;
-	glm::vec2 deltaMousePos;
-	float time;
-	float deltaTime;
-	boolean captureMouse;
-};
-
-static void updateScene(SceneData * sceneData);
-
 int audioVisualizer()
 {
 	// Struct to hold scene data
-	SceneData * sceneData = new SceneData;
-	sceneData->captureMouse = false;
+	SceneManager * sceneManager = new SceneManager;
+	sceneManager->captureMouse = false;
 
 	// Initialize GLFW, set version to 3.3, tell OpenGL that we want to use the core profile
 	glfwInit();
@@ -47,14 +34,14 @@ int audioVisualizer()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Create window object and error check, make the window the curent context, then bind the window resize callback function
-	sceneData->window = glfwCreateWindow(1600, 900, "Audio Visualizer", NULL, NULL);
-	if (sceneData->window == NULL)
+	sceneManager->window = glfwCreateWindow(1600, 900, "Audio Visualizer", NULL, NULL);
+	if (sceneManager->window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
 		return 1;
 	}
-	glfwMakeContextCurrent(sceneData->window);
+	glfwMakeContextCurrent(sceneManager->window);
 	glfwSwapInterval(0);
 
 	// Initialize GLAD to get OpenGL function pointers
@@ -66,8 +53,8 @@ int audioVisualizer()
 
 	// Setup ImGui
 	ImGui::CreateContext();
-	sceneData->imguiIO = &ImGui::GetIO(); (void)sceneData->imguiIO;
-	ImGui_ImplGlfwGL3_Init(sceneData->window, true);
+	sceneManager->imguiIO = &ImGui::GetIO(); (void)sceneManager->imguiIO;
+	ImGui_ImplGlfwGL3_Init(sceneManager->window, true);
 	ImGui::StyleColorsDark();
 
 	// Make shader
@@ -194,13 +181,13 @@ int audioVisualizer()
 	audioShader.setInt("lightColorCurve", lightColorCurve->textureID);
 
 	// Main loop
-	updateScene(sceneData);
-	while (!glfwWindowShouldClose(sceneData->window))
+	sceneManager->update();
+	while (!glfwWindowShouldClose(sceneManager->window))
 	{
 		// new frame
 		glfwPollEvents();
 		ImGui_ImplGlfwGL3_NewFrame();
-		updateScene(sceneData);
+		sceneManager->update();
 
 		// Debug window
 		ImGui::Begin("Settings");
@@ -388,8 +375,8 @@ int audioVisualizer()
 		audioShader.setInt("frequencyColorCurve", frequencyColorCurve->textureID);
 		audioShader.setInt("lightColorCurve", lightColorCurve->textureID);
 		audioShader.setFloat("time", (float)glfwGetTime());
-		audioShader.setVec2("texturePixelSize", 1.0f / (float)sceneData->screenSize.x, 1.0f / (float)sceneData->screenSize.y);
-		glm::vec2 mouseTextureCoords = sceneData->mousePos / sceneData->screenSize;
+		audioShader.setVec2("texturePixelSize", 1.0f / (float)sceneManager->screenSize.x, 1.0f / (float)sceneManager->screenSize.y);
+		glm::vec2 mouseTextureCoords = sceneManager->mousePos / sceneManager->screenSize;
 		audioShader.setVec2("mousePos", mouseTextureCoords.x, 1.0f - mouseTextureCoords.y);
 		audioShader.setFloat("lightHeight", lightHeight);
 
@@ -410,52 +397,10 @@ int audioVisualizer()
 		//swap the buffers
 		ImGui::Render();
 		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
-		glfwSwapBuffers(sceneData->window);
+		glfwSwapBuffers(sceneManager->window);
 	}
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
 	glfwTerminate();
 	return 0;
-}
-
-static void updateScene(SceneData * sceneData)
-{
-	// esc to quit
-	if (glfwGetKey(sceneData->window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(sceneData->window, true);
-
-	// update framebuffer size
-	int frameBufferWidth, frameBufferHeight;
-	glfwGetFramebufferSize(sceneData->window, &frameBufferWidth, &frameBufferHeight);
-	glViewport(0, 0, frameBufferWidth, frameBufferHeight);
-	sceneData->screenSize = glm::vec2((float)frameBufferWidth, (float)frameBufferHeight);
-
-	// update time
-	float newTime = glfwGetTime();
-	sceneData->deltaTime = newTime - sceneData->time;
-	sceneData->time = newTime;
-
-	// update mouse
-	double mouseX, mouseY;
-	glfwGetCursorPos(sceneData->window, &mouseX, &mouseY);
-	glm::vec2 newMousePos((float)mouseX, (float)mouseY);
-	sceneData->deltaMousePos = newMousePos - sceneData->mousePos;
-	sceneData->mousePos = newMousePos;
-
-	// handle switching between camera mode and mouse active mode
-	if (sceneData->captureMouse) 
-	{
-		bool mouseInWindow = glm::all(glm::greaterThan(sceneData->mousePos, glm::vec2(0.0)) && glm::lessThan(sceneData->mousePos, sceneData->screenSize));
-		bool leftMouseClicked = glfwGetMouseButton(sceneData->window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS;
-		bool leftCtrl = glfwGetKey(sceneData->window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
-		if (leftMouseClicked)
-		{
-			if (mouseInWindow && !sceneData->imguiIO->WantCaptureMouse)
-				glfwSetInputMode(sceneData->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			else
-				glfwSetInputMode(sceneData->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}
-		if (leftCtrl)
-			glfwSetInputMode(sceneData->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-	}
 }
