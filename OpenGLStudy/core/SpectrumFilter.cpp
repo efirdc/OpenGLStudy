@@ -276,6 +276,7 @@ void AverageFilter::setNumSpectrumsInAverage(int numSpectrumsInAverage)
 	m_spectrums = new FrequencySpectrum *[m_numSpectrums];
 	for (int i = 0; i < m_numSpectrums; i++)
 		m_spectrums[i] = new FrequencySpectrum(m_outputSpectrum->size);
+	m_spectrumID = 0;
 }
 
 int AverageFilter::getNumSpectrumsInAverage()
