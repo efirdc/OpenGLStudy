@@ -79,9 +79,9 @@ int fluidSimulation()
 	int fluidWidth = 640;
 	int fluidHeight = 360;
 	float standardTimestep = 1.0f / 60.0f;
-	float mouseSplatRadius = 5.0f;
-	float mouseForce = 0.05f;
-	int pressureIterations = 100;
+	float mouseSplatRadius = 7.5f;
+	float mouseForce = 0.275f;
+	int pressureIterations = 50;
 
 	// Setup textures
 	float borderColors[] = { 0.5f, 0.5f, 0.5f, 0.0f };
@@ -135,8 +135,14 @@ int fluidSimulation()
 		sceneManager->newFrame();
 
 		// Settings window
+		static float timestep = 1.0f;
 		ImGui::Begin("Settings");
 		{
+			ImGui::SliderInt("pressure iterations", &pressureIterations, 1, 200);
+			ImGui::SliderFloat("timestep", &timestep, 0.01f, 5.0f);
+			standardTimestep = timestep / 60.0f;
+			ImGui::SliderFloat("mouse radius", &mouseSplatRadius, 1.0f, 50.0f);
+			ImGui::SliderFloat("mouse force", &mouseForce, 0.01f, 1.0f);
 			// Error reporting
 			static int lastError = 0;
 			int currentError = glGetError();
