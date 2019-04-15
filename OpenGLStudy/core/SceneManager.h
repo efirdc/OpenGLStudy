@@ -14,6 +14,7 @@ public:
 	ImGuiIO * imguiIO;
 	glm::vec2 screenSize;
 	glm::vec2 mousePos;
+	glm::vec2 prevMousePos;
 	glm::vec2 deltaMousePos;
 	float time;
 	float deltaTime;

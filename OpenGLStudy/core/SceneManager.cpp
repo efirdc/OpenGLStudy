@@ -19,6 +19,7 @@ void SceneManager::newFrame()
 	glfwGetCursorPos(window, &mouseX, &mouseY);
 	glm::vec2 newMousePos((float)mouseX, (float)mouseY);
 	deltaMousePos = newMousePos - mousePos;
+	prevMousePos = mousePos;
 	mousePos = newMousePos;
 
 	// handle switching between camera mode and mouse active mode

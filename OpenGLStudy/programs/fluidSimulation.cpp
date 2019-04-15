@@ -94,6 +94,8 @@ int fluidSimulation()
 	glGenFramebuffers(1, &sourceFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, sourceFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sourceTexture, 0);
+	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
 
 	unsigned int destinationTexture;
 	glGenTextures(1, &destinationTexture);
@@ -107,6 +109,8 @@ int fluidSimulation()
 	glGenFramebuffers(1, &destinationFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, destinationFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, destinationTexture, 0);
+	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClear(GL_COLOR_BUFFER_BIT);
 	
 	Shader quadShader("shaders/fluid/screenQuad.vs", "shaders/fluid/screenQuad.fs");
 	Shader advectVelocityShader("shaders/fluid/screenQuad.vs", "shaders/fluid/advectVelocity.fs");
@@ -155,7 +159,7 @@ int fluidSimulation()
 		glm::vec2 fluidMouse = texCoordMousePos * glm::vec2(fluidWidth, fluidHeight);
 		velocitySplatShader.setVec2("mousePosition", fluidMouse);
 
-		velocitySplatShader.setVec2("mouseDelta", sceneManager->deltaMousePos);
+		velocitySplatShader.setVec2("mouseDelta", sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f));
 		velocitySplatShader.setFloat("radius", mouseSplatRadius);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);

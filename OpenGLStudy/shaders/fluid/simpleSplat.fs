@@ -33,7 +33,7 @@ void main()
   vec4 fluidSample = texture(fluid, TexCoords);
   vec2 fluidVelocity = getVelocity(fluidSample);
 
-  vec2 newVelocity = fluidVelocity + (splat * normalize(mouseDelta));
+  vec2 newVelocity = fluidVelocity + (splat * mouseDelta);
 
   FragColor = vec4(packVelocity(newVelocity), fluidSample.b, 1.0);
 }
