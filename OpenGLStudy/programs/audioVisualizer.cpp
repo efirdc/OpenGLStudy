@@ -181,13 +181,13 @@ int audioVisualizer()
 	audioShader.setInt("lightColorCurve", lightColorCurve->textureID);
 
 	// Main loop
-	sceneManager->update();
+	sceneManager->newFrame();
 	while (!glfwWindowShouldClose(sceneManager->window))
 	{
 		// new frame
 		glfwPollEvents();
 		ImGui_ImplGlfwGL3_NewFrame();
-		sceneManager->update();
+		sceneManager->newFrame();
 
 		// Debug window
 		ImGui::Begin("Settings");

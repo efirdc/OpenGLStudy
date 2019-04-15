@@ -1,16 +1,13 @@
 #include "SceneManager.h"
 
-void SceneManager::update()
+void SceneManager::newFrame()
 {
 	// esc to quit
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, true);
 
 	// update framebuffer size
-	int frameBufferWidth, frameBufferHeight;
-	glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
-	glViewport(0, 0, frameBufferWidth, frameBufferHeight);
-	screenSize = glm::vec2((float)frameBufferWidth, (float)frameBufferHeight);
+	sizeFramebufferToWindow();
 
 	// update time
 	float newTime = glfwGetTime();
@@ -39,4 +36,13 @@ void SceneManager::update()
 		if (leftCtrl)
 			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 	}
+}
+
+void SceneManager::sizeFramebufferToWindow()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	int frameBufferWidth, frameBufferHeight;
+	glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
+	glViewport(0, 0, frameBufferWidth, frameBufferHeight);
+	screenSize = glm::vec2((float)frameBufferWidth, (float)frameBufferHeight);
 }

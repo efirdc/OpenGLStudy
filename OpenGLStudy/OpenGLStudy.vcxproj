@@ -164,6 +164,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="programs\audioVisualizer.cpp" />
     <ClCompile Include="programs\basicWindow.cpp" />
+    <ClCompile Include="programs\fluidSimulation.cpp" />
     <ClCompile Include="programs\sphereParticles.cpp" />
     <ClCompile Include="programs\shaderTest.cpp" />
     <ClCompile Include="programs\textures.cpp" />
@@ -204,6 +205,11 @@
   <ItemGroup>
     <None Include="shaders\basicFrag.fs" />
     <None Include="shaders\basicVertex.vs" />
+    <None Include="shaders\fluid\advectVelocity.fs" />
+    <None Include="shaders\fluid\screenQuad.fs" />
+    <None Include="shaders\fluid\screenQuad.vs" />
+    <None Include="shaders\fluid\simpleSplat.fs" />
+    <None Include="shaders\fluid\velocitySplat.fs" />
     <None Include="shaders\loopbackTexture.fs" />
     <None Include="shaders\loopbackTexture.vs" />
     <None Include="shaders\shaderTest.fs" />

@@ -149,7 +149,7 @@ int sphereParticles()
 	Shader lightShader("shaders/light.vs", "shaders/light.fs");
 
 	// Camera
-	//SimpleCamera camera(glm::vec3(0.0f, 0.0f, 1.5f), 0.0f, 0.0f);
+	// SimpleCamera camera(glm::vec3(0.0f, 0.0f, 1.5f), 0.0f, 0.0f);
 
 	const int frameSize = 4096;
 	const int numSpectrumsInAverage = 18;
@@ -189,13 +189,13 @@ int sphereParticles()
 	View * view = new View;
 
 	// Main loop
-	sceneManager->update();
+	sceneManager->newFrame();
 	while (!glfwWindowShouldClose(sceneManager->window))
 	{
 		// new frame
 		glfwPollEvents();
 		ImGui_ImplGlfwGL3_NewFrame();
-		sceneManager->update();
+		sceneManager->newFrame();
 		
 		// Settings window
 		ImGuiWindowFlags windowFlags = 0;

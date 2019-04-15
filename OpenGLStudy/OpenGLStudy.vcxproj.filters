@@ -16,6 +16,9 @@
     <Filter Include="imgui_extensions">
       <UniqueIdentifier>{1fff1072-c58b-46c9-ac43-417ade54da3a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\fluid">
+      <UniqueIdentifier>{8c6bf05b-e0c0-4604-9047-0ccbc7608722}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dependencies\glad\glad.c">
@@ -105,6 +108,9 @@
     </ClCompile>
     <ClCompile Include="core\SceneManager.cpp">
       <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="programs\fluidSimulation.cpp">
+      <Filter>programs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -229,6 +235,21 @@
     </None>
     <None Include="shaders\transforms.vs">
       <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\fluid\screenQuad.fs">
+      <Filter>shaders\fluid</Filter>
+    </None>
+    <None Include="shaders\fluid\screenQuad.vs">
+      <Filter>shaders\fluid</Filter>
+    </None>
+    <None Include="shaders\fluid\advectVelocity.fs">
+      <Filter>shaders\fluid</Filter>
+    </None>
+    <None Include="shaders\fluid\simpleSplat.fs">
+      <Filter>shaders\fluid</Filter>
+    </None>
+    <None Include="shaders\fluid\velocitySplat.fs">
+      <Filter>shaders\fluid</Filter>
     </None>
   </ItemGroup>
 </Project>
