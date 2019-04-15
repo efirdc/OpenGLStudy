@@ -159,8 +159,8 @@ int fluidSimulation()
 		}
 		ImGui::End();
 
-		bool showDemoWindow = false;
-		ImGui::ShowDemoWindow(&showDemoWindow);
+		bool showDemoWindow = true;
+		//ImGui::ShowDemoWindow(&showDemoWindow);
 
 		// Velocity splat step
 		glBindTexture(GL_TEXTURE_2D, sourceTexture);
@@ -177,6 +177,7 @@ int fluidSimulation()
 		velocitySplatShader.setVec2("mouseDelta", sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f));
 		velocitySplatShader.setFloat("mouseForce", mouseForce);
 		velocitySplatShader.setFloat("radius", mouseSplatRadius);
+		velocitySplatShader.setFloat("leftMouseDown", sceneManager->leftMouseDown ? 1.0f : 0.0f);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		std::swap(sourceTexture, destinationTexture);

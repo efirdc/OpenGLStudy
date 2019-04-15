@@ -18,6 +18,9 @@ public:
 	glm::vec2 deltaMousePos;
 	float time;
 	float deltaTime;
+	bool leftMouseDown;
+	bool rightMouseDown;
+
 	bool captureMouse;
 
 	void newFrame();

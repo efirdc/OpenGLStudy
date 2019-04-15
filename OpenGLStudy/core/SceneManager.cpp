@@ -21,6 +21,8 @@ void SceneManager::newFrame()
 	deltaMousePos = newMousePos - mousePos;
 	prevMousePos = mousePos;
 	mousePos = newMousePos;
+	leftMouseDown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS;
+	rightMouseDown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_2) == GLFW_PRESS;
 
 	// handle switching between camera mode and mouse active mode
 	if (captureMouse) {

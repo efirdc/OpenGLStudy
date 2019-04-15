@@ -11,6 +11,7 @@ uniform vec2 mousePosition;
 uniform vec2 mouseDelta;
 uniform float radius;
 uniform float mouseForce;
+uniform float leftMouseDown;
 
 // Velocity is stored in the red and green channels. 
 // Need to multiply by 2 and subtract 1 to convert from the [0:1] color range to [-1:1] velocity range
@@ -34,7 +35,7 @@ void main()
   vec4 fluidSample = texture(fluid, TexCoords);
   vec2 fluidVelocity = getVelocity(fluidSample);
 
-  vec2 newVelocity = fluidVelocity + splat * mouseDelta * mouseForce;
+  vec2 newVelocity = fluidVelocity + splat * mouseDelta * mouseForce * leftMouseDown;
 
   FragColor = vec4(packVelocity(newVelocity), fluidSample.ba);
 }
