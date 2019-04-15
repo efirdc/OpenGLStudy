@@ -76,10 +76,11 @@ int fluidSimulation()
 	glEnableVertexAttribArray(1);
 
 	// Fluid values
-	const int fluidWidth = 640;
-	const int fluidHeight = 360;
-	const float standardTimestep = 1.0f / 60.0f;
-	const float mouseSplatRadius = 5.0f;
+	int fluidWidth = 640;
+	int fluidHeight = 360;
+	float standardTimestep = 1.0f / 60.0f;
+	float mouseSplatRadius = 5.0f;
+	int pressureIterations = 100;
 
 	// Setup textures
 	unsigned int sourceTexture;
@@ -94,7 +95,7 @@ int fluidSimulation()
 	glGenFramebuffers(1, &sourceFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, sourceFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sourceTexture, 0);
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	unsigned int destinationTexture;
@@ -109,12 +110,15 @@ int fluidSimulation()
 	glGenFramebuffers(1, &destinationFBO);
 	glBindFramebuffer(GL_FRAMEBUFFER, destinationFBO);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, destinationTexture, 0);
-	glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+	glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
 	Shader quadShader("shaders/fluid/screenQuad.vs", "shaders/fluid/screenQuad.fs");
 	Shader advectVelocityShader("shaders/fluid/screenQuad.vs", "shaders/fluid/advectVelocity.fs");
 	Shader velocitySplatShader("shaders/fluid/screenQuad.vs", "shaders/fluid/simpleSplat.fs");
+	Shader divergenceShader("shaders/fluid/screenQuad.vs", "shaders/fluid/divergence.fs");
+	Shader pressureShader("shaders/fluid/screenQuad.vs", "shaders/fluid/pressure.fs");
+	Shader subtractPressureShader("shaders/fluid/screenQuad.vs", "shaders/fluid/subtractPressure.fs");
 
 	// Main loop
 	sceneManager->newFrame();
@@ -158,7 +162,6 @@ int fluidSimulation()
 		texCoordMousePos.y = 1.0f - texCoordMousePos.y;
 		glm::vec2 fluidMouse = texCoordMousePos * glm::vec2(fluidWidth, fluidHeight);
 		velocitySplatShader.setVec2("mousePosition", fluidMouse);
-
 		velocitySplatShader.setVec2("mouseDelta", sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f));
 		velocitySplatShader.setFloat("radius", mouseSplatRadius);
 		glBindVertexArray(quadVAO);
@@ -174,6 +177,47 @@ int fluidSimulation()
 		advectVelocityShader.setInt("fluid", 0);
 		advectVelocityShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
 		advectVelocityShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		std::swap(sourceTexture, destinationTexture);
+		std::swap(sourceFBO, destinationFBO);
+
+		// Divergence step
+		glBindTexture(GL_TEXTURE_2D, sourceTexture);
+		glBindFramebuffer(GL_FRAMEBUFFER, destinationFBO);
+		glViewport(0, 0, fluidWidth, fluidHeight);
+		divergenceShader.use();
+		divergenceShader.setInt("fluid", 0);
+		divergenceShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		divergenceShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		std::swap(sourceTexture, destinationTexture);
+		std::swap(sourceFBO, destinationFBO);
+
+		// Pressure step
+		for (int i = 0; i < pressureIterations; i++) {
+			glBindTexture(GL_TEXTURE_2D, sourceTexture);
+			glBindFramebuffer(GL_FRAMEBUFFER, destinationFBO);
+			glViewport(0, 0, fluidWidth, fluidHeight);
+			pressureShader.use();
+			pressureShader.setInt("fluid", 0);
+			pressureShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+			pressureShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+			glBindVertexArray(quadVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			std::swap(sourceTexture, destinationTexture);
+			std::swap(sourceFBO, destinationFBO);
+		}
+
+		// Subtract pressure step
+		glBindTexture(GL_TEXTURE_2D, sourceTexture);
+		glBindFramebuffer(GL_FRAMEBUFFER, destinationFBO);
+		glViewport(0, 0, fluidWidth, fluidHeight);
+		subtractPressureShader.use();
+		subtractPressureShader.setInt("fluid", 0);
+		subtractPressureShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		subtractPressureShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		std::swap(sourceTexture, destinationTexture);
