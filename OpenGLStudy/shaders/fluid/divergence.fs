@@ -18,10 +18,10 @@ void main()
 {
   // Sample the fluid
   vec4 center = texture(fluid, TexCoords);
-  vec4 upVelocity = getVelocity(texture(fluid, TexCoords + pixelSize * vec2(0.0, 1.0)));
-  vec4 downVelocity = getVelocity(texture(fluid, TexCoords - pixelSize * vec2(0.0, 1.0)));
-  vec4 rightVelocity = getVelocity(texture(fluid, TexCoords + pixelSize * vec2(1.0, 0.0)));
-  vec4 leftVelocity = getVelocity(texture(fluid, TexCoords - pixelSize * vec2(1.0, 0.0)));
+  vec2 upVelocity = getVelocity(texture(fluid, TexCoords + pixelSize * vec2(0.0, 1.0)));
+  vec2 downVelocity = getVelocity(texture(fluid, TexCoords - pixelSize * vec2(0.0, 1.0)));
+  vec2 rightVelocity = getVelocity(texture(fluid, TexCoords + pixelSize * vec2(1.0, 0.0)));
+  vec2 leftVelocity = getVelocity(texture(fluid, TexCoords - pixelSize * vec2(1.0, 0.0)));
 
   float divergence = (rightVelocity.x - leftVelocity.x + upVelocity.y - downVelocity.y) * 0.5;
 
