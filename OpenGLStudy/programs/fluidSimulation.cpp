@@ -83,12 +83,15 @@ int fluidSimulation()
 	int pressureIterations = 100;
 
 	// Setup textures
+	float borderColors[] = { 0.5f, 0.5f, 0.5f, 0.0f };
+
 	unsigned int sourceTexture;
 	glGenTextures(1, &sourceTexture);
 	glBindTexture(GL_TEXTURE_2D, sourceTexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, fluidWidth, fluidHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColors);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	unsigned int sourceFBO;
@@ -102,8 +105,9 @@ int fluidSimulation()
 	glGenTextures(1, &destinationTexture);
 	glBindTexture(GL_TEXTURE_2D, destinationTexture);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, fluidWidth, fluidHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColors);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	unsigned int destinationFBO;
