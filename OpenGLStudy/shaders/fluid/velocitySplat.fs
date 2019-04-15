@@ -54,5 +54,5 @@ void main()
 
   vec2 newVelocity = fluidVelocity + splat * lineNormalized;
 
-  FragColor = vec4(packVelocity(newVelocity), fluidSample.b, 1.0);
+  FragColor = vec4(packVelocity(newVelocity), fluidSample.ba);
 }

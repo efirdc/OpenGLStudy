@@ -26,5 +26,5 @@ void main()
   vec2 newVelocityPos = TexCoords - centerVelocity * timestep * pixelSize;
   vec2 newVelocity = getVelocity(texture(fluid, newVelocityPos));
 
-  FragColor = vec4(packVelocity(newVelocity), center.b, 1.0);
+  FragColor = vec4(packVelocity(newVelocity), center.ba);
 }
