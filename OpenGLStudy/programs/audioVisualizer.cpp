@@ -102,7 +102,7 @@ int audioVisualizer()
 	// Constant sizes
 	const int bezierCurveSize = 4096;
 	const int gradientSize = 256;
-	const int soundTextureSize = 2048;
+	const int soundTextureSize = 1024;
 
 	// initialize stream textures
 	StreamTexture1D * soundTexture = new StreamTexture1D(GL_R32F, soundTextureSize, GL_RED, GL_FLOAT, 1, 4, true);
@@ -331,7 +331,7 @@ int audioVisualizer()
 		newSamples += loopback_getSound(audioBuffer, numAudioSamples);
 
 		// Main audio processing loop. This runs every time there is enough new audio samples to process the next audio frame.
-		static const FrequencySpectrum * frequencySpectrum = analyzer.getFrequencySpectrum();
+		static const FrequencySpectrum * frequencySpectrum = averageFilter.getFrequencySpectrum();
 		while (newSamples >= frameGap)
 		{
 			newSamples -= frameGap;
