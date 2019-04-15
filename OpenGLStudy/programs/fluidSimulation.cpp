@@ -118,7 +118,7 @@ int fluidSimulation()
 	glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
 	glClear(GL_COLOR_BUFFER_BIT);
 	
-	Shader quadShader("shaders/fluid/screenQuad.vs", "shaders/fluid/screenQuad.fs");
+	Shader displayShader("shaders/fluid/screenQuad.vs", "shaders/fluid/display.fs");
 	Shader advectVelocityShader("shaders/fluid/screenQuad.vs", "shaders/fluid/advectVelocity.fs");
 	Shader velocitySplatShader("shaders/fluid/screenQuad.vs", "shaders/fluid/simpleSplat.fs");
 	Shader divergenceShader("shaders/fluid/screenQuad.vs", "shaders/fluid/divergence.fs");
@@ -136,6 +136,7 @@ int fluidSimulation()
 
 		// Settings window
 		static float timestep = 1.0f;
+		static int displayMode = 1;
 		ImGui::Begin("Settings");
 		{
 			ImGui::SliderInt("pressure iterations", &pressureIterations, 1, 200);
@@ -143,6 +144,8 @@ int fluidSimulation()
 			standardTimestep = timestep / 60.0f;
 			ImGui::SliderFloat("mouse radius", &mouseSplatRadius, 1.0f, 50.0f);
 			ImGui::SliderFloat("mouse force", &mouseForce, 0.01f, 1.0f);
+			const char * displayModes[] = {"All", "Velocity", "Pressure", "Divergence"};
+			ImGui::Combo("display mode", &displayMode, displayModes, IM_ARRAYSIZE(displayModes));
 			// Error reporting
 			static int lastError = 0;
 			int currentError = glGetError();
@@ -156,10 +159,8 @@ int fluidSimulation()
 		}
 		ImGui::End();
 
-		// Update shaders
-		quadShader.update();
-		advectVelocityShader.update();
-		velocitySplatShader.update();
+		bool showDemoWindow = false;
+		ImGui::ShowDemoWindow(&showDemoWindow);
 
 		// Velocity splat step
 		glBindTexture(GL_TEXTURE_2D, sourceTexture);
@@ -242,8 +243,9 @@ int fluidSimulation()
 
 		// Display final texture on the default framebuffer
 		glBindTexture(GL_TEXTURE_2D, sourceTexture);
-		quadShader.use();
-		quadShader.setInt("screenTexture", 0);
+		displayShader.use();
+		displayShader.setInt("fluid", 0);
+		displayShader.setInt("displayMode", displayMode);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
