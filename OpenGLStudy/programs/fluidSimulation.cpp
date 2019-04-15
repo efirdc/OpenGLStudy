@@ -80,6 +80,7 @@ int fluidSimulation()
 	int fluidHeight = 360;
 	float standardTimestep = 1.0f / 60.0f;
 	float mouseSplatRadius = 5.0f;
+	float mouseForce = 0.05f;
 	int pressureIterations = 100;
 
 	// Setup textures
@@ -167,6 +168,7 @@ int fluidSimulation()
 		glm::vec2 fluidMouse = texCoordMousePos * glm::vec2(fluidWidth, fluidHeight);
 		velocitySplatShader.setVec2("mousePosition", fluidMouse);
 		velocitySplatShader.setVec2("mouseDelta", sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f));
+		velocitySplatShader.setFloat("mouseForce", mouseForce);
 		velocitySplatShader.setFloat("radius", mouseSplatRadius);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
