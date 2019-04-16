@@ -112,6 +112,9 @@
     <ClCompile Include="programs\fluidSimulation.cpp">
       <Filter>programs</Filter>
     </ClCompile>
+    <ClCompile Include="core\FluidBuffer.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\glad\glad.h">
@@ -202,6 +205,9 @@
       <Filter>dependencies</Filter>
     </ClInclude>
     <ClInclude Include="core\SceneManager.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\FluidBuffer.h">
       <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>

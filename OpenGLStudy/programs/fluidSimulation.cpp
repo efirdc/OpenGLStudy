@@ -13,6 +13,7 @@
 
 #include "Shader.h"
 #include "SceneManager.h"
+#include "FluidBuffer.h"
 
 int fluidSimulation()
 {
@@ -83,40 +84,7 @@ int fluidSimulation()
 	float mouseForce = 0.275f;
 	int pressureIterations = 50;
 
-	// Setup textures
-	float borderColors[] = { 0.5f, 0.5f, 0.5f, 0.0f };
-
-	unsigned int sourceTexture;
-	glGenTextures(1, &sourceTexture);
-	glBindTexture(GL_TEXTURE_2D, sourceTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, fluidWidth, fluidHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColors);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	unsigned int sourceFBO;
-	glGenFramebuffers(1, &sourceFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, sourceFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sourceTexture, 0);
-	glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
-
-	unsigned int destinationTexture;
-	glGenTextures(1, &destinationTexture);
-	glBindTexture(GL_TEXTURE_2D, destinationTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, fluidWidth, fluidHeight, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColors);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	unsigned int destinationFBO;
-	glGenFramebuffers(1, &destinationFBO);
-	glBindFramebuffer(GL_FRAMEBUFFER, destinationFBO);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, destinationTexture, 0);
-	glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
-	glClear(GL_COLOR_BUFFER_BIT);
+	FluidBuffer fluidBuffer(640, 360);
 	
 	Shader displayShader("shaders/fluid/screenQuad.vs", "shaders/fluid/display.fs");
 	Shader advectVelocityShader("shaders/fluid/screenQuad.vs", "shaders/fluid/advectVelocity.fs");
@@ -163,9 +131,7 @@ int fluidSimulation()
 		//ImGui::ShowDemoWindow(&showDemoWindow);
 
 		// Velocity splat step
-		glBindTexture(GL_TEXTURE_2D, sourceTexture);
-		glBindFramebuffer(GL_FRAMEBUFFER, destinationFBO);
-		glViewport(0, 0, fluidWidth, fluidHeight);
+		fluidBuffer.bind();
 		velocitySplatShader.use();
 		velocitySplatShader.setInt("fluid", 0);
 		velocitySplatShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
@@ -180,25 +146,20 @@ int fluidSimulation()
 		velocitySplatShader.setFloat("leftMouseDown", sceneManager->leftMouseDown ? 1.0f : 0.0f);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		std::swap(sourceTexture, destinationTexture);
-		std::swap(sourceFBO, destinationFBO);
+		fluidBuffer.swapFluidBuffers();
 
 		// Advection step
-		glBindTexture(GL_TEXTURE_2D, sourceTexture);
-		glBindFramebuffer(GL_FRAMEBUFFER, destinationFBO);
-		glViewport(0, 0, fluidWidth, fluidHeight);
+		fluidBuffer.bind();
 		advectVelocityShader.use();
 		advectVelocityShader.setInt("fluid", 0);
 		advectVelocityShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
 		advectVelocityShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		std::swap(sourceTexture, destinationTexture);
-		std::swap(sourceFBO, destinationFBO);
+		fluidBuffer.swapFluidBuffers();
 
 		// Divergence step
-		glBindTexture(GL_TEXTURE_2D, sourceTexture);
-		glBindFramebuffer(GL_FRAMEBUFFER, destinationFBO);
+		fluidBuffer.bind();
 		glViewport(0, 0, fluidWidth, fluidHeight);
 		divergenceShader.use();
 		divergenceShader.setInt("fluid", 0);
@@ -206,13 +167,11 @@ int fluidSimulation()
 		divergenceShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		std::swap(sourceTexture, destinationTexture);
-		std::swap(sourceFBO, destinationFBO);
+		fluidBuffer.swapFluidBuffers();
 
 		// Pressure step
 		for (int i = 0; i < pressureIterations; i++) {
-			glBindTexture(GL_TEXTURE_2D, sourceTexture);
-			glBindFramebuffer(GL_FRAMEBUFFER, destinationFBO);
+			fluidBuffer.bind();
 			glViewport(0, 0, fluidWidth, fluidHeight);
 			pressureShader.use();
 			pressureShader.setInt("fluid", 0);
@@ -220,13 +179,11 @@ int fluidSimulation()
 			pressureShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-			std::swap(sourceTexture, destinationTexture);
-			std::swap(sourceFBO, destinationFBO);
+			fluidBuffer.swapFluidBuffers();
 		}
 
 		// Subtract pressure step
-		glBindTexture(GL_TEXTURE_2D, sourceTexture);
-		glBindFramebuffer(GL_FRAMEBUFFER, destinationFBO);
+		fluidBuffer.bind();
 		glViewport(0, 0, fluidWidth, fluidHeight);
 		subtractPressureShader.use();
 		subtractPressureShader.setInt("fluid", 0);
@@ -234,8 +191,7 @@ int fluidSimulation()
 		subtractPressureShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		std::swap(sourceTexture, destinationTexture);
-		std::swap(sourceFBO, destinationFBO);
+		fluidBuffer.swapFluidBuffers();
 
 		// Use the default framebuffer
 		sceneManager->sizeFramebufferToWindow();
@@ -243,7 +199,7 @@ int fluidSimulation()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		// Display final texture on the default framebuffer
-		glBindTexture(GL_TEXTURE_2D, sourceTexture);
+		fluidBuffer.bindTextures();
 		displayShader.use();
 		displayShader.setInt("fluid", 0);
 		displayShader.setInt("displayMode", displayMode);
