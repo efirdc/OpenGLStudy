@@ -1,11 +1,15 @@
 #version 330 core
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColorFluid;
+layout (location = 1) out vec4 FragColorDensity;
 
 in vec2 TexCoords;
 
 uniform sampler2D fluid;
+uniform sampler2D density;
 uniform float timestep;
 uniform vec2 pixelSize;
+uniform float velocityDissipation;
+uniform float densityDissipation;
 
 // Velocity is stored in the red and green channels. 
 // Need to multiply by 2 and subtract 1 to convert from the [0:1] color range to [-1:1] velocity range
@@ -24,7 +28,9 @@ void main()
   // Follow the velocity at the center pixel backwards in time
   // Sample the fluid at this position to get the new velocity
   vec2 newVelocityPos = TexCoords - centerVelocity * timestep * pixelSize;
-  vec2 newVelocity = getVelocity(texture(fluid, newVelocityPos));
+  vec2 newVelocity = getVelocity(texture(fluid, newVelocityPos)) * velocityDissipation;
+  vec4 newDensity = texture(density, newVelocityPos) * densityDissipation;
 
-  FragColor = vec4(packVelocity(newVelocity), center.ba);
+  FragColorFluid = vec4(packVelocity(newVelocity), center.ba);
+  FragColorDensity = vec4(newDensity);
 }

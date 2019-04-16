@@ -80,15 +80,12 @@ int fluidSimulation()
 	int fluidWidth = 640;
 	int fluidHeight = 360;
 	float standardTimestep = 1.0f / 60.0f;
-	float mouseSplatRadius = 7.5f;
-	float mouseForce = 0.275f;
-	int pressureIterations = 50;
 
-	FluidBuffer fluidBuffer(640, 360);
+	FluidBuffer fluidBuffer(fluidWidth, fluidHeight);
 	
 	Shader displayShader("shaders/fluid/screenQuad.vs", "shaders/fluid/display.fs");
-	Shader advectVelocityShader("shaders/fluid/screenQuad.vs", "shaders/fluid/advectVelocity.fs");
-	Shader velocitySplatShader("shaders/fluid/screenQuad.vs", "shaders/fluid/simpleSplat.fs");
+	Shader advectShader("shaders/fluid/screenQuad.vs", "shaders/fluid/advection.fs");
+	Shader splatShader("shaders/fluid/screenQuad.vs", "shaders/fluid/simpleSplat.fs");
 	Shader divergenceShader("shaders/fluid/screenQuad.vs", "shaders/fluid/divergence.fs");
 	Shader pressureShader("shaders/fluid/screenQuad.vs", "shaders/fluid/pressure.fs");
 	Shader subtractPressureShader("shaders/fluid/screenQuad.vs", "shaders/fluid/subtractPressure.fs");
@@ -103,8 +100,13 @@ int fluidSimulation()
 		sceneManager->newFrame();
 
 		// Settings window
+		static int pressureIterations = 50;
 		static float timestep = 1.0f;
 		static int displayMode = 1;
+		static float mouseSplatRadius = 7.5f;
+		static float mouseForce = 0.275f;
+		static float velocityDissipation = 1.0f;
+		static float densityDissipation = 0.975f;
 		ImGui::Begin("Settings");
 		{
 			ImGui::SliderInt("pressure iterations", &pressureIterations, 1, 200);
@@ -112,7 +114,10 @@ int fluidSimulation()
 			standardTimestep = timestep / 60.0f;
 			ImGui::SliderFloat("mouse radius", &mouseSplatRadius, 1.0f, 50.0f);
 			ImGui::SliderFloat("mouse force", &mouseForce, 0.01f, 1.0f);
-			const char * displayModes[] = {"All", "Velocity", "Pressure", "Divergence"};
+			ImGui::SliderFloat("velocity dissipation", &velocityDissipation, 0.9f, 1.0f);
+			ImGui::SliderFloat("density dissipation", &densityDissipation, 0.9f, 1.0f);
+			ImGui::SliderFloat("mouse force", &mouseForce, 0.01f, 1.0f);
+			const char * displayModes[] = {"All", "Velocity", "Pressure", "Divergence", "Density"};
 			ImGui::Combo("display mode", &displayMode, displayModes, IM_ARRAYSIZE(displayModes));
 			// Error reporting
 			static int lastError = 0;
@@ -130,37 +135,43 @@ int fluidSimulation()
 		bool showDemoWindow = true;
 		//ImGui::ShowDemoWindow(&showDemoWindow);
 
-		// Velocity splat step
+		// Splat step
 		fluidBuffer.bind();
-		velocitySplatShader.use();
-		velocitySplatShader.setInt("fluid", 0);
-		velocitySplatShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
-		velocitySplatShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+		splatShader.use();
+		splatShader.setInt("fluid", 0);
+		splatShader.setInt("density", 1);
+		splatShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		splatShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glm::vec2 texCoordMousePos = sceneManager->mousePos / sceneManager->screenSize;
 		texCoordMousePos.y = 1.0f - texCoordMousePos.y;
 		glm::vec2 fluidMouse = texCoordMousePos * glm::vec2(fluidWidth, fluidHeight);
-		velocitySplatShader.setVec2("mousePosition", fluidMouse);
-		velocitySplatShader.setVec2("mouseDelta", sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f));
-		velocitySplatShader.setFloat("mouseForce", mouseForce);
-		velocitySplatShader.setFloat("radius", mouseSplatRadius);
-		velocitySplatShader.setFloat("leftMouseDown", sceneManager->leftMouseDown ? 1.0f : 0.0f);
+		splatShader.setVec2("mousePosition", fluidMouse);
+		splatShader.setVec2("mouseDelta", sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f));
+		splatShader.setFloat("mouseForce", mouseForce);
+		splatShader.setFloat("radius", mouseSplatRadius);
+		splatShader.setFloat("leftMouseDown", sceneManager->leftMouseDown ? 1.0f : 0.0f);
+		splatShader.setFloat("rightMouseDown", sceneManager->rightMouseDown ? 1.0f : 0.0f);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapFluidBuffers();
+		fluidBuffer.swapDensityBuffers();
 
 		// Advection step
 		fluidBuffer.bind();
-		advectVelocityShader.use();
-		advectVelocityShader.setInt("fluid", 0);
-		advectVelocityShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
-		advectVelocityShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+		advectShader.use();
+		advectShader.setInt("fluid", 0);
+		advectShader.setInt("density", 1);
+		advectShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		advectShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+		advectShader.setFloat("velocityDissipation", velocityDissipation);
+		advectShader.setFloat("densityDissipation", densityDissipation);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapFluidBuffers();
+		fluidBuffer.swapDensityBuffers();
 
 		// Divergence step
 		fluidBuffer.bind();
-		glViewport(0, 0, fluidWidth, fluidHeight);
 		divergenceShader.use();
 		divergenceShader.setInt("fluid", 0);
 		divergenceShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
@@ -172,7 +183,6 @@ int fluidSimulation()
 		// Pressure step
 		for (int i = 0; i < pressureIterations; i++) {
 			fluidBuffer.bind();
-			glViewport(0, 0, fluidWidth, fluidHeight);
 			pressureShader.use();
 			pressureShader.setInt("fluid", 0);
 			pressureShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
@@ -184,7 +194,6 @@ int fluidSimulation()
 
 		// Subtract pressure step
 		fluidBuffer.bind();
-		glViewport(0, 0, fluidWidth, fluidHeight);
 		subtractPressureShader.use();
 		subtractPressureShader.setInt("fluid", 0);
 		subtractPressureShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
@@ -202,6 +211,7 @@ int fluidSimulation()
 		fluidBuffer.bindTextures();
 		displayShader.use();
 		displayShader.setInt("fluid", 0);
+		displayShader.setInt("density", 1);
 		displayShader.setInt("displayMode", displayMode);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);

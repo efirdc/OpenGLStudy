@@ -27,7 +27,7 @@ FluidBuffer::FluidBuffer(int width, int height) :
 		glClearColor(0.5f, 0.5f, 0.5f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glBindTexture(GL_TEXTURE_2D, densityBorder[i]);
+		glBindTexture(GL_TEXTURE_2D, densityTexture[i]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, width, height, 0, GL_RGBA, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
@@ -35,7 +35,7 @@ FluidBuffer::FluidBuffer(int width, int height) :
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2 + i, GL_TEXTURE_2D, densityBorder[i], 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2 + i, GL_TEXTURE_2D, densityTexture[i], 0);
 		glDrawBuffer(GL_COLOR_ATTACHMENT2 + i);
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -47,7 +47,7 @@ FluidBuffer::~FluidBuffer()
 
 }
 
-void FluidBuffer::bind() 
+void FluidBuffer::bind()
 {
 	bindTextures();
 	glBindFramebuffer(GL_FRAMEBUFFER, FBO);
