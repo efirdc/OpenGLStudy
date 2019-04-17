@@ -8,10 +8,12 @@ in vec2 TexCoords;
 #define PRESSURE 2
 #define DIVERGENCE 3
 #define DENSITY 4
+#define DENSITY_COLOR 5
 
 uniform int displayMode;
 uniform sampler2D fluid;
 uniform sampler2D density;
+uniform sampler1D densityColorCurve;
 
 void main()
 {
@@ -28,6 +30,8 @@ void main()
     FragColor = vec4(vec3(fluidSample.a), 1.0);
   } else if (displayMode == DENSITY) {
     FragColor = densitySample;
+  } else if (displayMode == DENSITY_COLOR) {
+    FragColor = texture(densityColorCurve, densitySample.r);
   }
   
 }

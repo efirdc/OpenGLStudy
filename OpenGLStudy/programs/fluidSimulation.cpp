@@ -10,10 +10,17 @@
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
+#include "imgui_extras.h"
+#include "imgui_color_gradient.h"
 
 #include "Shader.h"
 #include "SceneManager.h"
+#include "StreamTexture.h"
 #include "FluidBuffer.h"
+
+#include "SpectrumAnalyzer.h"
+#include "SpectrumFilter.h"
+#include "loopback.h"
 
 int fluidSimulation()
 {
@@ -82,9 +89,73 @@ int fluidSimulation()
 	float standardTimestep = 1.0f / 60.0f;
 
 	FluidBuffer fluidBuffer(fluidWidth, fluidHeight);
+
+	const int gradientSize = 256;
+
+	const int frameSize = 4096;
+	const int numSpectrumsInAverage = 18;
+	const int numFreqBins = 1024;
+	const float domainShiftFactor = 10.0f;
+
+	SpectrumAnalyzer analyzer(frameSize);
+
+	loopback_init();
+	int frameGap = 128;
+	int numAudioSamples = analyzer.getFrameSize() * 2;
+	const int bezierCurveSize = 4096;
+	float * audioBuffer = new float[numAudioSamples]();
+
+	// initialize frequency amplitude curve
+	float * frequencyAmplitudeCurve = new float[bezierCurveSize]();
+	ImVec2 fAmpControlPoints[2] = { { 0.016f, 0.016f },{ 0.0f, 1.0f } };
+	glm::vec2 frequencyAmplitudePoints[bezierCurveSize];
+	utl::bezierTable((glm::vec2 *)fAmpControlPoints, frequencyAmplitudePoints, bezierCurveSize);
+	utl::curve2Dto1D(frequencyAmplitudePoints, bezierCurveSize, frequencyAmplitudeCurve, bezierCurveSize);
+
+	// initialize peak smoothing curve
+	float peakRadius = 0.05f;
+	int peakCurveSize = (int)((float)numFreqBins * peakRadius);
+	float * peakCurve = new float[peakCurveSize]();
+	ImVec2 peakControlPoints[2] = { { 1.00f, 0.00f },{ 0.0f, 1.00f } };
+	glm::vec2 peakCurvePoints[bezierCurveSize];
+	utl::bezierTable((glm::vec2 *)peakControlPoints, peakCurvePoints, bezierCurveSize);
+	utl::curve2Dto1D(peakCurvePoints, bezierCurveSize, peakCurve, peakCurveSize);
+
+	AmplitudeFilter amplitudeFilter(frequencyAmplitudeCurve, bezierCurveSize);
+	DomainShiftFilter domainShiftFilter(domainShiftFactor, numFreqBins);
+	PeakFilter peakFilter(peakCurve, peakCurveSize);
+	AverageFilter averageFilter(numSpectrumsInAverage);
+
+	StreamTexture1D * densityColorCurve = new StreamTexture1D(GL_RGB32F, gradientSize, GL_RGB, GL_FLOAT, 3, 4, false);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_1D, densityColorCurve->textureID);
+
+	// initialize frequency color gradient
+	ImGradient densityGradient;
+	densityGradient.getMarks().clear();
+	densityGradient.addMark(1.0f, ImColor(0xFF, 0xDE, 0x75));
+	densityGradient.addMark(0.75f, ImColor(0xFF, 0xEA, 0x00));
+	densityGradient.addMark(0.50f, ImColor(0xED, 0x00, 0x00));
+	densityGradient.addMark(0.25f, ImColor(0x22, 0x1D, 0x24));
+	densityGradient.addMark(0.0f, ImColor(0x00, 0x00, 0x00));
+	glm::vec3 * densityColors = (glm::vec3 *)densityColorCurve->getPixelBuffer();
+	int numColors = densityColorCurve->width;
+	for (int i = 0; i < numColors; i++)
+	{
+		ImVec4 color = densityGradient.getColorAt((float)i / (float)(numColors - 1));
+		densityColors[i] = glm::vec3(color.x, color.y, color.z);
+	}
+	densityColorCurve->unmapPixelBuffer();
+	densityColorCurve->getPixelBuffer(); // bug workadound. StreamTexture doesnt initialize properly without this
+	densityColorCurve->unmapPixelBuffer();
+
+	StreamTexture1D * frequencyTexture = new StreamTexture1D(GL_R32F, numFreqBins, GL_RED, GL_FLOAT, 1, 4, true);
+	glActiveTexture(GL_TEXTURE3);
+	glBindTexture(GL_TEXTURE_1D, frequencyTexture->textureID);
 	
 	Shader displayShader("shaders/fluid/screenQuad.vs", "shaders/fluid/display.fs");
 	Shader advectShader("shaders/fluid/screenQuad.vs", "shaders/fluid/advection.fs");
+	Shader audioSpiralShader("shaders/fluid/screenQuad.vs", "shaders/fluid/audioSpiral.fs");
 	Shader splatShader("shaders/fluid/screenQuad.vs", "shaders/fluid/simpleSplat.fs");
 	Shader divergenceShader("shaders/fluid/screenQuad.vs", "shaders/fluid/divergence.fs");
 	Shader pressureShader("shaders/fluid/screenQuad.vs", "shaders/fluid/pressure.fs");
@@ -102,11 +173,11 @@ int fluidSimulation()
 		// Settings window
 		static int pressureIterations = 50;
 		static float timestep = 1.0f;
-		static int displayMode = 1;
+		static int displayMode = 5;
 		static float mouseSplatRadius = 7.5f;
-		static float mouseForce = 0.275f;
+		static float mouseForce = 1.0;
 		static float velocityDissipation = 1.0f;
-		static float densityDissipation = 0.975f;
+		static float densityDissipation = 0.970f;
 		ImGui::Begin("Settings");
 		{
 			ImGui::SliderInt("pressure iterations", &pressureIterations, 1, 200);
@@ -117,8 +188,59 @@ int fluidSimulation()
 			ImGui::SliderFloat("velocity dissipation", &velocityDissipation, 0.9f, 1.0f);
 			ImGui::SliderFloat("density dissipation", &densityDissipation, 0.9f, 1.0f);
 			ImGui::SliderFloat("mouse force", &mouseForce, 0.01f, 1.0f);
-			const char * displayModes[] = {"All", "Velocity", "Pressure", "Divergence", "Density"};
+			const char * displayModes[] = {"All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor"};
 			ImGui::Combo("display mode", &displayMode, displayModes, IM_ARRAYSIZE(displayModes));
+
+			// Control the frequency color gradient
+			bool changed = false;
+			if (ImGui::TreeNode("Frequency Color Gradient"))
+			{
+				changed = ImGui::GradientEditor(&densityGradient);
+				ImGui::TreePop();
+			}
+			if (changed)
+			{
+				glm::vec3 * colors = (glm::vec3 *)densityColorCurve->getPixelBuffer();
+				int numColors = densityColorCurve->width;
+				for (int i = 0; i < numColors; i++)
+				{
+					ImVec4 color = densityGradient.getColorAt((float)i / (float)(numColors - 1));
+					colors[i] = glm::vec3(color.x, color.y, color.z);
+				}
+				densityColorCurve->unmapPixelBuffer();
+			}
+
+			// Control the frequency amplitude curve
+			changed = false;
+			if (ImGui::TreeNode("Frequency Amplitude Curve"))
+			{
+				changed = ImGui::Bezier("", fAmpControlPoints);
+				ImGui::TreePop();
+			}
+			if (changed)
+			{
+				utl::bezierTable((glm::vec2 *)fAmpControlPoints, frequencyAmplitudePoints, bezierCurveSize);
+				utl::curve2Dto1D(frequencyAmplitudePoints, bezierCurveSize, frequencyAmplitudeCurve, bezierCurveSize);
+				amplitudeFilter.setAmplitudeCurve(frequencyAmplitudeCurve, bezierCurveSize);
+			}
+
+			// Control the frequency peak curve
+			if (ImGui::TreeNode("Frequency Peak Curve"))
+			{
+				changed = ImGui::SliderFloat("Blur Radius", &peakRadius, 0.0f, 0.1f);
+				changed |= ImGui::Bezier("", peakControlPoints);
+				ImGui::TreePop();
+			}
+			if (changed)
+			{
+				delete[] peakCurve;
+				peakCurveSize = (int)((float)numFreqBins * peakRadius);
+				peakCurve = new float[peakCurveSize]();
+				utl::bezierTable((glm::vec2 *)peakControlPoints, peakCurvePoints, bezierCurveSize);
+				utl::curve2Dto1D(peakCurvePoints, bezierCurveSize, peakCurve, peakCurveSize);
+				peakFilter.setPeakCurve(peakCurve, peakCurveSize);
+			}
+
 			// Error reporting
 			static int lastError = 0;
 			int currentError = glGetError();
@@ -132,8 +254,41 @@ int fluidSimulation()
 		}
 		ImGui::End();
 
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_1D, densityColorCurve->textureID);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_1D, frequencyTexture->textureID);
+
 		bool showDemoWindow = true;
 		//ImGui::ShowDemoWindow(&showDemoWindow);
+
+		// Audio processing step
+		static int newSamples = 0;
+		newSamples += loopback_getSound(audioBuffer, numAudioSamples);
+		static const FrequencySpectrum * frequencySpectrum = averageFilter.getFrequencySpectrum();
+		while (newSamples >= frameGap)
+		{
+			newSamples -= frameGap;
+			float * inputBuffer = analyzer.getFrameInputBuffer();
+			int frameSize = analyzer.getFrameSize();
+			int frameStart = frameSize - newSamples;
+			for (int i = 0; i < frameSize; i++)
+				inputBuffer[i] = audioBuffer[frameStart + i];
+			analyzer.processFrame();
+			frequencySpectrum = analyzer.getFrequencySpectrum();
+			frequencySpectrum = amplitudeFilter.applyFilter(frequencySpectrum);
+			frequencySpectrum = domainShiftFilter.applyFilter(frequencySpectrum);
+			frequencySpectrum = peakFilter.applyFilter(frequencySpectrum);
+			frequencySpectrum = averageFilter.applyFilter(frequencySpectrum);
+		}
+		float * frequencyData = frequencySpectrum->data;
+		float * frequencyPixelBuffer = (float *)frequencyTexture->getPixelBuffer();
+		for (int i = 0; i < frequencySpectrum->size; i++)
+			frequencyPixelBuffer[i] = frequencyData[i];
+		frequencyTexture->unmapPixelBuffer();
+
+		// update shaders
+		audioSpiralShader.update();
 
 		// Splat step
 		fluidBuffer.bind();
@@ -151,6 +306,20 @@ int fluidSimulation()
 		splatShader.setFloat("radius", mouseSplatRadius);
 		splatShader.setFloat("leftMouseDown", sceneManager->leftMouseDown ? 1.0f : 0.0f);
 		splatShader.setFloat("rightMouseDown", sceneManager->rightMouseDown ? 1.0f : 0.0f);
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		fluidBuffer.swapFluidBuffers();
+		fluidBuffer.swapDensityBuffers();
+
+		// Audio spiral step
+		fluidBuffer.bind();
+		audioSpiralShader.use();
+		audioSpiralShader.setInt("fluid", 0);
+		audioSpiralShader.setInt("density", 1);
+		audioSpiralShader.setInt("frequency", 3);
+		audioSpiralShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		audioSpiralShader.setFloat("utime", sceneManager->time);
+		audioSpiralShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapFluidBuffers();
@@ -212,6 +381,7 @@ int fluidSimulation()
 		displayShader.use();
 		displayShader.setInt("fluid", 0);
 		displayShader.setInt("density", 1);
+		displayShader.setInt("densityColorCurve", 2);
 		displayShader.setInt("displayMode", displayMode);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
