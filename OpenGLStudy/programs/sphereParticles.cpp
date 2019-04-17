@@ -20,7 +20,6 @@
 #include "SpectrumFilter.h"
 #include "utilities.h"
 
-#define _CRTDBG_MAP_ALLOC
 #include <cstdlib>
 #include <crtdbg.h>
 
@@ -68,7 +67,6 @@ int sphereParticles()
 	}
 
 	glEnable(GL_DEPTH_TEST);
-	_crtBreakAlloc = 18;
 
 	// Setup ImGui
 	ImGui::CreateContext();
@@ -351,7 +349,6 @@ int sphereParticles()
 	}
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
-	_CrtDumpMemoryLeaks();
 	glfwTerminate();
 	return 0;
 }
