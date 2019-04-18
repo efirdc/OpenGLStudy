@@ -135,7 +135,7 @@ int fluidSimulation()
 	densityGradient.getMarks().clear();
 	densityGradient.addMark(1.0f, ImColor(0xFF, 0xDE, 0x75));
 	densityGradient.addMark(0.75f, ImColor(0xFF, 0xEA, 0x00));
-	densityGradient.addMark(0.50f, ImColor(0xED, 0x00, 0x00));
+	densityGradient.addMark(0.50f, ImColor(0x8E, 0x00, 0x00));
 	densityGradient.addMark(0.25f, ImColor(0x22, 0x1D, 0x24));
 	densityGradient.addMark(0.0f, ImColor(0x00, 0x00, 0x00));
 	glm::vec3 * densityColors = (glm::vec3 *)densityColorCurve->getPixelBuffer();
@@ -152,6 +152,9 @@ int fluidSimulation()
 	StreamTexture1D * frequencyTexture = new StreamTexture1D(GL_R32F, numFreqBins, GL_RED, GL_FLOAT, 1, 4, true);
 	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_1D, frequencyTexture->textureID);
+	float * frequencyPixelBuffer = (float *)frequencyTexture->getPixelBuffer();
+	for (int i = 0; i < frequencyTexture->width; i++)
+		frequencyPixelBuffer[i] = 0.0f;
 	
 	Shader displayShader("shaders/fluid/screenQuad.vs", "shaders/fluid/display.fs");
 	Shader advectShader("shaders/fluid/screenQuad.vs", "shaders/fluid/advection.fs");
@@ -178,8 +181,15 @@ int fluidSimulation()
 		static float mouseForce = 1.0;
 		static float velocityDissipation = 1.0f;
 		static float densityDissipation = 0.970f;
+		static float spiralCurl = 0.025f;
+		static float spiralSpin = 1.4f;
+		static float spiralSplatRadius = 0.0002;
+		static float spiralVelocityAddScalar = 5.0f;
+		static float spiralDensityAddScalar = 0.8f;
 		ImGui::Begin("Settings");
 		{
+			const char * displayModes[] = { "All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor" };
+			ImGui::Combo("display mode", &displayMode, displayModes, IM_ARRAYSIZE(displayModes));
 			ImGui::SliderInt("pressure iterations", &pressureIterations, 1, 200);
 			ImGui::SliderFloat("timestep", &timestep, 0.01f, 5.0f);
 			standardTimestep = timestep / 60.0f;
@@ -187,9 +197,11 @@ int fluidSimulation()
 			ImGui::SliderFloat("mouse force", &mouseForce, 0.01f, 1.0f);
 			ImGui::SliderFloat("velocity dissipation", &velocityDissipation, 0.9f, 1.0f);
 			ImGui::SliderFloat("density dissipation", &densityDissipation, 0.9f, 1.0f);
-			ImGui::SliderFloat("mouse force", &mouseForce, 0.01f, 1.0f);
-			const char * displayModes[] = {"All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor"};
-			ImGui::Combo("display mode", &displayMode, displayModes, IM_ARRAYSIZE(displayModes));
+			ImGui::SliderFloat("curl", &spiralCurl, 0.0f, 1.0f);
+			ImGui::SliderFloat("spin", &spiralSpin, 0.0f, 20.0f);
+			ImGui::SliderFloat("splat radius", &spiralSplatRadius, 0.0f, 0.001f, "%.5f");
+			ImGui::SliderFloat("velocity add scalar", &spiralVelocityAddScalar, 0.0f, 5.0f);
+			ImGui::SliderFloat("density add scalar", &spiralDensityAddScalar, 0.0f, 5.0f);
 
 			// Control the frequency color gradient
 			bool changed = false;
@@ -312,19 +324,28 @@ int fluidSimulation()
 		fluidBuffer.swapDensityBuffers();
 
 		// Audio spiral step
-		fluidBuffer.bind();
-		audioSpiralShader.use();
-		audioSpiralShader.setInt("fluid", 0);
-		audioSpiralShader.setInt("density", 1);
-		audioSpiralShader.setInt("frequency", 3);
-		audioSpiralShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
-		audioSpiralShader.setFloat("utime", sceneManager->time);
-		audioSpiralShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
-		glBindVertexArray(quadVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		fluidBuffer.swapFluidBuffers();
-		fluidBuffer.swapDensityBuffers();
-
+		// Dont run for the first 100 or so frames since the frequency data is garbage for a bit for some reason...
+		if (sceneManager->frameNumber > 100) 
+		{
+			fluidBuffer.bind();
+			audioSpiralShader.use();
+			audioSpiralShader.setInt("fluid", 0);
+			audioSpiralShader.setInt("density", 1);
+			audioSpiralShader.setInt("frequency", 3);
+			audioSpiralShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+			audioSpiralShader.setFloat("utime", sceneManager->time);
+			audioSpiralShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+			audioSpiralShader.setFloat("curl", spiralCurl);
+			audioSpiralShader.setFloat("spin", spiralSpin);
+			audioSpiralShader.setFloat("splatRadius", spiralSplatRadius);
+			audioSpiralShader.setFloat("velocityAddScalar", spiralVelocityAddScalar);
+			audioSpiralShader.setFloat("densityAddScalar", spiralDensityAddScalar);
+			glBindVertexArray(quadVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			fluidBuffer.swapFluidBuffers();
+			fluidBuffer.swapDensityBuffers();
+		}
+		
 		// Advection step
 		fluidBuffer.bind();
 		advectShader.use();

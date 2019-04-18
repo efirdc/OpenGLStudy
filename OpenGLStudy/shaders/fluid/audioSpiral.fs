@@ -17,6 +17,12 @@ uniform float timestep;
 uniform float utime;
 uniform vec2 pixelSize;
 
+uniform float curl;
+uniform float spin;
+uniform float splatRadius;
+uniform float velocityAddScalar;
+uniform float densityAddScalar;
+
 // Velocity is stored in the red and green channels. 
 // Need to multiply by 2 and subtract 1 to convert from the [0:1] color range to [-1:1] velocity range
 vec2 getVelocity(vec4 color) {return color.rg * 2.0 - 1.0;}
@@ -38,7 +44,7 @@ void main()
     float k = float(i);
     float kPct = k / float(NUM_POINTS);
     float radius = SPREAD * sqrt(k);
-    float angle = (utime * 0.05) * k * PI - utime * 5.0;
+    float angle = (SPIRALYNESS + utime * curl) * k * PI - utime * spin;
     vec2 spiralDir = vec2(cos(angle), sin(angle));
     vec2 spiralPoint = spiralDir * radius;
     vec2 deltaPos = spiralPoint + vec2(0.5) - TexCoords;
@@ -48,11 +54,18 @@ void main()
       velocityDir = spiralDir;
     }
   }
-  vec2 force = velocityDir * gauss(smallestDeltaPos, 0.0002) * 0.9 * texture(frequency, smallestkPct).r;
+
+  float splat = gauss(smallestDeltaPos, splatRadius);
+  float frequencySample = texture(frequency, smallestkPct).r;
+
+  vec2 velocityAdd = velocityDir * splat * frequencySample * velocityAddScalar;
+  float densityAdd = splat * frequencySample * densityAddScalar;
+
   vec4 fluidSample = texture(fluid, TexCoords);
-  vec2 newVelocity = getVelocity(fluidSample) + force;
   float densitySample = texture(density, TexCoords).r;
-  float newDensity = densitySample + length(force) * 0.5;
+
+  vec2 newVelocity = getVelocity(fluidSample) + velocityAdd;
+  float newDensity = densitySample + densityAdd;
   
   FragColorFluid = vec4(packVelocity(newVelocity), fluidSample.ba);
   FragColorDensity = vec4(newDensity);

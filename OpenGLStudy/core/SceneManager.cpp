@@ -13,6 +13,7 @@ void SceneManager::newFrame()
 	float newTime = glfwGetTime();
 	deltaTime = newTime - time;
 	time = newTime;
+	frameNumber += 1;
 
 	// update mouse
 	double mouseX, mouseY;
