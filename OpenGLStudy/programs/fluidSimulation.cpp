@@ -163,6 +163,7 @@ int fluidSimulation()
 	Shader divergenceShader("shaders/fluid/screenQuad.vs", "shaders/fluid/divergence.fs");
 	Shader pressureShader("shaders/fluid/screenQuad.vs", "shaders/fluid/pressure.fs");
 	Shader subtractPressureShader("shaders/fluid/screenQuad.vs", "shaders/fluid/subtractPressure.fs");
+	//Shader vorticityShader("shaders/fluid/screenQuad.vs", "shaders/fluid/vorticity.fs");
 
 	// Main loop
 	sceneManager->newFrame();
@@ -391,6 +392,18 @@ int fluidSimulation()
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapFluidBuffers();
+
+		// Vorticity step
+		/*
+		fluidBuffer.bind();
+		vorticityShader.use();
+		vorticityShader.setInt("fluid", 0);
+		vorticityShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		vorticityShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		fluidBuffer.swapFluidBuffers();
+		*/
 
 		// Use the default framebuffer
 		sceneManager->sizeFramebufferToWindow();
