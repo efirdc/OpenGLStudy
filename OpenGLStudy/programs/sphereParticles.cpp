@@ -13,26 +13,15 @@
 
 #include "Shader.h"
 #include "SimpleCamera.h"
+#include "SceneManager.h"
 
 #include "loopback.h"
 #include "SpectrumAnalyzer.h"
 #include "SpectrumFilter.h"
 #include "utilities.h"
 
-#define _CRTDBG_MAP_ALLOC
 #include <cstdlib>
 #include <crtdbg.h>
-
-struct SceneData
-{
-	GLFWwindow * window;
-	ImGuiIO * imguiIO;
-	glm::vec2 screenSize;
-	glm::vec2 mousePos;
-	glm::vec2 deltaMousePos;
-	float time;
-	float deltaTime;
-};
 
 struct View
 {
@@ -43,14 +32,14 @@ struct View
 	glm::mat4 invMatrix;
 };
 
-static void updateScene(SceneData * sceneData);
-static void updateView(View * view, SceneData * sceneData);
-static void updateView2(View * view, SceneData * sceneData);
+static void updateView(View * view, SceneManager * sceneManager);
+static void updateView2(View * view, SceneManager * sceneManager);
 
 int sphereParticles()
 {
 	// Struct to hold scene data
-	SceneData * sceneData = new SceneData;
+	SceneManager * sceneManager = new SceneManager;
+	sceneManager->captureMouse = true;
 
 	// Initialize GLFW, set version to 3.3, tell OpenGL that we want to use the core profile
 	glfwInit();
@@ -60,14 +49,14 @@ int sphereParticles()
 
 	// Create window object and error check
 	// Make the window the curent context
-	sceneData->window = glfwCreateWindow(1600, 900, "Spherical particle system", NULL, NULL);
-	if (sceneData->window == NULL)
+	sceneManager->window = glfwCreateWindow(1600, 900, "Spherical particle system", NULL, NULL);
+	if (sceneManager->window == NULL)
 	{
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
 		return 1;
 	}
-	glfwMakeContextCurrent(sceneData->window);
+	glfwMakeContextCurrent(sceneManager->window);
 	glfwSwapInterval(0);
 
 	// Initialize GLAD to get OpenGL function pointers
@@ -78,12 +67,11 @@ int sphereParticles()
 	}
 
 	glEnable(GL_DEPTH_TEST);
-	_crtBreakAlloc = 18;
 
 	// Setup ImGui
 	ImGui::CreateContext();
-	sceneData->imguiIO = &ImGui::GetIO(); (void)sceneData->imguiIO;
-	ImGui_ImplGlfwGL3_Init(sceneData->window, true);
+	sceneManager->imguiIO = &ImGui::GetIO(); (void)sceneManager->imguiIO;
+	ImGui_ImplGlfwGL3_Init(sceneManager->window, true);
 	ImGui::StyleColorsDark();
 
 	// Setup VBO for the cube
@@ -159,7 +147,7 @@ int sphereParticles()
 	Shader lightShader("shaders/light.vs", "shaders/light.fs");
 
 	// Camera
-	//SimpleCamera camera(glm::vec3(0.0f, 0.0f, 1.5f), 0.0f, 0.0f);
+	// SimpleCamera camera(glm::vec3(0.0f, 0.0f, 1.5f), 0.0f, 0.0f);
 
 	const int frameSize = 4096;
 	const int numSpectrumsInAverage = 18;
@@ -199,17 +187,17 @@ int sphereParticles()
 	View * view = new View;
 
 	// Main loop
-	updateScene(sceneData);
-	while (!glfwWindowShouldClose(sceneData->window))
+	sceneManager->newFrame();
+	while (!glfwWindowShouldClose(sceneManager->window))
 	{
 		// new frame
 		glfwPollEvents();
 		ImGui_ImplGlfwGL3_NewFrame();
-		updateScene(sceneData);
+		sceneManager->newFrame();
 		
 		// Settings window
 		ImGuiWindowFlags windowFlags = 0;
-		if (glfwGetInputMode(sceneData->window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+		if (glfwGetInputMode(sceneManager->window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
 			windowFlags |= ImGuiWindowFlags_NoInputs;
 		ImGui::Begin("Settings (Press CTRL to activate mouse)", nullptr, windowFlags);
 		static int numObjects = 500;
@@ -252,7 +240,7 @@ int sphereParticles()
 			ImGui::Text("%.1f, %.1f, %.1f, %.1f", viewMatrix[0][1], viewMatrix[1][1], viewMatrix[2][1], viewMatrix[3][1]);
 			ImGui::Text("%.1f, %.1f, %.1f, %.1f", viewMatrix[0][2], viewMatrix[1][2], viewMatrix[2][2], viewMatrix[3][2]);
 			ImGui::Text("%.1f, %.1f, %.1f, %.1f", viewMatrix[0][3], viewMatrix[1][3], viewMatrix[2][3], viewMatrix[3][3]);
-			ImGui::Text("%.1f, %.1f", sceneData->screenSize.x, sceneData->screenSize.y);
+			ImGui::Text("%.1f, %.1f", sceneManager->screenSize.x, sceneManager->screenSize.y);
 			// Error reporting
 			static int lastError = 0;
 			int currentError = glGetError();
@@ -272,7 +260,7 @@ int sphereParticles()
 
 		// Capture system audio, and keep track of the number of new samples
 		static int newSamples = 0;
-		newSamples += loopback_getSound(audioBuffer, numAudioSamples);
+		newSamples += loopback_getSound(audioBuffer, numAudioSamples); 
 
 		// Main audio processing loop. This runs every time there is enough new audio samples to process the next audio frame.
 		static const FrequencySpectrum * frequencySpectrum = analyzer.getFrequencySpectrum();
@@ -297,8 +285,8 @@ int sphereParticles()
 		float * frequencyData = frequencySpectrum->data;
 
 		// get view and projection matrices
-		updateView2(view, sceneData);
-		float aspect = sceneData->screenSize.y != 0.0f ? (float)sceneData->screenSize.x / (float)sceneData->screenSize.y : 1.0f;
+		updateView2(view, sceneManager);
+		float aspect = sceneManager->screenSize.y != 0.0f ? (float)sceneManager->screenSize.x / (float)sceneManager->screenSize.y : 1.0f;
 		glm::mat4 projection = glm::perspective(glm::radians(75.0f), aspect, 0.1f, 100.0f);
 
 		// make light
@@ -356,83 +344,43 @@ int sphereParticles()
 		// end frame stuff
 		ImGui::Render();
 		ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
-		glfwSwapBuffers(sceneData->window);
+		glfwSwapBuffers(sceneManager->window);
 		
 	}
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
-	_CrtDumpMemoryLeaks();
 	glfwTerminate();
 	return 0;
 }
 
-static void updateScene(SceneData * sceneData)
-{
-	// esc to quit
-	if (glfwGetKey(sceneData->window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(sceneData->window, true);
-
-	// update framebuffer size
-	int frameBufferWidth, frameBufferHeight;
-	glfwGetFramebufferSize(sceneData->window, &frameBufferWidth, &frameBufferHeight);
-	glViewport(0, 0, frameBufferWidth, frameBufferHeight);
-	sceneData->screenSize = glm::vec2((float)frameBufferWidth, (float)frameBufferHeight);
-
-	// update time
-	float newTime = glfwGetTime();
-	sceneData->deltaTime = newTime - sceneData->time;
-	sceneData->time = newTime;
-	
-	// update mouse
-	double mouseX, mouseY;
-	glfwGetCursorPos(sceneData->window, &mouseX, &mouseY);
-	glm::vec2 newMousePos((float)mouseX, (float)mouseY);
-	sceneData->deltaMousePos = newMousePos - sceneData->mousePos;
-	sceneData->mousePos = newMousePos;
-	
-	// handle switching between camera mode and mouse active mode
-	bool mouseInWindow = glm::all(glm::greaterThan(sceneData->mousePos, glm::vec2(0.0)) && glm::lessThan(sceneData->mousePos, sceneData->screenSize));
-	bool leftMouseClicked = glfwGetMouseButton(sceneData->window, GLFW_MOUSE_BUTTON_1) == GLFW_PRESS;
-	bool leftCtrl = glfwGetKey(sceneData->window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS;
-	if (leftMouseClicked)
-	{
-		if (mouseInWindow && !sceneData->imguiIO->WantCaptureMouse)
-			glfwSetInputMode(sceneData->window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-		else
-			glfwSetInputMode(sceneData->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-	}
-	if (leftCtrl)
-		glfwSetInputMode(sceneData->window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-}
-
-static void updateView(View * view, SceneData * sceneData)
+static void updateView(View * view, SceneManager * sceneManager)
 {
 	static const float CAMERA_SENSITIVITY = 0.1f;
 	static const glm::vec3 CAMERA_SPEED(4.0f, 3.0f, 4.0f);
 
 	// only update the view when the mouse is active
-	if (glfwGetInputMode(sceneData->window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
+	if (glfwGetInputMode(sceneManager->window, GLFW_CURSOR) == GLFW_CURSOR_NORMAL)
 		return;
 
 	// get movement axis
 	glm::vec3 movementAxis(0.0f);
-	if (glfwGetKey(sceneData->window, GLFW_KEY_A) == GLFW_PRESS)
+	if (glfwGetKey(sceneManager->window, GLFW_KEY_A) == GLFW_PRESS)
 		movementAxis[0] -= 1.0f;
-	if (glfwGetKey(sceneData->window, GLFW_KEY_D) == GLFW_PRESS)
+	if (glfwGetKey(sceneManager->window, GLFW_KEY_D) == GLFW_PRESS)
 		movementAxis[0] += 1.0f;
-	if (glfwGetKey(sceneData->window, GLFW_KEY_W) == GLFW_PRESS)
+	if (glfwGetKey(sceneManager->window, GLFW_KEY_W) == GLFW_PRESS)
 		movementAxis[2] -= 1.0f;
-	if (glfwGetKey(sceneData->window, GLFW_KEY_S) == GLFW_PRESS)
+	if (glfwGetKey(sceneManager->window, GLFW_KEY_S) == GLFW_PRESS)
 		movementAxis[2] += 1.0f;
-	if (glfwGetKey(sceneData->window, GLFW_KEY_SPACE) == GLFW_PRESS)
+	if (glfwGetKey(sceneManager->window, GLFW_KEY_SPACE) == GLFW_PRESS)
 		movementAxis[1] += 1.0f;
-	if (glfwGetKey(sceneData->window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+	if (glfwGetKey(sceneManager->window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 		movementAxis[1] -= 1.0f;
 	movementAxis = glm::length(movementAxis) > 0.0f ? glm::normalize(movementAxis) : movementAxis;
 
 	// constrain y axis rotation (yaw) to [0, 360] and x axis rotation (pitch) to [-90, 90]
-	view->eulerAngles.y = glm::mod(view->eulerAngles.y - sceneData->deltaMousePos.x * CAMERA_SENSITIVITY, 360.0f);
-	view->eulerAngles.x = glm::clamp(view->eulerAngles.x - sceneData->deltaMousePos.y * CAMERA_SENSITIVITY, -90.0f, 90.0f);
+	view->eulerAngles.y = glm::mod(view->eulerAngles.y - sceneManager->deltaMousePos.x * CAMERA_SENSITIVITY, 360.0f);
+	view->eulerAngles.x = glm::clamp(view->eulerAngles.x - sceneManager->deltaMousePos.y * CAMERA_SENSITIVITY, -90.0f, 90.0f);
 
 	// perform rotation around y axis (yaw) and rotation around x axis (pitch)
 	glm::mat4 intermediate = glm::rotate(glm::mat4(1.0f), glm::radians(view->eulerAngles.y), glm::vec3(0.0f, 1.0f, 0.0f));
@@ -441,12 +389,12 @@ static void updateView(View * view, SceneData * sceneData)
 	glm::vec3 velocity(intermediate * glm::vec4(movementAxis, 0.0f));
 	velocity *= CAMERA_SPEED;
 	// perform translation and calculate inverse matrix
-	view->position += velocity * sceneData->deltaTime;
+	view->position += velocity * sceneManager->deltaTime;
 	view->matrix[3] = glm::vec4(view->position, 1.0f);
 	view->invMatrix = glm::inverse(view->matrix);
 }
 
-static void updateView2(View * view, SceneData * sceneData)
+static void updateView2(View * view, SceneManager * sceneManager)
 {
 	static const float CAMERA_SENSITIVITY = 0.1f;
 	static const float CAMERA_MAX_VELOCITY = 4.0f;
@@ -456,26 +404,26 @@ static void updateView2(View * view, SceneData * sceneData)
 
 	// disable control when mouse is active
 	glm::vec3 movementAxis(0.0f);
-	if (glfwGetInputMode(sceneData->window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
+	if (glfwGetInputMode(sceneManager->window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
 	{
 		// get movement axis
-		if (glfwGetKey(sceneData->window, GLFW_KEY_A) == GLFW_PRESS)
+		if (glfwGetKey(sceneManager->window, GLFW_KEY_A) == GLFW_PRESS)
 			movementAxis[0] -= 1.0f;
-		if (glfwGetKey(sceneData->window, GLFW_KEY_D) == GLFW_PRESS)
+		if (glfwGetKey(sceneManager->window, GLFW_KEY_D) == GLFW_PRESS)
 			movementAxis[0] += 1.0f;
-		if (glfwGetKey(sceneData->window, GLFW_KEY_W) == GLFW_PRESS)
+		if (glfwGetKey(sceneManager->window, GLFW_KEY_W) == GLFW_PRESS)
 			movementAxis[2] -= 1.0f;
-		if (glfwGetKey(sceneData->window, GLFW_KEY_S) == GLFW_PRESS)
+		if (glfwGetKey(sceneManager->window, GLFW_KEY_S) == GLFW_PRESS)
 			movementAxis[2] += 1.0f;
-		if (glfwGetKey(sceneData->window, GLFW_KEY_SPACE) == GLFW_PRESS)
+		if (glfwGetKey(sceneManager->window, GLFW_KEY_SPACE) == GLFW_PRESS)
 			movementAxis[1] += 1.0f;
-		if (glfwGetKey(sceneData->window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+		if (glfwGetKey(sceneManager->window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
 			movementAxis[1] -= 1.0f;
 		movementAxis = glm::length(movementAxis) > 0.0f ? glm::normalize(movementAxis) : movementAxis;
 
 		// constrain y axis rotation (yaw) to [0, 360] and x axis rotation (pitch) to [-90, 90]
-		view->eulerAngles.y = glm::mod(view->eulerAngles.y - sceneData->deltaMousePos.x * CAMERA_SENSITIVITY, 360.0f);
-		view->eulerAngles.x = glm::clamp(view->eulerAngles.x - sceneData->deltaMousePos.y * CAMERA_SENSITIVITY, -90.0f, 90.0f);
+		view->eulerAngles.y = glm::mod(view->eulerAngles.y - sceneManager->deltaMousePos.x * CAMERA_SENSITIVITY, 360.0f);
+		view->eulerAngles.x = glm::clamp(view->eulerAngles.x - sceneManager->deltaMousePos.y * CAMERA_SENSITIVITY, -90.0f, 90.0f);
 	}
 
 	// perform rotation around y axis (yaw) and rotation around x axis (pitch)
@@ -487,17 +435,17 @@ static void updateView2(View * view, SceneData * sceneData)
 	// decellerate when the movement axis is 0, accelerate otherwise
 	float speed = glm::length(velocity);
 	if (glm::length(movementAxis) == 0.0f && speed != 0.0f)
-		velocity = glm::clamp(speed - CAMERA_DECCEL * sceneData->deltaTime, 0.0f, CAMERA_MAX_VELOCITY) * glm::normalize(velocity);
+		velocity = glm::clamp(speed - CAMERA_DECCEL * sceneManager->deltaTime, 0.0f, CAMERA_MAX_VELOCITY) * glm::normalize(velocity);
 	else
 	{
 		glm::vec3 accelDir(intermediate * glm::vec4(movementAxis, 0.0f));
-		velocity += accelDir * CAMERA_ACCEL * sceneData->deltaTime;
+		velocity += accelDir * CAMERA_ACCEL * sceneManager->deltaTime;
 		if (speed > CAMERA_MAX_VELOCITY)
 			velocity = glm::normalize(velocity) * CAMERA_MAX_VELOCITY;
 	}
 	
 	// perform translation and calculate inverse matrix
-	view->position += velocity * sceneData->deltaTime;
+	view->position += velocity * sceneManager->deltaTime;
 	view->matrix[3] = glm::vec4(view->position, 1.0f);
 	view->invMatrix = glm::inverse(view->matrix);
 }

@@ -53,6 +53,7 @@ bool Shader::update()
 	}
 	else
 		glDeleteProgram(newProgramID);
+	cout << "Shader " << vertexPath << " " << fragmentPath << " recompiled." << endl;
 	return true;
 }
 
