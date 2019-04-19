@@ -9,16 +9,20 @@ in vec2 TexCoords;
 #define DIVERGENCE 3
 #define DENSITY 4
 #define DENSITY_COLOR 5
+#define CURL 6
+#define VORTICITY 7
 
 uniform int displayMode;
 uniform sampler2D fluid;
 uniform sampler2D density;
+uniform sampler2D curl;
 uniform sampler1D densityColorCurve;
 
 void main()
 {
   vec4 fluidSample = texture(fluid, TexCoords);
   vec4 densitySample = texture(density, TexCoords);
+  vec4 curlSample = texture(curl, TexCoords);
   
   if (displayMode == ALL) {
     FragColor = vec4(fluidSample.rgb, 1.0);
@@ -32,6 +36,10 @@ void main()
     FragColor = densitySample;
   } else if (displayMode == DENSITY_COLOR) {
     FragColor = texture(densityColorCurve, densitySample.r);
+  } else if (displayMode == CURL) {
+    FragColor = vec4(vec3(curlSample.r), 1.0);
+  } else if (displayMode == VORTICITY) {
+    FragColor = vec4(curlSample.gb, 0.5, 1.0);
   }
   
 }

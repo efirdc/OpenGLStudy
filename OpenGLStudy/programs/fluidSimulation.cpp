@@ -94,7 +94,7 @@ int fluidSimulation()
 	const float quantitiesBorder[4] = { 0.0f, 0.5f, 0.5f, 0.0f };
 	fluidBuffer.addTextureChannel(GL_TEXTURE0, fluidBorder);
 	fluidBuffer.addTextureChannel(GL_TEXTURE1, densityBorder);
-	//fluidBuffer.addTextureChannel(GL_TEXTURE4, densityBorder);
+	fluidBuffer.addTextureChannel(GL_TEXTURE4, quantitiesBorder);
 
 	const int gradientSize = 256;
 
@@ -169,7 +169,8 @@ int fluidSimulation()
 	Shader divergenceShader("shaders/fluid/screenQuad.vs", "shaders/fluid/divergence.fs");
 	Shader pressureShader("shaders/fluid/screenQuad.vs", "shaders/fluid/pressure.fs");
 	Shader subtractPressureShader("shaders/fluid/screenQuad.vs", "shaders/fluid/subtractPressure.fs");
-	//Shader vorticityShader("shaders/fluid/screenQuad.vs", "shaders/fluid/vorticity.fs");
+	Shader curlShader("shaders/fluid/screenQuad.vs", "shaders/fluid/curl.fs");
+	Shader vorticityShader("shaders/fluid/screenQuad.vs", "shaders/fluid/vorticity.fs");
 
 	// Main loop
 	sceneManager->newFrame();
@@ -193,9 +194,10 @@ int fluidSimulation()
 		static float spiralSplatRadius = 0.0002f;
 		static float spiralVelocityAddScalar = 5.0f;
 		static float spiralDensityAddScalar = 0.8f;
+		static float vorticity = 0.5f;
 		ImGui::Begin("Settings");
 		{
-			const char * displayModes[] = { "All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor" };
+			const char * displayModes[] = { "All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor", "Curl", "Vorticity" };
 			ImGui::Combo("display mode", &displayMode, displayModes, IM_ARRAYSIZE(displayModes));
 			ImGui::SliderInt("pressure iterations", &pressureIterations, 1, 200);
 			ImGui::SliderFloat("timestep", &timestep, 0.01f, 5.0f);
@@ -209,6 +211,7 @@ int fluidSimulation()
 			ImGui::SliderFloat("splat radius", &spiralSplatRadius, 0.0f, 0.001f, "%.5f");
 			ImGui::SliderFloat("velocity add scalar", &spiralVelocityAddScalar, 0.0f, 5.0f);
 			ImGui::SliderFloat("density add scalar", &spiralDensityAddScalar, 0.0f, 5.0f);
+			ImGui::SliderFloat("vorticity", &vorticity, 0.0f, 10.0f);
 
 			// Control the frequency color gradient
 			bool changed = false;
@@ -367,6 +370,30 @@ int fluidSimulation()
 		fluidBuffer.swapTextureChannel(0);
 		fluidBuffer.swapTextureChannel(1);
 
+		// Curl step
+		fluidBuffer.bind();
+		curlShader.use();
+		curlShader.setInt("fluid", 0);
+		curlShader.setInt("curl", 4);
+		curlShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		curlShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		fluidBuffer.swapTextureChannel(2);
+
+		// Vorticity step
+		fluidBuffer.bind();
+		vorticityShader.use();
+		vorticityShader.setInt("fluid", 0);
+		vorticityShader.setInt("curl", 4);
+		vorticityShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		vorticityShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+		vorticityShader.setFloat("vorticityScalar", vorticity);
+		glBindVertexArray(quadVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		fluidBuffer.swapTextureChannel(0);
+		fluidBuffer.swapTextureChannel(2);
+
 		// Divergence step
 		fluidBuffer.bind();
 		divergenceShader.use();
@@ -399,18 +426,6 @@ int fluidSimulation()
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapTextureChannel(0);
 
-		// Vorticity step
-		/*
-		fluidBuffer.bind();
-		vorticityShader.use();
-		vorticityShader.setInt("fluid", 0);
-		vorticityShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
-		vorticityShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
-		glBindVertexArray(quadVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		fluidBuffer.swapFluidBuffers();
-		*/
-
 		// Use the default framebuffer
 		sceneManager->sizeFramebufferToWindow();
 		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -421,6 +436,7 @@ int fluidSimulation()
 		displayShader.use();
 		displayShader.setInt("fluid", 0);
 		displayShader.setInt("density", 1);
+		displayShader.setInt("curl", 4);
 		displayShader.setInt("densityColorCurve", 2);
 		displayShader.setInt("displayMode", displayMode);
 		glBindVertexArray(quadVAO);
