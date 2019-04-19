@@ -112,7 +112,7 @@
     <ClCompile Include="programs\fluidSimulation.cpp">
       <Filter>programs</Filter>
     </ClCompile>
-    <ClCompile Include="core\FluidBuffer.cpp">
+    <ClCompile Include="core\PingPongBuffer.cpp">
       <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
@@ -207,7 +207,7 @@
     <ClInclude Include="core\SceneManager.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="core\FluidBuffer.h">
+    <ClInclude Include="core\PingPongBuffer.h">
       <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
