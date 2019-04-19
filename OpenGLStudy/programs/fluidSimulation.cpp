@@ -92,9 +92,9 @@ int fluidSimulation()
 	const float fluidBorder[4] = { 0.5f, 0.5f, 0.5f, 0.0f };
 	const float densityBorder[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 	const float quantitiesBorder[4] = { 0.0f, 0.5f, 0.5f, 0.0f };
-	fluidBuffer.addBuffer(fluidBorder);
-	fluidBuffer.addBuffer(densityBorder);
-	//fluidBuffer.addBuffer(quantitiesBorder);
+	fluidBuffer.addTextureChannel(GL_TEXTURE0, fluidBorder);
+	fluidBuffer.addTextureChannel(GL_TEXTURE1, densityBorder);
+	//fluidBuffer.addTextureChannel(GL_TEXTURE4, densityBorder);
 
 	const int gradientSize = 256;
 
@@ -307,7 +307,7 @@ int fluidSimulation()
 		frequencyTexture->unmapPixelBuffer();
 
 		// update shaders
-		audioSpiralShader.update();
+		//audioSpiralShader.update();
 
 		// Splat step
 		fluidBuffer.bind();
@@ -327,8 +327,8 @@ int fluidSimulation()
 		splatShader.setFloat("rightMouseDown", sceneManager->rightMouseDown ? 1.0f : 0.0f);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		fluidBuffer.swapBuffer(0);
-		fluidBuffer.swapBuffer(1);
+		fluidBuffer.swapTextureChannel(0);
+		fluidBuffer.swapTextureChannel(1);
 
 		// Audio spiral step
 		// Dont run for the first 100 or so frames since the frequency data is garbage for a bit for some reason...
@@ -349,8 +349,8 @@ int fluidSimulation()
 			audioSpiralShader.setFloat("densityAddScalar", spiralDensityAddScalar);
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-			fluidBuffer.swapBuffer(0);
-			fluidBuffer.swapBuffer(1);
+			fluidBuffer.swapTextureChannel(0);
+			fluidBuffer.swapTextureChannel(1);
 		}
 		
 		// Advection step
@@ -364,8 +364,8 @@ int fluidSimulation()
 		advectShader.setFloat("densityDissipation", densityDissipation);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		fluidBuffer.swapBuffer(0);
-		fluidBuffer.swapBuffer(1);
+		fluidBuffer.swapTextureChannel(0);
+		fluidBuffer.swapTextureChannel(1);
 
 		// Divergence step
 		fluidBuffer.bind();
@@ -375,7 +375,7 @@ int fluidSimulation()
 		divergenceShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		fluidBuffer.swapBuffer(0);
+		fluidBuffer.swapTextureChannel(0);
 
 		// Pressure step
 		for (int i = 0; i < pressureIterations; i++) {
@@ -386,7 +386,7 @@ int fluidSimulation()
 			pressureShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
-			fluidBuffer.swapBuffer(0);
+			fluidBuffer.swapTextureChannel(0);
 		}
 
 		// Subtract pressure step
@@ -397,7 +397,7 @@ int fluidSimulation()
 		subtractPressureShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
-		fluidBuffer.swapBuffer(0);
+		fluidBuffer.swapTextureChannel(0);
 
 		// Vorticity step
 		/*

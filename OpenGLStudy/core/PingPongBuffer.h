@@ -4,32 +4,33 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
-#define MAX_BUFFERS 4
+// Every texture channel uses 2 attachment points on the FBO
+// OpenGL only guarantees that 8 attachment points are available, so for now there is a hardcoded max of 4
+#define MAX_CHANNELS 4
 
 class PingPongBuffer
 {
 public:
-	unsigned int FBO;
-	
 	PingPongBuffer(int width, int height);
 	~PingPongBuffer();
 
-	void addBuffer(const float * borderValues);
+	void addTextureChannel(unsigned int textureUnit, const float * borderValues);
+	void swapTextureChannel(int channelIndex);
 	void bind();
-	void bindTextures(int firstTextureUnit = GL_TEXTURE0);
+	void bindTextures();
 	void setDrawBuffers();
-	void swapBuffer(int bufferIndex);
 private:
-	struct TextureAttachment {
+	unsigned int FBO;
+	struct TextureChannel {
 		unsigned int texture[2];
-		unsigned int attachment[2];
+		unsigned int fboAttachmentPoint[2];
 		int sourceIndex;
 		unsigned int textureUnit;
 	};
 
-	TextureAttachment * buffers[MAX_BUFFERS];
-	unsigned int drawBuffers[MAX_BUFFERS];
-	int numBuffers;
+	TextureChannel * channel[MAX_CHANNELS];
+	unsigned int drawBuffers[MAX_CHANNELS];
+	int numChannels;
 	int width;
 	int height;
 
