@@ -207,11 +207,17 @@
   <ItemGroup>
     <None Include="shaders\basicFrag.fs" />
     <None Include="shaders\basicVertex.vs" />
-    <None Include="shaders\fluid\advectVelocity.fs" />
-    <None Include="shaders\fluid\screenQuad.fs" />
+    <None Include="shaders\fluid\advection.fs" />
+    <None Include="shaders\fluid\audioSpiral.fs" />
+    <None Include="shaders\fluid\curl.fs" />
+    <None Include="shaders\fluid\display.fs" />
+    <None Include="shaders\fluid\divergence.fs" />
+    <None Include="shaders\fluid\pressure.fs" />
     <None Include="shaders\fluid\screenQuad.vs" />
     <None Include="shaders\fluid\simpleSplat.fs" />
+    <None Include="shaders\fluid\subtractPressure.fs" />
     <None Include="shaders\fluid\velocitySplat.fs" />
+    <None Include="shaders\fluid\vorticity.fs" />
     <None Include="shaders\loopbackTexture.fs" />
     <None Include="shaders\loopbackTexture.vs" />
     <None Include="shaders\shaderTest.fs" />

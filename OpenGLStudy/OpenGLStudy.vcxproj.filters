@@ -242,19 +242,37 @@
     <None Include="shaders\transforms.vs">
       <Filter>shaders</Filter>
     </None>
-    <None Include="shaders\fluid\screenQuad.fs">
+    <None Include="shaders\fluid\advection.fs">
+      <Filter>shaders\fluid</Filter>
+    </None>
+    <None Include="shaders\fluid\audioSpiral.fs">
+      <Filter>shaders\fluid</Filter>
+    </None>
+    <None Include="shaders\fluid\display.fs">
+      <Filter>shaders\fluid</Filter>
+    </None>
+    <None Include="shaders\fluid\divergence.fs">
+      <Filter>shaders\fluid</Filter>
+    </None>
+    <None Include="shaders\fluid\pressure.fs">
       <Filter>shaders\fluid</Filter>
     </None>
     <None Include="shaders\fluid\screenQuad.vs">
       <Filter>shaders\fluid</Filter>
     </None>
-    <None Include="shaders\fluid\advectVelocity.fs">
-      <Filter>shaders\fluid</Filter>
-    </None>
     <None Include="shaders\fluid\simpleSplat.fs">
       <Filter>shaders\fluid</Filter>
     </None>
+    <None Include="shaders\fluid\subtractPressure.fs">
+      <Filter>shaders\fluid</Filter>
+    </None>
     <None Include="shaders\fluid\velocitySplat.fs">
+      <Filter>shaders\fluid</Filter>
+    </None>
+    <None Include="shaders\fluid\vorticity.fs">
+      <Filter>shaders\fluid</Filter>
+    </None>
+    <None Include="shaders\fluid\curl.fs">
       <Filter>shaders\fluid</Filter>
     </None>
   </ItemGroup>
