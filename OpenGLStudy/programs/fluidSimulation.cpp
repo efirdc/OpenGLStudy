@@ -185,11 +185,13 @@ int fluidSimulation()
 		static int pressureIterations = 50;
 		static float timestep = 1.0f;
 		static int displayMode = 5;
-		static float mouseSplatRadius = 50.0f;
-		static float mouseForce = 1.0;
 		static float velocityDissipation = 1.0f;
 		static float densityDissipation = 0.970f;
 		static float vorticity = 1.0f;
+		static float mouseSplatRadius = 25.0f;
+		static float mouseVelocityAddScalar = 0.75f;
+		static float mousePressureAddScalar = 1.0f;
+		static float mouseDensityAddScalar = 0.4f;
 		static bool spiralEnable = true;
 		static float spiralCurl = 0.010f;
 		static float spiralSpin = 1.4f;
@@ -200,16 +202,26 @@ int fluidSimulation()
 		ImGui::Begin("Settings");
 		{
 			ImGui::PushItemWidth(-150);
+
+
 			const char * displayModes[] = { "All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor", "Curl", "Vorticity" };
 			ImGui::Combo("display mode", &displayMode, displayModes, IM_ARRAYSIZE(displayModes));
 			ImGui::SliderInt("pressure iterations", &pressureIterations, 1, 200);
 			ImGui::SliderFloat("timestep", &timestep, 0.01f, 5.0f);
 			standardTimestep = timestep / 60.0f;
-			ImGui::SliderFloat("mouse radius", &mouseSplatRadius, 1.0f, 150.0f);
-			ImGui::SliderFloat("mouse force", &mouseForce, 0.01f, 5.0f);
 			ImGui::SliderFloat("velocity dissipation", &velocityDissipation, 0.9f, 1.0f);
 			ImGui::SliderFloat("density dissipation", &densityDissipation, 0.9f, 1.0f);
 			ImGui::SliderFloat("vorticity", &vorticity, 0.0f, 10.0f);
+
+			if (ImGui::TreeNode("Mouse Settings"))
+			{
+				ImGui::SliderFloat("radius", &mouseSplatRadius, 1.0f, 150.0f);
+				ImGui::SliderFloat("velocity add scalar", &mouseVelocityAddScalar, 0.00f, 15.0f);
+				ImGui::SliderFloat("pressure add scalar", &mousePressureAddScalar, 0.00f, 100.0f);
+				ImGui::SliderFloat("density add scalar", &mouseDensityAddScalar, 0.0f, 15.0f);
+				ImGui::TreePop();
+			}
+			
 			if (ImGui::TreeNode("Audio Visualiser Spiral"))
 			{
 				ImGui::Checkbox("enabled", &spiralEnable);
@@ -221,8 +233,6 @@ int fluidSimulation()
 				ImGui::SliderFloat("density add scalar", &spiralDensityAddScalar, 0.0f, 15.0f);
 				ImGui::TreePop();
 			}
-			
-			
 
 			// Control the frequency color gradient
 			bool changed = false;
@@ -335,7 +345,9 @@ int fluidSimulation()
 		glm::vec2 fluidMouse = texCoordMousePos * glm::vec2(fluidWidth, fluidHeight);
 		splatShader.setVec2("mousePosition", fluidMouse);
 		splatShader.setVec2("mouseDelta", sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f));
-		splatShader.setFloat("mouseForce", mouseForce);
+		splatShader.setFloat("velocityAddScalar", mouseVelocityAddScalar);
+		splatShader.setFloat("pressureAddScalar", mousePressureAddScalar);
+		splatShader.setFloat("densityAddScalar", mouseDensityAddScalar);
 		splatShader.setFloat("radius", mouseSplatRadius);
 		splatShader.setFloat("leftMouseDown", sceneManager->leftMouseDown ? 1.0f : 0.0f);
 		splatShader.setFloat("rightMouseDown", sceneManager->rightMouseDown ? 1.0f : 0.0f);

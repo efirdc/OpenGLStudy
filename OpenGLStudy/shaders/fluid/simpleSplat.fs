@@ -12,7 +12,9 @@ uniform vec2 pixelSize;
 uniform vec2 mousePosition;
 uniform vec2 mouseDelta;
 uniform float radius;
-uniform float mouseForce;
+uniform float velocityAddScalar;
+uniform float pressureAddScalar;
+uniform float densityAddScalar;
 uniform float leftMouseDown;
 uniform float rightMouseDown;
 
@@ -36,13 +38,12 @@ void main()
 
   // Sample the fluid
   vec4 fluidSample = texture(fluid, TexCoords);
-  vec2 fluidVelocity = getVelocity(fluidSample);
-  vec2 newVelocity = fluidVelocity + splat * mouseDelta * mouseForce * leftMouseDown;
-
-  FragColorFluid = vec4(packVelocity(newVelocity), fluidSample.ba);
-
   float densitySample = texture(density, TexCoords).r;
-  float newDensity = densitySample + splat * rightMouseDown;
 
+  vec2 newVelocity = getVelocity(fluidSample) + splat * mouseDelta * velocityAddScalar * leftMouseDown;
+  float newPressure = fluidSample.b + splat * pressureAddScalar * leftMouseDown;
+  float newDensity = densitySample + splat * densityAddScalar * rightMouseDown;
+
+  FragColorFluid = vec4(packVelocity(newVelocity), newPressure, fluidSample.a);
   FragColorDensity = vec4(newDensity);
 }
