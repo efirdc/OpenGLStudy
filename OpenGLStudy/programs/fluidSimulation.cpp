@@ -187,12 +187,13 @@ int fluidSimulation()
 		static int displayMode = 5;
 		static float velocityDissipation = 1.0f;
 		static float densityDissipation = 0.970f;
+		static bool vorticityEnabled = true;
 		static float vorticity = 1.0f;
 		static float mouseSplatRadius = 25.0f;
 		static float mouseVelocityAddScalar = 0.75f;
 		static float mousePressureAddScalar = 1.0f;
 		static float mouseDensityAddScalar = 0.4f;
-		static bool spiralEnable = true;
+		static bool spiralEnabled = true;
 		static float spiralCurl = 0.010f;
 		static float spiralSpin = 1.4f;
 		static float spiralSplatRadius = 0.0002f;
@@ -211,6 +212,7 @@ int fluidSimulation()
 			standardTimestep = timestep / 60.0f;
 			ImGui::SliderFloat("velocity dissipation", &velocityDissipation, 0.9f, 1.0f);
 			ImGui::SliderFloat("density dissipation", &densityDissipation, 0.9f, 1.0f);
+			ImGui::Checkbox("vorticity enabled", &vorticityEnabled);
 			ImGui::SliderFloat("vorticity", &vorticity, 0.0f, 10.0f);
 
 			if (ImGui::TreeNode("Mouse Settings"))
@@ -224,7 +226,7 @@ int fluidSimulation()
 			
 			if (ImGui::TreeNode("Audio Visualiser Spiral"))
 			{
-				ImGui::Checkbox("enabled", &spiralEnable);
+				ImGui::Checkbox("enabled", &spiralEnabled);
 				ImGui::SliderFloat("curl", &spiralCurl, 0.0f, 0.2f);
 				ImGui::SliderFloat("spin", &spiralSpin, 0.0f, 20.0f);
 				ImGui::SliderFloat("splat radius", &spiralSplatRadius, 0.0f, 0.0005f, "%.5f");
@@ -358,7 +360,7 @@ int fluidSimulation()
 
 		// Audio spiral step
 		// Dont run for the first 100 or so frames since the frequency data is garbage for a bit for some reason...
-		if (sceneManager->frameNumber > 100 && spiralEnable) 
+		if (sceneManager->frameNumber > 100 && spiralEnabled) 
 		{
 			fluidBuffer.bind();
 			audioSpiralShader.use();
@@ -394,30 +396,33 @@ int fluidSimulation()
 		fluidBuffer.swapTextureChannel(0);
 		fluidBuffer.swapTextureChannel(1);
 
-		// Curl step
-		fluidBuffer.bind();
-		curlShader.use();
-		curlShader.setInt("fluid", 0);
-		curlShader.setInt("curl", 4);
-		curlShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
-		curlShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
-		glBindVertexArray(quadVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		fluidBuffer.swapTextureChannel(2);
+		if (vorticityEnabled) 
+		{
+			// Curl step
+			fluidBuffer.bind();
+			curlShader.use();
+			curlShader.setInt("fluid", 0);
+			curlShader.setInt("curl", 4);
+			curlShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+			curlShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+			glBindVertexArray(quadVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			fluidBuffer.swapTextureChannel(2);
 
-		// Vorticity step
-		fluidBuffer.bind();
-		vorticityShader.use();
-		vorticityShader.setInt("fluid", 0);
-		vorticityShader.setInt("curl", 4);
-		vorticityShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
-		vorticityShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
-		vorticityShader.setFloat("vorticityScalar", vorticity);
-		glBindVertexArray(quadVAO);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		fluidBuffer.swapTextureChannel(0);
-		fluidBuffer.swapTextureChannel(2);
-
+			// Vorticity step
+			fluidBuffer.bind();
+			vorticityShader.use();
+			vorticityShader.setInt("fluid", 0);
+			vorticityShader.setInt("curl", 4);
+			vorticityShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+			vorticityShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
+			vorticityShader.setFloat("vorticityScalar", vorticity);
+			glBindVertexArray(quadVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+			fluidBuffer.swapTextureChannel(0);
+			fluidBuffer.swapTextureChannel(2);
+		}
+		
 		// Divergence step
 		fluidBuffer.bind();
 		divergenceShader.use();
