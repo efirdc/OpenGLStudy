@@ -195,12 +195,12 @@
     <ClInclude Include="dependencies\imgui\stb_rect_pack.h" />
     <ClInclude Include="dependencies\imgui\stb_textedit.h" />
     <ClInclude Include="dependencies\imgui\stb_truetype.h" />
-    <ClInclude Include="dependencies\json\json.hpp" />
     <ClInclude Include="dependencies\KHR\khrplatform.h" />
     <ClInclude Include="dependencies\kissfft\kissfft.hh" />
     <ClInclude Include="dependencies\kissfft\kiss_fft.h" />
     <ClInclude Include="dependencies\kissfft\kiss_fftr.h" />
     <ClInclude Include="dependencies\kissfft\_kiss_fft_guts.h" />
+    <ClInclude Include="dependencies\nlohmann\json.hpp" />
     <ClInclude Include="dependencies\stb\stb_image.h" />
     <ClInclude Include="imgui_extensions\imgui_color_gradient.h" />
     <ClInclude Include="imgui_extensions\imgui_extras.h" />

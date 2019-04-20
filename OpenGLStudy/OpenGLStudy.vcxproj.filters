@@ -210,7 +210,7 @@
     <ClInclude Include="core\PingPongBuffer.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="dependencies\json\json.hpp">
+    <ClInclude Include="dependencies\nlohmann\json.hpp">
       <Filter>dependencies</Filter>
     </ClInclude>
   </ItemGroup>
