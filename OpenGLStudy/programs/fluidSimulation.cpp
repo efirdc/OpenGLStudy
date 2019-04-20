@@ -139,7 +139,7 @@ int fluidSimulation()
 	// initialize frequency color gradient
 	ImGradient densityGradient;
 	densityGradient.getMarks().clear();
-	densityGradient.addMark(1.0f, ImColor(0xFF, 0xDE, 0x75));
+	densityGradient.addMark(1.0f, ImColor(0xFF, 0xFF, 0xCC));
 	densityGradient.addMark(0.75f, ImColor(0xFF, 0xEA, 0x00));
 	densityGradient.addMark(0.50f, ImColor(0x8E, 0x00, 0x00));
 	densityGradient.addMark(0.25f, ImColor(0x22, 0x1D, 0x24));
@@ -185,16 +185,17 @@ int fluidSimulation()
 		static int pressureIterations = 50;
 		static float timestep = 1.0f;
 		static int displayMode = 5;
-		static float mouseSplatRadius = 7.5f;
+		static float mouseSplatRadius = 50.0f;
 		static float mouseForce = 1.0;
 		static float velocityDissipation = 1.0f;
 		static float densityDissipation = 0.970f;
-		static float spiralCurl = 0.025f;
+		static float spiralCurl = 0.010f;
 		static float spiralSpin = 1.4f;
 		static float spiralSplatRadius = 0.0002f;
 		static float spiralVelocityAddScalar = 5.0f;
+		static float spiralPressureAddScalar = 1.0f;
 		static float spiralDensityAddScalar = 0.8f;
-		static float vorticity = 0.5f;
+		static float vorticity = 1.0f;
 		ImGui::Begin("Settings");
 		{
 			const char * displayModes[] = { "All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor", "Curl", "Vorticity" };
@@ -202,15 +203,16 @@ int fluidSimulation()
 			ImGui::SliderInt("pressure iterations", &pressureIterations, 1, 200);
 			ImGui::SliderFloat("timestep", &timestep, 0.01f, 5.0f);
 			standardTimestep = timestep / 60.0f;
-			ImGui::SliderFloat("mouse radius", &mouseSplatRadius, 1.0f, 50.0f);
-			ImGui::SliderFloat("mouse force", &mouseForce, 0.01f, 1.0f);
+			ImGui::SliderFloat("mouse radius", &mouseSplatRadius, 1.0f, 150.0f);
+			ImGui::SliderFloat("mouse force", &mouseForce, 0.01f, 5.0f);
 			ImGui::SliderFloat("velocity dissipation", &velocityDissipation, 0.9f, 1.0f);
 			ImGui::SliderFloat("density dissipation", &densityDissipation, 0.9f, 1.0f);
-			ImGui::SliderFloat("curl", &spiralCurl, 0.0f, 1.0f);
+			ImGui::SliderFloat("curl", &spiralCurl, 0.0f, 0.2f);
 			ImGui::SliderFloat("spin", &spiralSpin, 0.0f, 20.0f);
-			ImGui::SliderFloat("splat radius", &spiralSplatRadius, 0.0f, 0.001f, "%.5f");
-			ImGui::SliderFloat("velocity add scalar", &spiralVelocityAddScalar, 0.0f, 5.0f);
-			ImGui::SliderFloat("density add scalar", &spiralDensityAddScalar, 0.0f, 5.0f);
+			ImGui::SliderFloat("splat radius", &spiralSplatRadius, 0.0f, 0.0005f, "%.5f");
+			ImGui::SliderFloat("velocity add scalar", &spiralVelocityAddScalar, 0.0f, 15.0f);
+			ImGui::SliderFloat("pressure add scalar", &spiralPressureAddScalar, 0.0f, 100.0f);
+			ImGui::SliderFloat("density add scalar", &spiralDensityAddScalar, 0.0f, 15.0f);
 			ImGui::SliderFloat("vorticity", &vorticity, 0.0f, 10.0f);
 
 			// Control the frequency color gradient
@@ -310,7 +312,7 @@ int fluidSimulation()
 		frequencyTexture->unmapPixelBuffer();
 
 		// update shaders
-		//audioSpiralShader.update();
+		audioSpiralShader.update();
 
 		// Splat step
 		fluidBuffer.bind();
@@ -349,6 +351,7 @@ int fluidSimulation()
 			audioSpiralShader.setFloat("spin", spiralSpin);
 			audioSpiralShader.setFloat("splatRadius", spiralSplatRadius);
 			audioSpiralShader.setFloat("velocityAddScalar", spiralVelocityAddScalar);
+			audioSpiralShader.setFloat("pressureAddScalar", spiralPressureAddScalar);
 			audioSpiralShader.setFloat("densityAddScalar", spiralDensityAddScalar);
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);

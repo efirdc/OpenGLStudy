@@ -21,6 +21,7 @@ uniform float curl;
 uniform float spin;
 uniform float splatRadius;
 uniform float velocityAddScalar;
+uniform float pressureAddScalar;
 uniform float densityAddScalar;
 
 // Velocity is stored in the red and green channels. 
@@ -59,14 +60,16 @@ void main()
   float frequencySample = texture(frequency, smallestkPct).r;
 
   vec2 velocityAdd = velocityDir * splat * frequencySample * velocityAddScalar;
+  float pressureAdd = splat * frequencySample * pressureAddScalar;
   float densityAdd = splat * frequencySample * densityAddScalar;
 
   vec4 fluidSample = texture(fluid, TexCoords);
   float densitySample = texture(density, TexCoords).r;
 
   vec2 newVelocity = getVelocity(fluidSample) + velocityAdd;
+  float newPressure = fluidSample.b + pressureAdd;
   float newDensity = densitySample + densityAdd;
   
-  FragColorFluid = vec4(packVelocity(newVelocity), fluidSample.ba);
+  FragColorFluid = vec4(packVelocity(newVelocity), newPressure, fluidSample.a);
   FragColorDensity = vec4(newDensity);
 }
