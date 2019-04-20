@@ -24,13 +24,6 @@ uniform float velocityAddScalar;
 uniform float pressureAddScalar;
 uniform float densityAddScalar;
 
-// Velocity is stored in the red and green channels. 
-// Need to multiply by 2 and subtract 1 to convert from the [0:1] color range to [-1:1] velocity range
-vec2 getVelocity(vec4 color) {return color.rg * 2.0 - 1.0;}
-
-// Multiply by 0.5 and add 0.5 to shift back to color range
-vec2 packVelocity(vec2 vel) {return vel * 0.5 + 0.5;}
-
 float gauss(vec2 p, float r)
 {
   return exp(-dot(p, p) / r);
@@ -66,10 +59,10 @@ void main()
   vec4 fluidSample = texture(fluid, TexCoords);
   float densitySample = texture(density, TexCoords).r;
 
-  vec2 newVelocity = getVelocity(fluidSample) + velocityAdd;
+  vec2 newVelocity = fluidSample.rg + velocityAdd;
   float newPressure = fluidSample.b + pressureAdd;
   float newDensity = densitySample + densityAdd;
   
-  FragColorFluid = vec4(packVelocity(newVelocity), newPressure, fluidSample.a);
+  FragColorFluid = vec4(newVelocity, newPressure, fluidSample.a);
   FragColorDensity = vec4(newDensity);
 }

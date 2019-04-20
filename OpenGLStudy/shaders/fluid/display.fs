@@ -21,8 +21,10 @@ uniform sampler1D densityColorCurve;
 void main()
 {
   vec4 fluidSample = texture(fluid, TexCoords);
+  fluidSample.rgb = fluidSample.rgb * 0.05 + 0.5;
   vec4 densitySample = texture(density, TexCoords);
   vec4 curlSample = texture(curl, TexCoords);
+  curlSample.gb = curlSample.gb * 0.5 + 0.5;
   
   if (displayMode == ALL) {
     FragColor = vec4(fluidSample.rgb, 1.0);

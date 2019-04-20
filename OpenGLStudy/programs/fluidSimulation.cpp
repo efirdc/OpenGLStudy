@@ -89,12 +89,10 @@ int fluidSimulation()
 	float standardTimestep = 1.0f / 60.0f;
 
 	PingPongBuffer fluidBuffer(fluidWidth, fluidHeight);
-	const float fluidBorder[4] = { 0.5f, 0.5f, 0.5f, 0.0f };
-	const float densityBorder[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	const float quantitiesBorder[4] = { 0.0f, 0.5f, 0.5f, 0.0f };
-	fluidBuffer.addTextureChannel(GL_TEXTURE0, fluidBorder);
-	fluidBuffer.addTextureChannel(GL_TEXTURE1, densityBorder);
-	fluidBuffer.addTextureChannel(GL_TEXTURE4, quantitiesBorder);
+	const float borderValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	fluidBuffer.addTextureChannel(GL_TEXTURE0, borderValues);
+	fluidBuffer.addTextureChannel(GL_TEXTURE1, borderValues);
+	fluidBuffer.addTextureChannel(GL_TEXTURE4, borderValues);
 
 	const int gradientSize = 256;
 

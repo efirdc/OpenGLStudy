@@ -7,21 +7,14 @@ uniform sampler2D fluid;
 uniform float timestep;
 uniform vec2 pixelSize;
 
-// Velocity is stored in the red and green channels. 
-// Need to multiply by 2 and subtract 1 to convert from the [0:1] color range to [-1:1] velocity range
-vec2 getVelocity(vec4 color) {return color.rg * 2.0 - 1.0;}
-
-// Multiply by 0.5 and add 0.5 to shift back to color range
-vec2 packVelocity(vec2 vel) {return vel * 0.5 + 0.5;}
-
 void main()
 {
   // Sample the fluid
   vec4 center = texture(fluid, TexCoords);
-  vec2 upVelocity = getVelocity(texture(fluid, TexCoords + pixelSize * vec2(0.0, 1.0)));
-  vec2 downVelocity = getVelocity(texture(fluid, TexCoords - pixelSize * vec2(0.0, 1.0)));
-  vec2 rightVelocity = getVelocity(texture(fluid, TexCoords + pixelSize * vec2(1.0, 0.0)));
-  vec2 leftVelocity = getVelocity(texture(fluid, TexCoords - pixelSize * vec2(1.0, 0.0)));
+  vec2 upVelocity = texture(fluid, TexCoords + pixelSize * vec2(0.0, 1.0)).rg;
+  vec2 downVelocity = texture(fluid, TexCoords - pixelSize * vec2(0.0, 1.0)).rg;
+  vec2 rightVelocity = texture(fluid, TexCoords + pixelSize * vec2(1.0, 0.0)).rg;
+  vec2 leftVelocity = texture(fluid, TexCoords - pixelSize * vec2(1.0, 0.0)).rg;
 
   float divergence = (rightVelocity.x - leftVelocity.x + upVelocity.y - downVelocity.y) * 0.5;
 
