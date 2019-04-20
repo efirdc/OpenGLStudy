@@ -8,7 +8,7 @@
 
 #include "glm/glm.hpp"
 
-#include ""
+#include "nlohmann/json.hpp"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
@@ -23,6 +23,32 @@
 #include "SpectrumAnalyzer.h"
 #include "SpectrumFilter.h"
 #include "loopback.h"
+
+using json = nlohmann::json;
+
+struct Settings 
+{
+	int pressureIterations = 50;
+	float timestep = 1.0f;
+	int displayMode = 5;
+	float velocityDissipation = 1.0f;
+	float densityDissipation = 0.970f;
+	bool vorticityEnabled = true;
+	float vorticity = 1.0f;
+	float mouseSplatRadius = 25.0f;
+	float mouseVelocityAddScalar = 0.75f;
+	float mousePressureAddScalar = 1.0f;
+	float mouseDensityAddScalar = 0.4f;
+	bool spiralEnabled = true;
+	float spiralCurl = 0.010f;
+	float spiralSpin = 1.4f;
+	float spiralSplatRadius = 0.0002f;
+	float spiralVelocityAddScalar = 5.0f;
+	float spiralPressureAddScalar = 1.0f;
+	float spiralDensityAddScalar = 0.8f;
+	ImVec2 fAmpControlPoints[2] = { { 0.016f, 0.016f },{ 0.0f, 1.0f } };
+	ImVec2 peakControlPoints[2] = { { 1.00f, 0.00f },{ 0.0f, 1.00f } };
+};
 
 int fluidSimulation()
 {
@@ -182,6 +208,7 @@ int fluidSimulation()
 		sceneManager->newFrame();
 
 		// Settings window
+		json j;
 		static int pressureIterations = 50;
 		static float timestep = 1.0f;
 		static int displayMode = 5;
@@ -203,7 +230,6 @@ int fluidSimulation()
 		ImGui::Begin("Settings");
 		{
 			ImGui::PushItemWidth(-150);
-
 
 			const char * displayModes[] = { "All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor", "Curl", "Vorticity" };
 			ImGui::Combo("display mode", &displayMode, displayModes, IM_ARRAYSIZE(displayModes));
