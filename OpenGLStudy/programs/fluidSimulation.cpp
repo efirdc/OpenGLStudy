@@ -189,15 +189,17 @@ int fluidSimulation()
 		static float mouseForce = 1.0;
 		static float velocityDissipation = 1.0f;
 		static float densityDissipation = 0.970f;
+		static float vorticity = 1.0f;
+		static bool spiralEnable = true;
 		static float spiralCurl = 0.010f;
 		static float spiralSpin = 1.4f;
 		static float spiralSplatRadius = 0.0002f;
 		static float spiralVelocityAddScalar = 5.0f;
 		static float spiralPressureAddScalar = 1.0f;
 		static float spiralDensityAddScalar = 0.8f;
-		static float vorticity = 1.0f;
 		ImGui::Begin("Settings");
 		{
+			ImGui::PushItemWidth(-150);
 			const char * displayModes[] = { "All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor", "Curl", "Vorticity" };
 			ImGui::Combo("display mode", &displayMode, displayModes, IM_ARRAYSIZE(displayModes));
 			ImGui::SliderInt("pressure iterations", &pressureIterations, 1, 200);
@@ -207,13 +209,20 @@ int fluidSimulation()
 			ImGui::SliderFloat("mouse force", &mouseForce, 0.01f, 5.0f);
 			ImGui::SliderFloat("velocity dissipation", &velocityDissipation, 0.9f, 1.0f);
 			ImGui::SliderFloat("density dissipation", &densityDissipation, 0.9f, 1.0f);
-			ImGui::SliderFloat("curl", &spiralCurl, 0.0f, 0.2f);
-			ImGui::SliderFloat("spin", &spiralSpin, 0.0f, 20.0f);
-			ImGui::SliderFloat("splat radius", &spiralSplatRadius, 0.0f, 0.0005f, "%.5f");
-			ImGui::SliderFloat("velocity add scalar", &spiralVelocityAddScalar, 0.0f, 15.0f);
-			ImGui::SliderFloat("pressure add scalar", &spiralPressureAddScalar, 0.0f, 100.0f);
-			ImGui::SliderFloat("density add scalar", &spiralDensityAddScalar, 0.0f, 15.0f);
 			ImGui::SliderFloat("vorticity", &vorticity, 0.0f, 10.0f);
+			if (ImGui::TreeNode("Audio Visualiser Spiral"))
+			{
+				ImGui::Checkbox("enabled", &spiralEnable);
+				ImGui::SliderFloat("curl", &spiralCurl, 0.0f, 0.2f);
+				ImGui::SliderFloat("spin", &spiralSpin, 0.0f, 20.0f);
+				ImGui::SliderFloat("splat radius", &spiralSplatRadius, 0.0f, 0.0005f, "%.5f");
+				ImGui::SliderFloat("velocity add scalar", &spiralVelocityAddScalar, 0.0f, 15.0f);
+				ImGui::SliderFloat("pressure add scalar", &spiralPressureAddScalar, 0.0f, 100.0f);
+				ImGui::SliderFloat("density add scalar", &spiralDensityAddScalar, 0.0f, 15.0f);
+				ImGui::TreePop();
+			}
+			
+			
 
 			// Control the frequency color gradient
 			bool changed = false;
@@ -284,7 +293,7 @@ int fluidSimulation()
 		glBindTexture(GL_TEXTURE_1D, frequencyTexture->textureID);
 
 		bool showDemoWindow = true;
-		//ImGui::ShowDemoWindow(&showDemoWindow);
+		ImGui::ShowDemoWindow(&showDemoWindow);
 
 		// Audio processing step
 		static int newSamples = 0;
@@ -337,7 +346,7 @@ int fluidSimulation()
 
 		// Audio spiral step
 		// Dont run for the first 100 or so frames since the frequency data is garbage for a bit for some reason...
-		if (sceneManager->frameNumber > 100) 
+		if (sceneManager->frameNumber > 100 && spiralEnable) 
 		{
 			fluidBuffer.bind();
 			audioSpiralShader.use();
