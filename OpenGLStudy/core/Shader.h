@@ -77,7 +77,15 @@ private:
 	const char * fragmentPath;
 	long long int vertexModifiedTime;
 	long long int fragmentModifiedTime;
-	std::map<std::string, int> uniformLocations;
+
+	struct Uniform 
+	{
+		std::string name;
+		int location;
+		GLenum type;
+		int size;
+	};
+	std::map<std::string, Uniform> uniforms;
 
 	const char * getCode(const char * codePath, std::string & code);
 	/*
@@ -101,18 +109,18 @@ private:
 	*	newProgramID is set to the new ID of the program
 	*/
 
+	void getUniforms();
+	/*
+	* Populates uniforms with this shaders uniform data
+	* Pre:
+	*	uniforms is empty
+	* Post:
+	*	uniforms is populated
+	*/
+
 	long long int getModificationTime(const char * filePath);
 	/*
 	* Returns time the file was last modified.
-	*/
-
-	int getUniformLocation(const std::string & name);
-	/*
-	* Gets the location of a uniform with the associated name
-	* Pre:
-	*	name is the name of a uniform for this Shader
-	* Post:
-	*	returns location of the uniform so its value can be set with a glUniform*() call
 	*/
 };
 

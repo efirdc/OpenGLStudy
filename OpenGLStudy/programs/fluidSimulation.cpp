@@ -61,6 +61,7 @@ int fluidSimulation()
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 
 	// Create window object and error check, make the window the curent context, then bind the window resize callback function
 	sceneManager->window = glfwCreateWindow(1600, 900, "GPU Fluid Simulation", NULL, NULL);
@@ -341,7 +342,6 @@ int fluidSimulation()
 		splatShader.use();
 		splatShader.setInt("fluid", 0);
 		splatShader.setInt("density", 1);
-		splatShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 		splatShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glm::vec2 texCoordMousePos = sceneManager->mousePos / sceneManager->screenSize;
 		texCoordMousePos.y = 1.0f - texCoordMousePos.y;
@@ -403,8 +403,6 @@ int fluidSimulation()
 			fluidBuffer.bind();
 			curlShader.use();
 			curlShader.setInt("fluid", 0);
-			curlShader.setInt("curl", 4);
-			curlShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 			curlShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -428,18 +426,17 @@ int fluidSimulation()
 		fluidBuffer.bind();
 		divergenceShader.use();
 		divergenceShader.setInt("fluid", 0);
-		divergenceShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 		divergenceShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapTextureChannel(0);
 
 		// Pressure step
-		for (int i = 0; i < settings.pressureIterations; i++) {
+		for (int i = 0; i < settings.pressureIterations; i++) 
+		{
 			fluidBuffer.bind();
 			pressureShader.use();
 			pressureShader.setInt("fluid", 0);
-			pressureShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 			pressureShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -450,7 +447,6 @@ int fluidSimulation()
 		fluidBuffer.bind();
 		subtractPressureShader.use();
 		subtractPressureShader.setInt("fluid", 0);
-		subtractPressureShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 		subtractPressureShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);

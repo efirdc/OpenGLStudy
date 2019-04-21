@@ -25,9 +25,8 @@ Shader::Shader(const char * vertexPath, const char * fragmentPath) :
 	// Make the shader program
 	makeProgram(cVertexCode, cFragmentCode, ID);
 
-	int numUniforms;
-	glGetProgramiv(ID, GL_ACTIVE_UNIFORMS, &numUniforms);
-
+	// Get shader uniforms
+	getUniforms();
 }
 
 bool Shader::update()
@@ -57,6 +56,10 @@ bool Shader::update()
 	}
 	else
 		glDeleteProgram(newProgramID);
+
+	uniforms.clear();
+	getUniforms();
+
 	cout << "Shader " << vertexPath << " " << fragmentPath << " recompiled." << endl;
 	return true;
 }
@@ -134,6 +137,26 @@ bool Shader::makeProgram(const char * vShaderCode, const char * fShaderCode, uns
 	return vSuccess && fSuccess && pSuccess;
 }
 
+void Shader::getUniforms()
+{
+	int numUniforms;
+	glGetProgramiv(ID, GL_ACTIVE_UNIFORMS, &numUniforms);
+	for (int i = 0; i <= numUniforms; i++)
+	{
+		GLenum type;
+		int size;
+		const int maxNameSize = 64;
+		char name[maxNameSize];
+		glGetActiveUniform(ID, i, maxNameSize, NULL, &size, &type, name);
+		Uniform newUniform;
+		newUniform.location = glGetUniformLocation(ID, name);
+		newUniform.name = std::string(name);
+		newUniform.size = size;
+		newUniform.type = type;
+		uniforms[newUniform.name] = newUniform;
+	}
+}
+
 long long int Shader::getModificationTime(const char * filePath)
 {
 	struct stat result;
@@ -147,64 +170,51 @@ void Shader::use()
 	glUseProgram(ID);
 }
 
-int Shader::getUniformLocation(const std::string & name)
-{
-	// Get the location of the uniform if it already exists in the uniformLocations map
-	auto it = uniformLocations.find(name);
-	if (it != uniformLocations.end())
-		return it->second;
-
-	// Get the location
-	int location = glGetUniformLocation(ID, name.c_str());
-	uniformLocations[name] = location;
-	return location;
-}
-
 void Shader::setBool(const std::string & name, bool value)
 {
-	glUniform1i(getUniformLocation(name), (int)value);
+	glUniform1i(uniforms[name].location, (int)value);
 }
 void Shader::setInt(const std::string & name, int value)
 {
-	glUniform1i(getUniformLocation(name), value);
+	glUniform1i(uniforms[name].location, value);
 }
 void Shader::setFloat(const std::string & name, float value)
 {
-	glUniform1f(getUniformLocation(name), value);
+	glUniform1f(uniforms[name].location, value);
 }
 void Shader::setVec2(const std::string & name, const glm::vec2 & value)
 {
-	glUniform2fv(getUniformLocation(name), 1, &value[0]);
+	glUniform2fv(uniforms[name].location, 1, &value[0]);
 }
 void Shader::setVec2(const std::string & name, float x, float y)
 {
-	glUniform2f(getUniformLocation(name), x, y);
+	glUniform2f(uniforms[name].location, x, y);
 }
 void Shader::setVec3(const std::string & name, const glm::vec3 & value)
 {
-	glUniform3fv(getUniformLocation(name), 1, &value[0]);
+	glUniform3fv(uniforms[name].location, 1, &value[0]);
 }
 void Shader::setVec3(const std::string & name, float x, float y, float z)
 {
-	glUniform3f(getUniformLocation(name), x, y, z);
+	glUniform3f(uniforms[name].location, x, y, z);
 }
 void Shader::setVec4(const std::string & name, const glm::vec4 & value)
 {
-	glUniform4fv(getUniformLocation(name), 1, &value[0]);
+	glUniform4fv(uniforms[name].location, 1, &value[0]);
 }
 void Shader::setVec4(const std::string & name, float x, float y, float z, float w)
 {
-	glUniform4f(getUniformLocation(name), x, y, z, w);
+	glUniform4f(uniforms[name].location, x, y, z, w);
 }
 void Shader::setMat2(const std::string & name, const glm::mat2 & mat)
 {
-	glUniformMatrix2fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
+	glUniformMatrix2fv(uniforms[name].location, 1, GL_FALSE, &mat[0][0]);
 }
 void Shader::setMat3(const std::string & name, const glm::mat3 & mat)
 {
-	glUniformMatrix3fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
+	glUniformMatrix3fv(uniforms[name].location, 1, GL_FALSE, &mat[0][0]);
 }
 void Shader::setMat4(const std::string & name, const glm::mat4 & mat)
 {
-	glUniformMatrix4fv(getUniformLocation(name), 1, GL_FALSE, &mat[0][0]);
+	glUniformMatrix4fv(uniforms[name].location, 1, GL_FALSE, &mat[0][0]);
 }

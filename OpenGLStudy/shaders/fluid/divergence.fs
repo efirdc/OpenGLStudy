@@ -4,7 +4,6 @@ out vec4 FragColor;
 in vec2 TexCoords;
 
 uniform sampler2D fluid;
-uniform float timestep;
 uniform vec2 pixelSize;
 
 void main()
