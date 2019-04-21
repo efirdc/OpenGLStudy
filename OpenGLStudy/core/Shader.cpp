@@ -24,6 +24,10 @@ Shader::Shader(const char * vertexPath, const char * fragmentPath) :
 	
 	// Make the shader program
 	makeProgram(cVertexCode, cFragmentCode, ID);
+
+	int numUniforms;
+	glGetProgramiv(ID, GL_ACTIVE_UNIFORMS, &numUniforms);
+
 }
 
 bool Shader::update()

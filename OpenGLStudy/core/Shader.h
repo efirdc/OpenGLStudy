@@ -29,12 +29,7 @@ Licensed under the terms of the CC BY-NC 4.0 license as published by Creative Co
 class Shader
 {
 public:
-	unsigned int ID;
-	const char * vertexPath;
-	const char * fragmentPath;
-	long long int vertexModifiedTime;
-	long long int fragmentModifiedTime;
-	std::map<std::string, int> uniformLocations;
+	
 
 	Shader(const char * vertexPath, const char * fragmentPath);
 	/*
@@ -77,6 +72,13 @@ public:
 	void setMat4(const std::string & name, const glm::mat4 & mat);
 
 private:
+	unsigned int ID;
+	const char * vertexPath;
+	const char * fragmentPath;
+	long long int vertexModifiedTime;
+	long long int fragmentModifiedTime;
+	std::map<std::string, int> uniformLocations;
+
 	const char * getCode(const char * codePath, std::string & code);
 	/*
 	* Gets shader code from a file as a c string
