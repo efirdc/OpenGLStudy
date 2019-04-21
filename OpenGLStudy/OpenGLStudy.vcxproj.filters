@@ -118,6 +118,9 @@
     <ClCompile Include="imgui_extensions\imgui_bezier_curve.cpp">
       <Filter>imgui_extensions</Filter>
     </ClCompile>
+    <ClCompile Include="core\glDebug.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\glad\glad.h">
@@ -218,6 +221,9 @@
     </ClInclude>
     <ClInclude Include="imgui_extensions\imgui_bezier_curve.h">
       <Filter>imgui_extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="core\glDebug.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

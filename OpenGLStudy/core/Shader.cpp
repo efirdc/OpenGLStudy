@@ -141,7 +141,7 @@ void Shader::getUniforms()
 {
 	int numUniforms;
 	glGetProgramiv(ID, GL_ACTIVE_UNIFORMS, &numUniforms);
-	for (int i = 0; i <= numUniforms; i++)
+	for (int i = 0; i < numUniforms; i++)
 	{
 		GLenum type;
 		int size;

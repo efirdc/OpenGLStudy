@@ -139,6 +139,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="core\Camera.cpp" />
+    <ClCompile Include="core\glDebug.cpp" />
     <ClCompile Include="core\PingPongBuffer.cpp" />
     <ClCompile Include="core\FrequencySpectrum.cpp" />
     <ClCompile Include="core\loopback.cpp" />
@@ -174,6 +175,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\Camera.h" />
+    <ClInclude Include="core\glDebug.h" />
     <ClInclude Include="core\PingPongBuffer.h" />
     <ClInclude Include="core\FrequencySpectrum.h" />
     <ClInclude Include="core\loopback.h" />

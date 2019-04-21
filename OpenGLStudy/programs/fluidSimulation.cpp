@@ -4,6 +4,8 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
+#include "glDebug.h"
+
 #include "utilities.h"
 
 #include "glm/glm.hpp"
@@ -80,6 +82,8 @@ int fluidSimulation()
 		std::cout << "Failed to initialize GLAD" << std::endl;
 		return -1;
 	}
+
+	glDebug_init();
 
 	// Setup ImGui
 	ImGui::CreateContext();
@@ -370,7 +374,6 @@ int fluidSimulation()
 			audioSpiralShader.setInt("frequency", 3);
 			audioSpiralShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 			audioSpiralShader.setFloat("utime", sceneManager->time);
-			audioSpiralShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 			audioSpiralShader.setFloat("curl", settings.spiralCurl);
 			audioSpiralShader.setFloat("spin", settings.spiralSpin);
 			audioSpiralShader.setFloat("splatRadius", settings.spiralSplatRadius);
