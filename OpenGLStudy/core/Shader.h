@@ -32,7 +32,8 @@ class Shader
 public:
 	
 	static void setGlobalUniform(const std::string & name, void * data);
-	static void deleteGlobalUniform(const std::string & name);
+	static void bindGlobalUniform(const std::string & name, void * data);
+	static void unbindGlobalUniform(const std::string & name);
 
 	Shader(const char * vertexPath, const char * fragmentPath);
 	/*
@@ -42,6 +43,8 @@ public:
 	* Post:
 	*	shader program is created and ready to be used
 	*/
+	
+	~Shader();
 
 	bool update();
 	/*
@@ -61,6 +64,9 @@ public:
 	* binds the shader program with glUseProgram()
 	*/
 
+	void setUniform(const std::string & name, void * data);
+	void bindUniform(const std::string & name, void * data);
+	void unbindUniform(const std::string & name);
 	void setUniform(const std::string & name, bool value);
 	void setUniform(const std::string & name, int value);
 	void setUniform(const std::string & name, unsigned int value);
@@ -74,10 +80,22 @@ public:
 	void setUniform(const std::string & name, const glm::mat2 & mat);
 	void setUniform(const std::string & name, const glm::mat3 & mat);
 	void setUniform(const std::string & name, const glm::mat4 & mat);
-
+	
 private:
+	struct Uniform
+	{
+		std::string name;
+		int location;
+		GLenum type;
+		int size;
+		void * data;
+	};
+
 	static std::vector<Shader *> allShaders;
-	static std::unordered_map<std::string, void *> globalUniforms;
+	static std::unordered_map<std::string, void *> globalUniformBindings;
+
+	std::unordered_map<std::string, Uniform *> activeUniforms;
+	std::vector<Uniform *> uniformBindings;
 
 	unsigned int ID;
 	const char * vertexPath;
@@ -85,21 +103,15 @@ private:
 	long long int vertexModifiedTime;
 	long long int fragmentModifiedTime;
 
-	struct Uniform 
-	{
-		std::string name;
-		int location;
-		GLenum type;
-		int size;
-	};
-	std::unordered_map<std::string, Uniform> uniforms;
-	std::unordered_map<std::string, void *> boundUniforms;
-
+	Uniform * getBoundUniform(const std::string & name);
 	void bindGlobalUniforms();
-
 	void setBoundUniforms();
 
-	void setUniform(const std::string & name, void * data);
+	void setUniform(Uniform * uniform);
+	void setUniform(int location, GLenum type, void * data);
+
+	bool hasActiveUniform(const std::string & name);
+	bool setUniformErrorCheck(const std::string & name);
 
 	const char * getCode(const char * codePath, std::string & code);
 	/*
@@ -123,7 +135,7 @@ private:
 	*	newProgramID is set to the new ID of the program
 	*/
 
-	void getUniforms();
+	void getActiveUniforms();
 	/*
 	* Populates uniforms with this shaders uniform data
 	* Pre:
@@ -137,6 +149,19 @@ private:
 	* Returns time the file was last modified.
 	*/
 
+	void setUniform(int location, bool value);
+	void setUniform(int location, int value);
+	void setUniform(int location, unsigned int value);
+	void setUniform(int location, float value);
+	void setUniform(int location, const glm::vec2 & value);
+	void setUniform(int location, const glm::vec3 & value);
+	void setUniform(int location, const glm::vec4 & value);
+	void setUniform(int location, float x, float y);
+	void setUniform(int location, float x, float y, float z);
+	void setUniform(int location, float x, float y, float z, float w);
+	void setUniform(int location, const glm::mat2 & mat);
+	void setUniform(int location, const glm::mat3 & mat);
+	void setUniform(int location, const glm::mat4 & mat);
 	
 };
 

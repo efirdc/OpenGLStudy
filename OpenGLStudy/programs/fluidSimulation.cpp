@@ -52,6 +52,24 @@ struct Settings
 	float spiralDensityAddScalar = 0.8f;
 };
 
+struct TextureUnits
+{
+	const int fluid = 0;
+	const int density = 1;
+	const int curl = 2;
+	const int densityColorCurve = 3;
+	const int frequency = 4;
+};
+
+struct UniformBindingData
+{
+	float timestep;
+	glm::vec2 mousePosition;
+	glm::vec2 mouseDelta;
+	float leftMouseDown;
+	float rightMouseDown;
+};
+
 int fluidSimulation()
 {
 	// Set up scene manager
@@ -124,17 +142,13 @@ int fluidSimulation()
 	const int numSpectrumsInAverage = 18;
 	const int numFreqBins = 1024;
 	const float domainShiftFactor = 10.0f;
-	const int fluidTextureUnit = 0;
-	const int densityTextureUnit = 1;
-	const int curlTextureUnit = 2;
-	const int densityColorCurveTextureUnit = 3;
-	const int frequencyTextureUnit = 4;
+	TextureUnits textureUnits;
 
 	PingPongBuffer fluidBuffer(fluidWidth, fluidHeight);
 	const float borderValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	fluidBuffer.addTextureChannel(GL_TEXTURE0 + fluidTextureUnit, borderValues);
-	fluidBuffer.addTextureChannel(GL_TEXTURE0 + densityTextureUnit, borderValues);
-	fluidBuffer.addTextureChannel(GL_TEXTURE0 + curlTextureUnit, borderValues);
+	fluidBuffer.addTextureChannel(GL_TEXTURE0 + textureUnits.fluid, borderValues);
+	fluidBuffer.addTextureChannel(GL_TEXTURE0 + textureUnits.density, borderValues);
+	fluidBuffer.addTextureChannel(GL_TEXTURE0 + textureUnits.curl, borderValues);
 
 	SpectrumAnalyzer analyzer(frameSize);
 
@@ -160,7 +174,7 @@ int fluidSimulation()
 	AverageFilter averageFilter(numSpectrumsInAverage);
 
 	StreamTexture1D * densityColorCurve = new StreamTexture1D(GL_RGB32F, gradientSize, GL_RGB, GL_FLOAT, 3, 4, false);
-	glActiveTexture(GL_TEXTURE0 + densityColorCurveTextureUnit);
+	glActiveTexture(GL_TEXTURE0 + textureUnits.density);
 	glBindTexture(GL_TEXTURE_1D, densityColorCurve->textureID);
 
 	// initialize frequency color gradient
@@ -183,12 +197,15 @@ int fluidSimulation()
 	densityColorCurve->unmapPixelBuffer();
 
 	StreamTexture1D * frequencyTexture = new StreamTexture1D(GL_R32F, numFreqBins, GL_RED, GL_FLOAT, 1, 4, true);
-	glActiveTexture(GL_TEXTURE0 + frequencyTextureUnit);
+	glActiveTexture(GL_TEXTURE0 + textureUnits.frequency);
 	glBindTexture(GL_TEXTURE_1D, frequencyTexture->textureID);
 	float * frequencyPixelBuffer = (float *)frequencyTexture->getPixelBuffer();
 	for (int i = 0; i < frequencyTexture->width; i++)
 		frequencyPixelBuffer[i] = 0.0f;
 	
+	json j;
+	Settings settings;
+
 	Shader displayShader("shaders/fluid/screenQuad.vs", "shaders/fluid/display.fs");
 	Shader advectShader("shaders/fluid/screenQuad.vs", "shaders/fluid/advection.fs");
 	Shader audioSpiralShader("shaders/fluid/screenQuad.vs", "shaders/fluid/audioSpiral.fs");
@@ -199,8 +216,37 @@ int fluidSimulation()
 	Shader curlShader("shaders/fluid/screenQuad.vs", "shaders/fluid/curl.fs");
 	Shader vorticityShader("shaders/fluid/screenQuad.vs", "shaders/fluid/vorticity.fs");
 
-	json j;
-	Settings settings;
+	// Set global uniforms
+	const glm::vec2 fluidPixelSize = 1.0f / glm::vec2(fluidWidth, fluidHeight);
+	Shader::setGlobalUniform("pixelSize", (void *)&fluidPixelSize);
+	Shader::setGlobalUniform("fluid", (void *)&textureUnits.fluid);
+	Shader::setGlobalUniform("density", (void *)&textureUnits.density);
+	Shader::setGlobalUniform("curl", (void *)&textureUnits.curl);
+	Shader::setGlobalUniform("densityColorCurve", (void *)&textureUnits.densityColorCurve);
+	Shader::setGlobalUniform("frequency", (void *)&textureUnits.frequency);
+	
+	// Bind uniform pointers
+	UniformBindingData uniformBinds;
+	Shader::bindGlobalUniform("timestep", (void *)&uniformBinds.timestep);
+	Shader::bindGlobalUniform("time", (void *)&sceneManager->time);
+	Shader::bindGlobalUniform("mousePosition", (void *)&uniformBinds.mousePosition);
+	Shader::bindGlobalUniform("mouseDelta", (void *)&uniformBinds.mouseDelta);
+	Shader::bindGlobalUniform("leftMouseDown", (void *)&uniformBinds.leftMouseDown);
+	Shader::bindGlobalUniform("rightMouseDown", (void *)&uniformBinds.rightMouseDown);
+	splatShader.bindUniform("velocityAddScalar", (void *)&settings.mouseVelocityAddScalar);
+	splatShader.bindUniform("pressureAddScalar", (void *)&settings.mousePressureAddScalar);
+	splatShader.bindUniform("densityAddScalar", (void *)&settings.mouseDensityAddScalar);
+	splatShader.bindUniform("radius", (void *)&settings.mouseSplatRadius);
+	audioSpiralShader.bindUniform("spiralCurl", (void *)&settings.spiralCurl);
+	audioSpiralShader.bindUniform("spiralSpin", (void *)&settings.spiralSpin);
+	audioSpiralShader.bindUniform("splatRadius", (void *)&settings.spiralSplatRadius);
+	audioSpiralShader.bindUniform("velocityAddScalar", (void *)&settings.spiralVelocityAddScalar);
+	audioSpiralShader.bindUniform("pressureAddScalar", (void *)&settings.spiralPressureAddScalar);
+	audioSpiralShader.bindUniform("densityAddScalar", (void *)&settings.spiralDensityAddScalar);
+	advectShader.bindUniform("velocityDissipation", (void *)&settings.velocityDissipation);
+	advectShader.bindUniform("densityDissipation", (void *)&settings.densityDissipation);
+	vorticityShader.bindUniform("vorticityScalar", (void *)&settings.vorticity);
+	displayShader.bindUniform("displayMode", (void *)&settings.displayMode);
 
 	// Main loop
 	sceneManager->newFrame();
@@ -248,9 +294,9 @@ int fluidSimulation()
 				ImGui::TreePop();
 			}
 
-			// Control the frequency color gradient
+			// Control the density color gradient
 			bool changed = false;
-			if (ImGui::TreeNode("Frequency Color Gradient"))
+			if (ImGui::TreeNode("Density Color Gradient"))
 			{
 				changed = ImGui::GradientEditor(&densityGradient);
 				ImGui::TreePop();
@@ -310,9 +356,9 @@ int fluidSimulation()
 		}
 		ImGui::End();
 
-		glActiveTexture(GL_TEXTURE0 + densityColorCurveTextureUnit);
+		glActiveTexture(GL_TEXTURE0 + textureUnits.densityColorCurve);
 		glBindTexture(GL_TEXTURE_1D, densityColorCurve->textureID);
-		glActiveTexture(GL_TEXTURE0 + frequencyTextureUnit);
+		glActiveTexture(GL_TEXTURE0 + textureUnits.frequency);
 		glBindTexture(GL_TEXTURE_1D, frequencyTexture->textureID);
 
 		bool showDemoWindow = true;
@@ -343,37 +389,18 @@ int fluidSimulation()
 			frequencyPixelBuffer[i] = frequencyData[i];
 		frequencyTexture->unmapPixelBuffer();
 
-		// Calculate global uniforms
-		float timestep = sceneManager->deltaTime / settings.standardTimestep;
-		glm::vec2 pixelSize = 1.0f / glm::vec2(fluidWidth, fluidHeight);
+		// Calculate uniform data
+		uniformBinds.timestep = glm::min(sceneManager->deltaTime / settings.standardTimestep, 2.0f);
 		glm::vec2 texCoordMousePos = sceneManager->mousePos / sceneManager->screenSize;
 		texCoordMousePos.y = 1.0f - texCoordMousePos.y;
-		glm::vec2 fluidMouse = texCoordMousePos * glm::vec2(fluidWidth, fluidHeight);
-		glm::vec2 mouseDelta = sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f);
-		float leftMouseDown = sceneManager->leftMouseDown ? 1.0f : 0.0f;
-		float rightMouseDown = sceneManager->rightMouseDown ? 1.0f : 0.0f;
-
-		// Set global uniforms
-		Shader::setGlobalUniform("timestep", (void *)&timestep);
-		Shader::setGlobalUniform("time", (void *)&sceneManager->time);
-		Shader::setGlobalUniform("fluid", (void *)&fluidTextureUnit);
-		Shader::setGlobalUniform("density", (void *)&densityTextureUnit);
-		Shader::setGlobalUniform("curl", (void *)&curlTextureUnit);
-		Shader::setGlobalUniform("densityColorCurve", (void *)&densityColorCurveTextureUnit);
-		Shader::setGlobalUniform("frequency", (void *)&frequencyTextureUnit);
-		Shader::setGlobalUniform("pixelSize", (void *)&pixelSize);
-		Shader::setGlobalUniform("mousePosition", (void *)&fluidMouse);
-		Shader::setGlobalUniform("mouseDelta", (void *)&mouseDelta);
-		Shader::setGlobalUniform("leftMouseDown", (void *)&leftMouseDown);
-		Shader::setGlobalUniform("rightMouseDown", (void *)&rightMouseDown);
+		uniformBinds.mousePosition = texCoordMousePos * glm::vec2(fluidWidth, fluidHeight);
+		uniformBinds.mouseDelta = sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f);
+		uniformBinds.leftMouseDown = sceneManager->leftMouseDown ? 1.0f : 0.0f;
+		uniformBinds.rightMouseDown = sceneManager->rightMouseDown ? 1.0f : 0.0f;
 
 		// Splat step
 		fluidBuffer.bind();
 		splatShader.use();
-		splatShader.setUniform("velocityAddScalar", settings.mouseVelocityAddScalar);
-		splatShader.setUniform("pressureAddScalar", settings.mousePressureAddScalar);
-		splatShader.setUniform("densityAddScalar", settings.mouseDensityAddScalar);
-		splatShader.setUniform("radius", settings.mouseSplatRadius);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapTextureChannel(0);
@@ -385,12 +412,6 @@ int fluidSimulation()
 		{
 			fluidBuffer.bind();
 			audioSpiralShader.use();
-			audioSpiralShader.setUniform("curl", settings.spiralCurl);
-			audioSpiralShader.setUniform("spin", settings.spiralSpin);
-			audioSpiralShader.setUniform("splatRadius", settings.spiralSplatRadius);
-			audioSpiralShader.setUniform("velocityAddScalar", settings.spiralVelocityAddScalar);
-			audioSpiralShader.setUniform("pressureAddScalar", settings.spiralPressureAddScalar);
-			audioSpiralShader.setUniform("densityAddScalar", settings.spiralDensityAddScalar);
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			fluidBuffer.swapTextureChannel(0);
@@ -400,8 +421,6 @@ int fluidSimulation()
 		// Advection step
 		fluidBuffer.bind();
 		advectShader.use();
-		advectShader.setUniform("velocityDissipation", settings.velocityDissipation);
-		advectShader.setUniform("densityDissipation", settings.densityDissipation);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapTextureChannel(0);
@@ -419,7 +438,6 @@ int fluidSimulation()
 			// Vorticity step
 			fluidBuffer.bind();
 			vorticityShader.use();
-			vorticityShader.setUniform("vorticityScalar", settings.vorticity);
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			fluidBuffer.swapTextureChannel(0);
@@ -458,7 +476,6 @@ int fluidSimulation()
 		// Display final texture on the default framebuffer
 		fluidBuffer.bindTextures();
 		displayShader.use();
-		displayShader.setUniform("displayMode", settings.displayMode);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 

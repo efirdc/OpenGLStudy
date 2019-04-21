@@ -16,8 +16,8 @@ uniform sampler1D frequency;
 uniform float time;
 uniform vec2 pixelSize;
 
-uniform float curl;
-uniform float spin;
+uniform float spiralCurl;
+uniform float spiralSpin;
 uniform float splatRadius;
 uniform float velocityAddScalar;
 uniform float pressureAddScalar;
@@ -37,7 +37,7 @@ void main()
     float k = float(i);
     float kPct = k / float(NUM_POINTS);
     float radius = SPREAD * sqrt(k);
-    float angle = (SPIRALYNESS + time * curl) * k * PI - time * spin;
+    float angle = (SPIRALYNESS + time * spiralCurl) * k * PI - time * spiralSpin;
     vec2 spiralDir = vec2(cos(angle), sin(angle));
     vec2 spiralPoint = spiralDir * radius;
     vec2 deltaPos = spiralPoint + vec2(0.5) - TexCoords;
