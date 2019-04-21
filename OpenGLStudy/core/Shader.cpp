@@ -8,6 +8,18 @@ Licensed under the terms of the CC BY-NC 4.0 license as published by Creative Co
 
 using namespace std;
 
+std::map<std::string, void *> Shader::globalUniforms;
+
+void Shader::bindGlobalUniform(const std::string & name, void * data)
+{
+	globalUniforms[name] = data;
+}
+
+void Shader::unbindGlobalUniform(const std::string & name)
+{
+	globalUniforms.erase(name);
+}
+
 Shader::Shader(const char * vertexPath, const char * fragmentPath) :
 	vertexPath(vertexPath),
 	fragmentPath(fragmentPath)
@@ -63,6 +75,8 @@ bool Shader::update()
 	cout << "Shader " << vertexPath << " " << fragmentPath << " recompiled." << endl;
 	return true;
 }
+
+
 
 const char * Shader::getCode(const char * codePath, string & code)
 {
@@ -163,6 +177,56 @@ long long int Shader::getModificationTime(const char * filePath)
 	if (stat(filePath, &result) != 0)
 		cout << "ERROR::SHADER::CANT_READ_FILE_STATUS::" << filePath << endl;
 	return result.st_mtime;
+}
+
+void Shader::setGlobalUniforms()
+{
+	for (const auto &pair : globalUniforms)
+		if (uniforms.count(pair.first) > 0)
+			setUniform(pair.first, pair.second);
+}
+
+void Shader::setUniform(const std::string & name, void * data)
+{
+	switch (uniforms[name].type)
+	{
+	case GL_BOOL:
+		setUniform(name, *(bool *)data);
+		break;
+	case GL_INT:
+		setUniform(name, *(int *)data);
+		break;
+	case GL_UNSIGNED_INT:
+		setUniform(name, *(unsigned int *)data);
+		break;
+	case GL_FLOAT:
+		setUniform(name, *(float *)data);
+		break;
+	case GL_FLOAT_VEC2:
+		setUniform(name, *(glm::vec2 *)data);
+		break;
+	case GL_FLOAT_VEC3:
+		setUniform(name, *(glm::vec3 *)data);
+		break;
+	case GL_FLOAT_VEC4:
+		setUniform(name, *(glm::vec4 *)data);
+		break;
+	case GL_FLOAT_MAT2:
+		setUniform(name, *(glm::mat2 *)data);
+		break;
+	case GL_FLOAT_MAT3:
+		setUniform(name, *(glm::mat3 *)data);
+		break;
+	case GL_FLOAT_MAT4:
+		setUniform(name, *(glm::mat4 *)data);
+		break;
+	default:
+		std::cout << "ERROR::SHADER::UNIFORM::UNSUPPORTED_TYPE\n" <<
+			vertexPath << "\n" <<
+			fragmentPath << "\n" <<
+			"Unsupported type: " << uniforms[name].type <<
+		std::endl;
+	}
 }
 
 void Shader::use()

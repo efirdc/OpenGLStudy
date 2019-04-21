@@ -9,6 +9,7 @@ Licensed under the terms of the CC BY-NC 4.0 license as published by Creative Co
 
 #include <string>
 #include <map>
+#include <vector>
 #include <fstream>
 #include <sstream>
 #include <iostream>
@@ -30,6 +31,8 @@ class Shader
 {
 public:
 	
+	static void bindGlobalUniform(const std::string & name, void * data);
+	static void unbindGlobalUniform(const std::string & name);
 
 	Shader(const char * vertexPath, const char * fragmentPath);
 	/*
@@ -73,6 +76,8 @@ public:
 	void setUniform(const std::string & name, const glm::mat4 & mat);
 
 private:
+	static std::map<std::string, void *> globalUniforms;
+
 	unsigned int ID;
 	const char * vertexPath;
 	const char * fragmentPath;
@@ -87,6 +92,7 @@ private:
 		int size;
 	};
 	std::map<std::string, Uniform> uniforms;
+	void setUniform(const std::string & name, void * data);
 
 	const char * getCode(const char * codePath, std::string & code);
 	/*
@@ -123,6 +129,8 @@ private:
 	/*
 	* Returns time the file was last modified.
 	*/
+
+	void setGlobalUniforms();
 };
 
 #endif
