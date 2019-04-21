@@ -6,8 +6,8 @@ in vec2 TexCoords;
 
 uniform sampler2D fluid;
 uniform sampler2D density;
-uniform vec2 pixelSize;
 
+uniform vec2 pixelSize;
 uniform vec2 mousePosition;
 uniform vec2 mouseDelta;
 uniform float radius;

@@ -124,12 +124,17 @@ int fluidSimulation()
 	const int numSpectrumsInAverage = 18;
 	const int numFreqBins = 1024;
 	const float domainShiftFactor = 10.0f;
+	const int fluidTextureUnit = 0;
+	const int densityTextureUnit = 1;
+	const int curlTextureUnit = 2;
+	const int densityColorCurveTextureUnit = 3;
+	const int frequencyTextureUnit = 4;
 
 	PingPongBuffer fluidBuffer(fluidWidth, fluidHeight);
 	const float borderValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-	fluidBuffer.addTextureChannel(GL_TEXTURE0, borderValues);
-	fluidBuffer.addTextureChannel(GL_TEXTURE1, borderValues);
-	fluidBuffer.addTextureChannel(GL_TEXTURE4, borderValues);
+	fluidBuffer.addTextureChannel(GL_TEXTURE0 + fluidTextureUnit, borderValues);
+	fluidBuffer.addTextureChannel(GL_TEXTURE0 + densityTextureUnit, borderValues);
+	fluidBuffer.addTextureChannel(GL_TEXTURE0 + curlTextureUnit, borderValues);
 
 	SpectrumAnalyzer analyzer(frameSize);
 
@@ -155,7 +160,7 @@ int fluidSimulation()
 	AverageFilter averageFilter(numSpectrumsInAverage);
 
 	StreamTexture1D * densityColorCurve = new StreamTexture1D(GL_RGB32F, gradientSize, GL_RGB, GL_FLOAT, 3, 4, false);
-	glActiveTexture(GL_TEXTURE2);
+	glActiveTexture(GL_TEXTURE0 + densityColorCurveTextureUnit);
 	glBindTexture(GL_TEXTURE_1D, densityColorCurve->textureID);
 
 	// initialize frequency color gradient
@@ -178,7 +183,7 @@ int fluidSimulation()
 	densityColorCurve->unmapPixelBuffer();
 
 	StreamTexture1D * frequencyTexture = new StreamTexture1D(GL_R32F, numFreqBins, GL_RED, GL_FLOAT, 1, 4, true);
-	glActiveTexture(GL_TEXTURE3);
+	glActiveTexture(GL_TEXTURE0 + frequencyTextureUnit);
 	glBindTexture(GL_TEXTURE_1D, frequencyTexture->textureID);
 	float * frequencyPixelBuffer = (float *)frequencyTexture->getPixelBuffer();
 	for (int i = 0; i < frequencyTexture->width; i++)
@@ -305,9 +310,9 @@ int fluidSimulation()
 		}
 		ImGui::End();
 
-		glActiveTexture(GL_TEXTURE2);
+		glActiveTexture(GL_TEXTURE0 + densityColorCurveTextureUnit);
 		glBindTexture(GL_TEXTURE_1D, densityColorCurve->textureID);
-		glActiveTexture(GL_TEXTURE3);
+		glActiveTexture(GL_TEXTURE0 + frequencyTextureUnit);
 		glBindTexture(GL_TEXTURE_1D, frequencyTexture->textureID);
 
 		bool showDemoWindow = true;
@@ -338,26 +343,37 @@ int fluidSimulation()
 			frequencyPixelBuffer[i] = frequencyData[i];
 		frequencyTexture->unmapPixelBuffer();
 
-		// update shaders
-		audioSpiralShader.update();
+		// Calculate global uniforms
+		float timestep = sceneManager->deltaTime / settings.standardTimestep;
+		glm::vec2 pixelSize = 1.0f / glm::vec2(fluidWidth, fluidHeight);
+		glm::vec2 texCoordMousePos = sceneManager->mousePos / sceneManager->screenSize;
+		texCoordMousePos.y = 1.0f - texCoordMousePos.y;
+		glm::vec2 fluidMouse = texCoordMousePos * glm::vec2(fluidWidth, fluidHeight);
+		glm::vec2 mouseDelta = sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f);
+		float leftMouseDown = sceneManager->leftMouseDown ? 1.0f : 0.0f;
+		float rightMouseDown = sceneManager->rightMouseDown ? 1.0f : 0.0f;
+
+		// Set global uniforms
+		Shader::setGlobalUniform("timestep", (void *)&timestep);
+		Shader::setGlobalUniform("time", (void *)&sceneManager->time);
+		Shader::setGlobalUniform("fluid", (void *)&fluidTextureUnit);
+		Shader::setGlobalUniform("density", (void *)&densityTextureUnit);
+		Shader::setGlobalUniform("curl", (void *)&curlTextureUnit);
+		Shader::setGlobalUniform("densityColorCurve", (void *)&densityColorCurveTextureUnit);
+		Shader::setGlobalUniform("frequency", (void *)&frequencyTextureUnit);
+		Shader::setGlobalUniform("pixelSize", (void *)&pixelSize);
+		Shader::setGlobalUniform("mousePosition", (void *)&fluidMouse);
+		Shader::setGlobalUniform("mouseDelta", (void *)&mouseDelta);
+		Shader::setGlobalUniform("leftMouseDown", (void *)&leftMouseDown);
+		Shader::setGlobalUniform("rightMouseDown", (void *)&rightMouseDown);
 
 		// Splat step
 		fluidBuffer.bind();
 		splatShader.use();
-		splatShader.setUniform("fluid", 0);
-		splatShader.setUniform("density", 1);
-		splatShader.setUniform("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
-		glm::vec2 texCoordMousePos = sceneManager->mousePos / sceneManager->screenSize;
-		texCoordMousePos.y = 1.0f - texCoordMousePos.y;
-		glm::vec2 fluidMouse = texCoordMousePos * glm::vec2(fluidWidth, fluidHeight);
-		splatShader.setUniform("mousePosition", fluidMouse);
-		splatShader.setUniform("mouseDelta", sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f));
 		splatShader.setUniform("velocityAddScalar", settings.mouseVelocityAddScalar);
 		splatShader.setUniform("pressureAddScalar", settings.mousePressureAddScalar);
 		splatShader.setUniform("densityAddScalar", settings.mouseDensityAddScalar);
 		splatShader.setUniform("radius", settings.mouseSplatRadius);
-		splatShader.setUniform("leftMouseDown", sceneManager->leftMouseDown ? 1.0f : 0.0f);
-		splatShader.setUniform("rightMouseDown", sceneManager->rightMouseDown ? 1.0f : 0.0f);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapTextureChannel(0);
@@ -369,11 +385,6 @@ int fluidSimulation()
 		{
 			fluidBuffer.bind();
 			audioSpiralShader.use();
-			audioSpiralShader.setUniform("fluid", 0);
-			audioSpiralShader.setUniform("density", 1);
-			audioSpiralShader.setUniform("frequency", 3);
-			audioSpiralShader.setUniform("timestep", sceneManager->deltaTime / settings.standardTimestep);
-			audioSpiralShader.setUniform("utime", sceneManager->time);
 			audioSpiralShader.setUniform("curl", settings.spiralCurl);
 			audioSpiralShader.setUniform("spin", settings.spiralSpin);
 			audioSpiralShader.setUniform("splatRadius", settings.spiralSplatRadius);
@@ -389,10 +400,6 @@ int fluidSimulation()
 		// Advection step
 		fluidBuffer.bind();
 		advectShader.use();
-		advectShader.setUniform("fluid", 0);
-		advectShader.setUniform("density", 1);
-		advectShader.setUniform("timestep", sceneManager->deltaTime / settings.standardTimestep);
-		advectShader.setUniform("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		advectShader.setUniform("velocityDissipation", settings.velocityDissipation);
 		advectShader.setUniform("densityDissipation", settings.densityDissipation);
 		glBindVertexArray(quadVAO);
@@ -405,8 +412,6 @@ int fluidSimulation()
 			// Curl step
 			fluidBuffer.bind();
 			curlShader.use();
-			curlShader.setUniform("fluid", 0);
-			curlShader.setUniform("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			fluidBuffer.swapTextureChannel(2);
@@ -414,10 +419,6 @@ int fluidSimulation()
 			// Vorticity step
 			fluidBuffer.bind();
 			vorticityShader.use();
-			vorticityShader.setUniform("fluid", 0);
-			vorticityShader.setUniform("curl", 4);
-			vorticityShader.setUniform("timestep", sceneManager->deltaTime / settings.standardTimestep);
-			vorticityShader.setUniform("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 			vorticityShader.setUniform("vorticityScalar", settings.vorticity);
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -428,8 +429,6 @@ int fluidSimulation()
 		// Divergence step
 		fluidBuffer.bind();
 		divergenceShader.use();
-		divergenceShader.setUniform("fluid", 0);
-		divergenceShader.setUniform("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapTextureChannel(0);
@@ -439,8 +438,6 @@ int fluidSimulation()
 		{
 			fluidBuffer.bind();
 			pressureShader.use();
-			pressureShader.setUniform("fluid", 0);
-			pressureShader.setUniform("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			fluidBuffer.swapTextureChannel(0);
@@ -449,8 +446,6 @@ int fluidSimulation()
 		// Subtract pressure step
 		fluidBuffer.bind();
 		subtractPressureShader.use();
-		subtractPressureShader.setUniform("fluid", 0);
-		subtractPressureShader.setUniform("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapTextureChannel(0);
@@ -463,10 +458,6 @@ int fluidSimulation()
 		// Display final texture on the default framebuffer
 		fluidBuffer.bindTextures();
 		displayShader.use();
-		displayShader.setUniform("fluid", 0);
-		displayShader.setUniform("density", 1);
-		displayShader.setUniform("curl", 4);
-		displayShader.setUniform("densityColorCurve", 2);
 		displayShader.setUniform("displayMode", settings.displayMode);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);

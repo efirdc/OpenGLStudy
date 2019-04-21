@@ -13,8 +13,7 @@ in vec2 TexCoords;
 uniform sampler2D fluid;
 uniform sampler2D density;
 uniform sampler1D frequency;
-uniform float timestep;
-uniform float utime;
+uniform float time;
 uniform vec2 pixelSize;
 
 uniform float curl;
@@ -38,7 +37,7 @@ void main()
     float k = float(i);
     float kPct = k / float(NUM_POINTS);
     float radius = SPREAD * sqrt(k);
-    float angle = (SPIRALYNESS + utime * curl) * k * PI - utime * spin;
+    float angle = (SPIRALYNESS + time * curl) * k * PI - time * spin;
     vec2 spiralDir = vec2(cos(angle), sin(angle));
     vec2 spiralPoint = spiralDir * radius;
     vec2 deltaPos = spiralPoint + vec2(0.5) - TexCoords;

@@ -10,12 +10,12 @@ using namespace std;
 
 std::map<std::string, void *> Shader::globalUniforms;
 
-void Shader::bindGlobalUniform(const std::string & name, void * data)
+void Shader::setGlobalUniform(const std::string & name, void * data)
 {
 	globalUniforms[name] = data;
 }
 
-void Shader::unbindGlobalUniform(const std::string & name)
+void Shader::deleteGlobalUniform(const std::string & name)
 {
 	globalUniforms.erase(name);
 }
@@ -194,6 +194,10 @@ void Shader::setUniform(const std::string & name, void * data)
 		setUniform(name, *(bool *)data);
 		break;
 	case GL_INT:
+	case GL_SAMPLER_1D:
+	case GL_SAMPLER_2D:
+	case GL_SAMPLER_3D:
+	case GL_SAMPLER_CUBE:
 		setUniform(name, *(int *)data);
 		break;
 	case GL_UNSIGNED_INT:
@@ -224,7 +228,8 @@ void Shader::setUniform(const std::string & name, void * data)
 		std::cout << "ERROR::SHADER::UNIFORM::UNSUPPORTED_TYPE\n" <<
 			vertexPath << "\n" <<
 			fragmentPath << "\n" <<
-			"Unsupported type: " << uniforms[name].type <<
+			"Uniform name: " << name << "\n" <<
+			"Unsupported type: " << std::hex << uniforms[name].type <<
 		std::endl;
 	}
 }
@@ -232,6 +237,7 @@ void Shader::setUniform(const std::string & name, void * data)
 void Shader::use()
 {
 	glUseProgram(ID);
+	setGlobalUniforms();
 }
 
 void Shader::setUniform(const std::string & name, bool value)

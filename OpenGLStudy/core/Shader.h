@@ -31,8 +31,8 @@ class Shader
 {
 public:
 	
-	static void bindGlobalUniform(const std::string & name, void * data);
-	static void unbindGlobalUniform(const std::string & name);
+	static void setGlobalUniform(const std::string & name, void * data);
+	static void deleteGlobalUniform(const std::string & name);
 
 	Shader(const char * vertexPath, const char * fragmentPath);
 	/*
@@ -92,6 +92,7 @@ private:
 		int size;
 	};
 	std::map<std::string, Uniform> uniforms;
+
 	void setUniform(const std::string & name, void * data);
 
 	const char * getCode(const char * codePath, std::string & code);
