@@ -119,7 +119,6 @@ int fluidSimulation()
 	const int numSpectrumsInAverage = 18;
 	const int numFreqBins = 1024;
 	const float domainShiftFactor = 10.0f;
-	float standardTimestep = 1.0f / 60.0f;
 
 	PingPongBuffer fluidBuffer(fluidWidth, fluidHeight);
 	const float borderValues[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -190,6 +189,9 @@ int fluidSimulation()
 	Shader curlShader("shaders/fluid/screenQuad.vs", "shaders/fluid/curl.fs");
 	Shader vorticityShader("shaders/fluid/screenQuad.vs", "shaders/fluid/vorticity.fs");
 
+	json j;
+	Settings settings;
+
 	// Main loop
 	sceneManager->newFrame();
 	while (!glfwWindowShouldClose(sceneManager->window))
@@ -200,57 +202,39 @@ int fluidSimulation()
 		sceneManager->newFrame();
 
 		// Settings window
-		json j;
-		static int pressureIterations = 50;
-		static float timestep = 1.0f;
-		static int displayMode = 5;
-		static float velocityDissipation = 1.0f;
-		static float densityDissipation = 0.970f;
-		static bool vorticityEnabled = true;
-		static float vorticity = 1.0f;
-		static float mouseSplatRadius = 25.0f;
-		static float mouseVelocityAddScalar = 0.75f;
-		static float mousePressureAddScalar = 1.0f;
-		static float mouseDensityAddScalar = 0.4f;
-		static bool spiralEnabled = true;
-		static float spiralCurl = 0.010f;
-		static float spiralSpin = 1.4f;
-		static float spiralSplatRadius = 0.0002f;
-		static float spiralVelocityAddScalar = 5.0f;
-		static float spiralPressureAddScalar = 1.0f;
-		static float spiralDensityAddScalar = 0.8f;
+		
 		ImGui::Begin("Settings");
 		{
 			ImGui::PushItemWidth(-150);
 
 			const char * displayModes[] = { "All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor", "Curl", "Vorticity" };
-			ImGui::Combo("display mode", &displayMode, displayModes, IM_ARRAYSIZE(displayModes));
-			ImGui::SliderInt("pressure iterations", &pressureIterations, 1, 200);
-			ImGui::SliderFloat("timestep", &timestep, 0.01f, 5.0f);
-			standardTimestep = timestep / 60.0f;
-			ImGui::SliderFloat("velocity dissipation", &velocityDissipation, 0.9f, 1.0f);
-			ImGui::SliderFloat("density dissipation", &densityDissipation, 0.9f, 1.0f);
-			ImGui::Checkbox("vorticity enabled", &vorticityEnabled);
-			ImGui::SliderFloat("vorticity", &vorticity, 0.0f, 10.0f);
+			ImGui::Combo("display mode", &settings.displayMode, displayModes, IM_ARRAYSIZE(displayModes));
+			ImGui::SliderInt("pressure iterations", &settings.pressureIterations, 1, 200);
+			ImGui::SliderFloat("timestep", &settings.timestep, 0.01f, 5.0f);
+			settings.standardTimestep = settings.timestep / 60.0f;
+			ImGui::SliderFloat("velocity dissipation", &settings.velocityDissipation, 0.9f, 1.0f);
+			ImGui::SliderFloat("density dissipation", &settings.densityDissipation, 0.9f, 1.0f);
+			ImGui::Checkbox("vorticity enabled", &settings.vorticityEnabled);
+			ImGui::SliderFloat("vorticity", &settings.vorticity, 0.0f, 10.0f);
 
 			if (ImGui::TreeNode("Mouse Settings"))
 			{
-				ImGui::SliderFloat("radius", &mouseSplatRadius, 1.0f, 150.0f);
-				ImGui::SliderFloat("velocity add scalar", &mouseVelocityAddScalar, 0.00f, 15.0f);
-				ImGui::SliderFloat("pressure add scalar", &mousePressureAddScalar, 0.00f, 100.0f);
-				ImGui::SliderFloat("density add scalar", &mouseDensityAddScalar, 0.0f, 15.0f);
+				ImGui::SliderFloat("radius", &settings.mouseSplatRadius, 1.0f, 150.0f);
+				ImGui::SliderFloat("velocity add scalar", &settings.mouseVelocityAddScalar, 0.00f, 15.0f);
+				ImGui::SliderFloat("pressure add scalar", &settings.mousePressureAddScalar, 0.00f, 100.0f);
+				ImGui::SliderFloat("density add scalar", &settings.mouseDensityAddScalar, 0.0f, 15.0f);
 				ImGui::TreePop();
 			}
 			
 			if (ImGui::TreeNode("Audio Visualiser Spiral"))
 			{
-				ImGui::Checkbox("enabled", &spiralEnabled);
-				ImGui::SliderFloat("curl", &spiralCurl, 0.0f, 0.2f);
-				ImGui::SliderFloat("spin", &spiralSpin, 0.0f, 20.0f);
-				ImGui::SliderFloat("splat radius", &spiralSplatRadius, 0.0f, 0.0005f, "%.5f");
-				ImGui::SliderFloat("velocity add scalar", &spiralVelocityAddScalar, 0.0f, 15.0f);
-				ImGui::SliderFloat("pressure add scalar", &spiralPressureAddScalar, 0.0f, 100.0f);
-				ImGui::SliderFloat("density add scalar", &spiralDensityAddScalar, 0.0f, 15.0f);
+				ImGui::Checkbox("enabled", &settings.spiralEnabled);
+				ImGui::SliderFloat("curl", &settings.spiralCurl, 0.0f, 0.2f);
+				ImGui::SliderFloat("spin", &settings.spiralSpin, 0.0f, 20.0f);
+				ImGui::SliderFloat("splat radius", &settings.spiralSplatRadius, 0.0f, 0.0005f, "%.5f");
+				ImGui::SliderFloat("velocity add scalar", &settings.spiralVelocityAddScalar, 0.0f, 15.0f);
+				ImGui::SliderFloat("pressure add scalar", &settings.spiralPressureAddScalar, 0.0f, 100.0f);
+				ImGui::SliderFloat("density add scalar", &settings.spiralDensityAddScalar, 0.0f, 15.0f);
 				ImGui::TreePop();
 			}
 
@@ -357,17 +341,17 @@ int fluidSimulation()
 		splatShader.use();
 		splatShader.setInt("fluid", 0);
 		splatShader.setInt("density", 1);
-		splatShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		splatShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 		splatShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glm::vec2 texCoordMousePos = sceneManager->mousePos / sceneManager->screenSize;
 		texCoordMousePos.y = 1.0f - texCoordMousePos.y;
 		glm::vec2 fluidMouse = texCoordMousePos * glm::vec2(fluidWidth, fluidHeight);
 		splatShader.setVec2("mousePosition", fluidMouse);
 		splatShader.setVec2("mouseDelta", sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f));
-		splatShader.setFloat("velocityAddScalar", mouseVelocityAddScalar);
-		splatShader.setFloat("pressureAddScalar", mousePressureAddScalar);
-		splatShader.setFloat("densityAddScalar", mouseDensityAddScalar);
-		splatShader.setFloat("radius", mouseSplatRadius);
+		splatShader.setFloat("velocityAddScalar", settings.mouseVelocityAddScalar);
+		splatShader.setFloat("pressureAddScalar", settings.mousePressureAddScalar);
+		splatShader.setFloat("densityAddScalar", settings.mouseDensityAddScalar);
+		splatShader.setFloat("radius", settings.mouseSplatRadius);
 		splatShader.setFloat("leftMouseDown", sceneManager->leftMouseDown ? 1.0f : 0.0f);
 		splatShader.setFloat("rightMouseDown", sceneManager->rightMouseDown ? 1.0f : 0.0f);
 		glBindVertexArray(quadVAO);
@@ -377,22 +361,22 @@ int fluidSimulation()
 
 		// Audio spiral step
 		// Dont run for the first 100 or so frames since the frequency data is garbage for a bit for some reason...
-		if (sceneManager->frameNumber > 100 && spiralEnabled) 
+		if (sceneManager->frameNumber > 100 && settings.spiralEnabled)
 		{
 			fluidBuffer.bind();
 			audioSpiralShader.use();
 			audioSpiralShader.setInt("fluid", 0);
 			audioSpiralShader.setInt("density", 1);
 			audioSpiralShader.setInt("frequency", 3);
-			audioSpiralShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+			audioSpiralShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 			audioSpiralShader.setFloat("utime", sceneManager->time);
 			audioSpiralShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
-			audioSpiralShader.setFloat("curl", spiralCurl);
-			audioSpiralShader.setFloat("spin", spiralSpin);
-			audioSpiralShader.setFloat("splatRadius", spiralSplatRadius);
-			audioSpiralShader.setFloat("velocityAddScalar", spiralVelocityAddScalar);
-			audioSpiralShader.setFloat("pressureAddScalar", spiralPressureAddScalar);
-			audioSpiralShader.setFloat("densityAddScalar", spiralDensityAddScalar);
+			audioSpiralShader.setFloat("curl", settings.spiralCurl);
+			audioSpiralShader.setFloat("spin", settings.spiralSpin);
+			audioSpiralShader.setFloat("splatRadius", settings.spiralSplatRadius);
+			audioSpiralShader.setFloat("velocityAddScalar", settings.spiralVelocityAddScalar);
+			audioSpiralShader.setFloat("pressureAddScalar", settings.spiralPressureAddScalar);
+			audioSpiralShader.setFloat("densityAddScalar", settings.spiralDensityAddScalar);
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			fluidBuffer.swapTextureChannel(0);
@@ -404,23 +388,23 @@ int fluidSimulation()
 		advectShader.use();
 		advectShader.setInt("fluid", 0);
 		advectShader.setInt("density", 1);
-		advectShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		advectShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 		advectShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
-		advectShader.setFloat("velocityDissipation", velocityDissipation);
-		advectShader.setFloat("densityDissipation", densityDissipation);
+		advectShader.setFloat("velocityDissipation", settings.velocityDissipation);
+		advectShader.setFloat("densityDissipation", settings.densityDissipation);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapTextureChannel(0);
 		fluidBuffer.swapTextureChannel(1);
 
-		if (vorticityEnabled) 
+		if (settings.vorticityEnabled)
 		{
 			// Curl step
 			fluidBuffer.bind();
 			curlShader.use();
 			curlShader.setInt("fluid", 0);
 			curlShader.setInt("curl", 4);
-			curlShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+			curlShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 			curlShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -431,9 +415,9 @@ int fluidSimulation()
 			vorticityShader.use();
 			vorticityShader.setInt("fluid", 0);
 			vorticityShader.setInt("curl", 4);
-			vorticityShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+			vorticityShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 			vorticityShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
-			vorticityShader.setFloat("vorticityScalar", vorticity);
+			vorticityShader.setFloat("vorticityScalar", settings.vorticity);
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 			fluidBuffer.swapTextureChannel(0);
@@ -444,18 +428,18 @@ int fluidSimulation()
 		fluidBuffer.bind();
 		divergenceShader.use();
 		divergenceShader.setInt("fluid", 0);
-		divergenceShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		divergenceShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 		divergenceShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		fluidBuffer.swapTextureChannel(0);
 
 		// Pressure step
-		for (int i = 0; i < pressureIterations; i++) {
+		for (int i = 0; i < settings.pressureIterations; i++) {
 			fluidBuffer.bind();
 			pressureShader.use();
 			pressureShader.setInt("fluid", 0);
-			pressureShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+			pressureShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 			pressureShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 			glBindVertexArray(quadVAO);
 			glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -466,7 +450,7 @@ int fluidSimulation()
 		fluidBuffer.bind();
 		subtractPressureShader.use();
 		subtractPressureShader.setInt("fluid", 0);
-		subtractPressureShader.setFloat("timestep", sceneManager->deltaTime / standardTimestep);
+		subtractPressureShader.setFloat("timestep", sceneManager->deltaTime / settings.standardTimestep);
 		subtractPressureShader.setVec2("pixelSize", 1.0f / glm::vec2(fluidWidth, fluidHeight));
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -484,7 +468,7 @@ int fluidSimulation()
 		displayShader.setInt("density", 1);
 		displayShader.setInt("curl", 4);
 		displayShader.setInt("densityColorCurve", 2);
-		displayShader.setInt("displayMode", displayMode);
+		displayShader.setInt("displayMode", settings.displayMode);
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
