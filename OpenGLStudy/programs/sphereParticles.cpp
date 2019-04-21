@@ -293,14 +293,14 @@ int sphereParticles()
 		glBindVertexArray(lightVAO);
 		lightShader.update();
 		lightShader.use();
-		lightShader.setVec3("lightColor", lightColor);
-		lightShader.setMat4("view", view->invMatrix);
-		lightShader.setMat4("projection", projection);
+		lightShader.setUniform("lightColor", lightColor);
+		lightShader.setUniform("view", view->invMatrix);
+		lightShader.setUniform("projection", projection);
 		glm::mat4 lightModel; 
 		//lightModel = glm::rotate(lightModel, (float)time * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		//lightModel = glm::translate(lightModel, glm::vec3(3.0f, 0.0f, 0.0f));
 		lightModel = glm::scale(lightModel, glm::vec3(objectScale * 1.0f));
-		lightShader.setMat4("model", lightModel);
+		lightShader.setUniform("model", lightModel);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		
 		// make cubes
@@ -308,18 +308,18 @@ int sphereParticles()
 		cubeShader.update();
 		cubeShader.use();
 		glm::vec3 gamma3(gamma);
-		cubeShader.setVec3("color1", glm::pow(color1, gamma3));
-		cubeShader.setVec3("color2", glm::pow(color2, gamma3));
-		cubeShader.setVec3("lightColor", glm::pow(lightColor, gamma3));
-		cubeShader.setVec3("lightPos", glm::vec3(lightModel[3]));
-		cubeShader.setVec3("viewPos", view->position);
-		cubeShader.setMat4("view", view->invMatrix);
-		cubeShader.setMat4("projection", projection);
-		cubeShader.setFloat("ambientStrength", ambientStrength);
-		cubeShader.setFloat("specularStrength", specularStrength);
-		cubeShader.setFloat("shininess", shininess);
-		cubeShader.setBool("blinn", blinn);
-		cubeShader.setFloat("gamma", gamma);
+		cubeShader.setUniform("color1", glm::pow(color1, gamma3));
+		cubeShader.setUniform("color2", glm::pow(color2, gamma3));
+		cubeShader.setUniform("lightColor", glm::pow(lightColor, gamma3));
+		cubeShader.setUniform("lightPos", glm::vec3(lightModel[3]));
+		cubeShader.setUniform("viewPos", view->position);
+		cubeShader.setUniform("view", view->invMatrix);
+		cubeShader.setUniform("projection", projection);
+		cubeShader.setUniform("ambientStrength", ambientStrength);
+		cubeShader.setUniform("specularStrength", specularStrength);
+		cubeShader.setUniform("shininess", shininess);
+		cubeShader.setUniform("blinn", blinn);
+		cubeShader.setUniform("gamma", gamma);
 		float freqAccumulation = 0.0f;
 		for (int i = 0; i < numObjects; i++)
 		{
@@ -337,7 +337,7 @@ int sphereParticles()
 			model = glm::translate(model, glm::vec3(1.0f, 0.0f, 0.0f) * sin(time + x * objectTranslationScalar));
 			model = glm::scale(model, glm::vec3(objectScale + freq));
 
-			cubeShader.setMat4("model", model);
+			cubeShader.setUniform("model", model);
 			glDrawArrays(GL_TRIANGLES, 0, 36);
 		}
 

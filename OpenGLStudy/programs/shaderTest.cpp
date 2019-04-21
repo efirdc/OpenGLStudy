@@ -75,9 +75,9 @@ int shaderTest()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		basicShader.use();
-		basicShader.setFloat("time", (float)glfwGetTime());
+		basicShader.setUniform("time", (float)glfwGetTime());
 
-		basicShader.setVec4("modulate", 1.0, 1.0, 1.0, 1.0);
+		basicShader.setUniform("modulate", 1.0, 1.0, 1.0, 1.0);
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 

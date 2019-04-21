@@ -135,8 +135,8 @@ int transformations()
 
 	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
 	ourShader.use();
-	ourShader.setInt("texture1", 0);
-	ourShader.setInt("texture2", 1);
+	ourShader.setUniform("texture1", 0);
+	ourShader.setUniform("texture2", 1);
 	
 	// Main loop
 	while (!glfwWindowShouldClose(window))
@@ -169,7 +169,7 @@ int transformations()
 			trans = glm::rotate(trans,  1.0f * time + x * 3.14159f * 2.0f, glm::vec3(0.0f, 0.0f, 1.0f));
 			trans = glm::translate(trans, glm::vec3(1.0f, 0.0f, 0.0f) * 3.0f * sin(time + x * 40.0f));
 
-			ourShader.setMat4("transform", trans);
+			ourShader.setUniform("transform", trans);
 			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		}
 		

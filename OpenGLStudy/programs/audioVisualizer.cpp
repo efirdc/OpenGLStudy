@@ -175,10 +175,10 @@ int audioVisualizer()
 
 	// tell opengl for each sampler to which texture unit it belongs to
 	audioShader.use();
-	audioShader.setInt("soundTexture", soundTexture->textureID);
-	audioShader.setInt("frequencyTexture", frequencyTexture->textureID);
-	audioShader.setInt("frequencyColorCurve", frequencyColorCurve->textureID);
-	audioShader.setInt("lightColorCurve", lightColorCurve->textureID);
+	audioShader.setUniform("soundTexture", soundTexture->textureID);
+	audioShader.setUniform("frequencyTexture", frequencyTexture->textureID);
+	audioShader.setUniform("frequencyColorCurve", frequencyColorCurve->textureID);
+	audioShader.setUniform("lightColorCurve", lightColorCurve->textureID);
 
 	// Main loop
 	sceneManager->newFrame();
@@ -370,15 +370,15 @@ int audioVisualizer()
 		// Update the shader, use it, and set uniforms
 		audioShader.update();
 		audioShader.use();
-		audioShader.setInt("soundTexture", soundTexture->textureID);
-		audioShader.setInt("frequencyTexture", frequencyTexture->textureID);
-		audioShader.setInt("frequencyColorCurve", frequencyColorCurve->textureID);
-		audioShader.setInt("lightColorCurve", lightColorCurve->textureID);
-		audioShader.setFloat("time", (float)glfwGetTime());
-		audioShader.setVec2("texturePixelSize", 1.0f / (float)sceneManager->screenSize.x, 1.0f / (float)sceneManager->screenSize.y);
+		audioShader.setUniform("soundTexture", soundTexture->textureID);
+		audioShader.setUniform("frequencyTexture", frequencyTexture->textureID);
+		audioShader.setUniform("frequencyColorCurve", frequencyColorCurve->textureID);
+		audioShader.setUniform("lightColorCurve", lightColorCurve->textureID);
+		audioShader.setUniform("time", (float)glfwGetTime());
+		audioShader.setUniform("texturePixelSize", 1.0f / (float)sceneManager->screenSize.x, 1.0f / (float)sceneManager->screenSize.y);
 		glm::vec2 mouseTextureCoords = sceneManager->mousePos / sceneManager->screenSize;
-		audioShader.setVec2("mousePos", mouseTextureCoords.x, 1.0f - mouseTextureCoords.y);
-		audioShader.setFloat("lightHeight", lightHeight);
+		audioShader.setUniform("mousePos", mouseTextureCoords.x, 1.0f - mouseTextureCoords.y);
+		audioShader.setUniform("lightHeight", lightHeight);
 
 		// Bind textures on corresponding texture units
 		glActiveTexture(GL_TEXTURE1);

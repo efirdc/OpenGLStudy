@@ -130,8 +130,8 @@ int textures()
 
 	// tell opengl for each sampler to which texture unit it belongs to (only has to be done once)
 	ourShader.use();
-	ourShader.setInt("texture1", 0);
-	ourShader.setInt("texture2", 1);
+	ourShader.setUniform("texture1", 0);
+	ourShader.setUniform("texture2", 1);
 
 
 	// Main loop
