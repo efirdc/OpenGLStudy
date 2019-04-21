@@ -8,16 +8,27 @@ Licensed under the terms of the CC BY-NC 4.0 license as published by Creative Co
 
 using namespace std;
 
-std::map<std::string, void *> Shader::globalUniforms;
+std::vector<Shader *> Shader::allShaders;
+std::unordered_map<std::string, void *> Shader::globalUniforms;
 
 void Shader::setGlobalUniform(const std::string & name, void * data)
 {
+	if (globalUniforms.count(name))
+	{
+		globalUniforms[name] = data;
+		return;
+	}
 	globalUniforms[name] = data;
+	for (Shader * shader : allShaders)
+		shader->bindGlobalUniforms();
 }
 
 void Shader::deleteGlobalUniform(const std::string & name)
 {
 	globalUniforms.erase(name);
+	for (Shader * shader : allShaders)
+		if (shader->boundUniforms.count(name) > 0)
+			shader->boundUniforms.erase(name);
 }
 
 Shader::Shader(const char * vertexPath, const char * fragmentPath) :
@@ -39,6 +50,12 @@ Shader::Shader(const char * vertexPath, const char * fragmentPath) :
 
 	// Get shader uniforms
 	getUniforms();
+
+	// Add to vector of all shaders
+	allShaders.push_back(this);
+
+	// Bind global uniforms
+	bindGlobalUniforms();
 }
 
 bool Shader::update()
@@ -75,8 +92,6 @@ bool Shader::update()
 	cout << "Shader " << vertexPath << " " << fragmentPath << " recompiled." << endl;
 	return true;
 }
-
-
 
 const char * Shader::getCode(const char * codePath, string & code)
 {
@@ -179,11 +194,17 @@ long long int Shader::getModificationTime(const char * filePath)
 	return result.st_mtime;
 }
 
-void Shader::setGlobalUniforms()
+void Shader::bindGlobalUniforms()
 {
 	for (const auto &pair : globalUniforms)
 		if (uniforms.count(pair.first) > 0)
-			setUniform(pair.first, pair.second);
+			boundUniforms[pair.first] = pair.second;
+}
+
+void Shader::setBoundUniforms()
+{
+	for (const auto &pair : boundUniforms)
+		setUniform(pair.first, pair.second);
 }
 
 void Shader::setUniform(const std::string & name, void * data)
@@ -237,7 +258,7 @@ void Shader::setUniform(const std::string & name, void * data)
 void Shader::use()
 {
 	glUseProgram(ID);
-	setGlobalUniforms();
+	setBoundUniforms();
 }
 
 void Shader::setUniform(const std::string & name, bool value)

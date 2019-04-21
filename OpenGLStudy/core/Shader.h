@@ -8,7 +8,7 @@ Licensed under the terms of the CC BY-NC 4.0 license as published by Creative Co
 #define SHADER_H
 
 #include <string>
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <fstream>
 #include <sstream>
@@ -76,7 +76,8 @@ public:
 	void setUniform(const std::string & name, const glm::mat4 & mat);
 
 private:
-	static std::map<std::string, void *> globalUniforms;
+	static std::vector<Shader *> allShaders;
+	static std::unordered_map<std::string, void *> globalUniforms;
 
 	unsigned int ID;
 	const char * vertexPath;
@@ -91,7 +92,12 @@ private:
 		GLenum type;
 		int size;
 	};
-	std::map<std::string, Uniform> uniforms;
+	std::unordered_map<std::string, Uniform> uniforms;
+	std::unordered_map<std::string, void *> boundUniforms;
+
+	void bindGlobalUniforms();
+
+	void setBoundUniforms();
 
 	void setUniform(const std::string & name, void * data);
 
@@ -131,7 +137,7 @@ private:
 	* Returns time the file was last modified.
 	*/
 
-	void setGlobalUniforms();
+	
 };
 
 #endif
