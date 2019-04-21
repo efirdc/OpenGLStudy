@@ -160,6 +160,7 @@
     <ClCompile Include="dependencies\kissfft\kiss_fft.c" />
     <ClCompile Include="dependencies\kissfft\kiss_fftr.c" />
     <ClCompile Include="dependencies\stb\stb_image.cpp" />
+    <ClCompile Include="imgui_extensions\imgui_bezier_curve.cpp" />
     <ClCompile Include="imgui_extensions\imgui_color_gradient.cpp" />
     <ClCompile Include="imgui_extensions\imgui_extras.cpp" />
     <ClCompile Include="main.cpp" />
@@ -202,6 +203,7 @@
     <ClInclude Include="dependencies\kissfft\_kiss_fft_guts.h" />
     <ClInclude Include="dependencies\nlohmann\json.hpp" />
     <ClInclude Include="dependencies\stb\stb_image.h" />
+    <ClInclude Include="imgui_extensions\imgui_bezier_curve.h" />
     <ClInclude Include="imgui_extensions\imgui_color_gradient.h" />
     <ClInclude Include="imgui_extensions\imgui_extras.h" />
   </ItemGroup>

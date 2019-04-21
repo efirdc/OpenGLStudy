@@ -115,6 +115,9 @@
     <ClCompile Include="core\PingPongBuffer.cpp">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="imgui_extensions\imgui_bezier_curve.cpp">
+      <Filter>imgui_extensions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\glad\glad.h">
@@ -212,6 +215,9 @@
     </ClInclude>
     <ClInclude Include="dependencies\nlohmann\json.hpp">
       <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_extensions\imgui_bezier_curve.h">
+      <Filter>imgui_extensions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

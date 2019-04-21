@@ -14,6 +14,7 @@
 #include "imgui/imgui_impl_glfw_gl3.h"
 #include "imgui_extras.h"
 #include "imgui_color_gradient.h"
+#include "imgui_bezier_curve.h"
 
 #include "Shader.h"
 #include "SceneManager.h"
@@ -30,6 +31,7 @@ struct Settings
 {
 	int pressureIterations = 50;
 	float timestep = 1.0f;
+	float standardTimestep = timestep / 60.0f;
 	int displayMode = 5;
 	float velocityDissipation = 1.0f;
 	float densityDissipation = 0.970f;
@@ -46,8 +48,6 @@ struct Settings
 	float spiralVelocityAddScalar = 5.0f;
 	float spiralPressureAddScalar = 1.0f;
 	float spiralDensityAddScalar = 0.8f;
-	ImVec2 fAmpControlPoints[2] = { { 0.016f, 0.016f },{ 0.0f, 1.0f } };
-	ImVec2 peakControlPoints[2] = { { 1.00f, 0.00f },{ 0.0f, 1.00f } };
 };
 
 int fluidSimulation()
@@ -112,8 +112,13 @@ int fluidSimulation()
 	glEnableVertexAttribArray(1);
 
 	// Fluid values
-	int fluidWidth = 640;
-	int fluidHeight = 360;
+	const int fluidWidth = 640;
+	const int fluidHeight = 360;
+	const int gradientSize = 256;
+	const int frameSize = 4096;
+	const int numSpectrumsInAverage = 18;
+	const int numFreqBins = 1024;
+	const float domainShiftFactor = 10.0f;
 	float standardTimestep = 1.0f / 60.0f;
 
 	PingPongBuffer fluidBuffer(fluidWidth, fluidHeight);
@@ -121,13 +126,6 @@ int fluidSimulation()
 	fluidBuffer.addTextureChannel(GL_TEXTURE0, borderValues);
 	fluidBuffer.addTextureChannel(GL_TEXTURE1, borderValues);
 	fluidBuffer.addTextureChannel(GL_TEXTURE4, borderValues);
-
-	const int gradientSize = 256;
-
-	const int frameSize = 4096;
-	const int numSpectrumsInAverage = 18;
-	const int numFreqBins = 1024;
-	const float domainShiftFactor = 10.0f;
 
 	SpectrumAnalyzer analyzer(frameSize);
 
@@ -138,24 +136,18 @@ int fluidSimulation()
 	float * audioBuffer = new float[numAudioSamples]();
 
 	// initialize frequency amplitude curve
-	float * frequencyAmplitudeCurve = new float[bezierCurveSize]();
 	ImVec2 fAmpControlPoints[2] = { { 0.016f, 0.016f },{ 0.0f, 1.0f } };
-	glm::vec2 frequencyAmplitudePoints[bezierCurveSize];
-	utl::bezierTable((glm::vec2 *)fAmpControlPoints, frequencyAmplitudePoints, bezierCurveSize);
-	utl::curve2Dto1D(frequencyAmplitudePoints, bezierCurveSize, frequencyAmplitudeCurve, bezierCurveSize);
+	ImBezierCurve frequencyAmplitudeCurve(fAmpControlPoints, bezierCurveSize, bezierCurveSize);
 
 	// initialize peak smoothing curve
 	float peakRadius = 0.05f;
 	int peakCurveSize = (int)((float)numFreqBins * peakRadius);
-	float * peakCurve = new float[peakCurveSize]();
 	ImVec2 peakControlPoints[2] = { { 1.00f, 0.00f },{ 0.0f, 1.00f } };
-	glm::vec2 peakCurvePoints[bezierCurveSize];
-	utl::bezierTable((glm::vec2 *)peakControlPoints, peakCurvePoints, bezierCurveSize);
-	utl::curve2Dto1D(peakCurvePoints, bezierCurveSize, peakCurve, peakCurveSize);
+	ImBezierCurve peakShapingCurve(peakControlPoints, peakCurveSize, bezierCurveSize);
 
-	AmplitudeFilter amplitudeFilter(frequencyAmplitudeCurve, bezierCurveSize);
+	AmplitudeFilter amplitudeFilter(frequencyAmplitudeCurve.curve1D, frequencyAmplitudeCurve.curve1DSize);
 	DomainShiftFilter domainShiftFilter(domainShiftFactor, numFreqBins);
-	PeakFilter peakFilter(peakCurve, peakCurveSize);
+	PeakFilter peakFilter(peakShapingCurve.curve1D, peakShapingCurve.curve1DSize);
 	AverageFilter averageFilter(numSpectrumsInAverage);
 
 	StreamTexture1D * densityColorCurve = new StreamTexture1D(GL_RGB32F, gradientSize, GL_RGB, GL_FLOAT, 3, 4, false);
@@ -279,37 +271,36 @@ int fluidSimulation()
 					colors[i] = glm::vec3(color.x, color.y, color.z);
 				}
 				densityColorCurve->unmapPixelBuffer();
+				densityColorCurve->getPixelBuffer();
+				densityColorCurve->unmapPixelBuffer();
 			}
 
 			// Control the frequency amplitude curve
 			changed = false;
 			if (ImGui::TreeNode("Frequency Amplitude Curve"))
 			{
-				changed = ImGui::Bezier("", fAmpControlPoints);
+				changed = ImGui::Bezier("", frequencyAmplitudeCurve.controlPoints);
 				ImGui::TreePop();
 			}
 			if (changed)
 			{
-				utl::bezierTable((glm::vec2 *)fAmpControlPoints, frequencyAmplitudePoints, bezierCurveSize);
-				utl::curve2Dto1D(frequencyAmplitudePoints, bezierCurveSize, frequencyAmplitudeCurve, bezierCurveSize);
-				amplitudeFilter.setAmplitudeCurve(frequencyAmplitudeCurve, bezierCurveSize);
+				frequencyAmplitudeCurve.recalculate();
+				amplitudeFilter.setAmplitudeCurve(frequencyAmplitudeCurve.curve1D, frequencyAmplitudeCurve.curve1DSize);
 			}
 
 			// Control the frequency peak curve
 			if (ImGui::TreeNode("Frequency Peak Curve"))
 			{
 				changed = ImGui::SliderFloat("Blur Radius", &peakRadius, 0.0f, 0.1f);
-				changed |= ImGui::Bezier("", peakControlPoints);
+				changed |= ImGui::Bezier("", peakShapingCurve.controlPoints);
 				ImGui::TreePop();
 			}
 			if (changed)
 			{
-				delete[] peakCurve;
 				peakCurveSize = (int)((float)numFreqBins * peakRadius);
-				peakCurve = new float[peakCurveSize]();
-				utl::bezierTable((glm::vec2 *)peakControlPoints, peakCurvePoints, bezierCurveSize);
-				utl::curve2Dto1D(peakCurvePoints, bezierCurveSize, peakCurve, peakCurveSize);
-				peakFilter.setPeakCurve(peakCurve, peakCurveSize);
+				peakShapingCurve.curve1DSize = peakCurveSize;
+				peakShapingCurve.recalculate();
+				peakFilter.setPeakCurve(peakShapingCurve.curve1D, peakShapingCurve.curve1DSize);
 			}
 
 			// Error reporting
