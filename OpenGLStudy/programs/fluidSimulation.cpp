@@ -413,7 +413,7 @@ int fluidSimulation()
 		glBindTexture(GL_TEXTURE_1D, frequencyTexture->textureID);
 
 		bool showDemoWindow = true;
-		ImGui::ShowDemoWindow(&showDemoWindow);
+		//ImGui::ShowDemoWindow(&showDemoWindow);
 
 		// Audio processing step
 		static int newSamples = 0;
