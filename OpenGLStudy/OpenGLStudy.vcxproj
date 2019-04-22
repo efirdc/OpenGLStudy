@@ -210,6 +210,7 @@
     <ClInclude Include="imgui_extensions\imgui_extras.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="presets.json" />
     <None Include="shaders\basicFrag.fs" />
     <None Include="shaders\basicVertex.vs" />
     <None Include="shaders\fluid\advection.fs" />

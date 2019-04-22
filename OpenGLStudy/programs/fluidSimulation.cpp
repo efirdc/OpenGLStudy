@@ -50,7 +50,11 @@ struct Settings
 	float spiralVelocityAddScalar = 5.0f;
 	float spiralPressureAddScalar = 1.0f;
 	float spiralDensityAddScalar = 0.8f;
+	ImGradient densityGradient;
 };
+
+void savePreset(Settings & settings, json & jsonPresets, const char * presetName);
+void loadPreset(Settings & settings, json & jsonPresets, const char * presetName);
 
 struct TextureUnits
 {
@@ -177,19 +181,23 @@ int fluidSimulation()
 	glActiveTexture(GL_TEXTURE0 + textureUnits.density);
 	glBindTexture(GL_TEXTURE_1D, densityColorCurve->textureID);
 
+	std::ifstream inFile("presets.json");
+	json jsonPresets;
+	inFile >> jsonPresets;
+	Settings settings;
+
 	// initialize frequency color gradient
-	ImGradient densityGradient;
-	densityGradient.getMarks().clear();
-	densityGradient.addMark(1.0f, ImColor(0xFF, 0xFF, 0xCC));
-	densityGradient.addMark(0.75f, ImColor(0xFF, 0xEA, 0x00));
-	densityGradient.addMark(0.50f, ImColor(0x8E, 0x00, 0x00));
-	densityGradient.addMark(0.25f, ImColor(0x22, 0x1D, 0x24));
-	densityGradient.addMark(0.0f, ImColor(0x00, 0x00, 0x00));
+	settings.densityGradient.getMarks().clear();
+	settings.densityGradient.addMark(1.0f, ImColor(0xFF, 0xFF, 0xCC));
+	settings.densityGradient.addMark(0.75f, ImColor(0xFF, 0xEA, 0x00));
+	settings.densityGradient.addMark(0.50f, ImColor(0x8E, 0x00, 0x00));
+	settings.densityGradient.addMark(0.25f, ImColor(0x22, 0x1D, 0x24));
+	settings.densityGradient.addMark(0.0f, ImColor(0x00, 0x00, 0x00));
 	glm::vec3 * densityColors = (glm::vec3 *)densityColorCurve->getPixelBuffer();
 	int numColors = densityColorCurve->width;
 	for (int i = 0; i < numColors; i++)
 	{
-		ImVec4 color = densityGradient.getColorAt((float)i / (float)(numColors - 1));
+		ImVec4 color = settings.densityGradient.getColorAt((float)i / (float)(numColors - 1));
 		densityColors[i] = glm::vec3(color.x, color.y, color.z);
 	}
 	densityColorCurve->unmapPixelBuffer();
@@ -202,9 +210,6 @@ int fluidSimulation()
 	float * frequencyPixelBuffer = (float *)frequencyTexture->getPixelBuffer();
 	for (int i = 0; i < frequencyTexture->width; i++)
 		frequencyPixelBuffer[i] = 0.0f;
-	
-	json j;
-	Settings settings;
 
 	Shader displayShader("shaders/fluid/screenQuad.vs", "shaders/fluid/display.fs");
 	Shader advectShader("shaders/fluid/screenQuad.vs", "shaders/fluid/advection.fs");
@@ -261,19 +266,61 @@ int fluidSimulation()
 		
 		ImGui::Begin("Settings");
 		{
-			ImGui::PushItemWidth(-150);
+			ImGui::PushItemWidth(-180);
 
-			const char * displayModes[] = { "All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor", "Curl", "Vorticity" };
-			ImGui::Combo("display mode", &settings.displayMode, displayModes, IM_ARRAYSIZE(displayModes));
-			ImGui::SliderInt("pressure iterations", &settings.pressureIterations, 1, 200);
-			ImGui::SliderFloat("timestep", &settings.timestep, 0.01f, 5.0f);
-			settings.standardTimestep = settings.timestep / 60.0f;
-			ImGui::SliderFloat("velocity dissipation", &settings.velocityDissipation, 0.9f, 1.0f);
-			ImGui::SliderFloat("density dissipation", &settings.densityDissipation, 0.9f, 1.0f);
-			ImGui::Checkbox("vorticity enabled", &settings.vorticityEnabled);
-			ImGui::SliderFloat("vorticity", &settings.vorticity, 0.0f, 10.0f);
+			if (ImGui::TreeNode("Presets"))
+			{
+				static std::string selection = "default";
+				if (ImGui::BeginCombo("##loadpreset", selection.c_str()))
+				{
+					for (auto& element : jsonPresets.items())
+					{
+						std::string key = element.key();
+						bool isSelected = selection == key;
+						if (ImGui::Selectable(key.c_str(), isSelected))
+							selection = key;
+						if (isSelected)
+							ImGui::SetItemDefaultFocus();
+					}
+					ImGui::EndCombo();
+				}
+				ImGui::SameLine();
+				if (ImGui::Button("Load"))
+					loadPreset(settings, jsonPresets, selection.c_str());
+				ImGui::SameLine();
+				if (ImGui::Button("Delete"))
+				{
+					if (selection != "default")
+					{
+						jsonPresets.erase(selection);
+						std::ofstream outFile("presets.json");
+						outFile << jsonPresets.dump(2) << std::endl;
+						selection = "default";
+					}
+				}
+				static char presetName[64] = "";
+				ImGui::InputText("##savepreset", presetName, IM_ARRAYSIZE(presetName));
+				ImGui::SameLine();
+				if (ImGui::Button("Save Preset"))
+					savePreset(settings, jsonPresets, presetName);
+				ImGui::TreePop();
+			}
 
-			if (ImGui::TreeNode("Mouse Settings"))
+			if (ImGui::TreeNode("Fluid Behavior"))
+			{
+				const char * displayModes[] = { "All", "Velocity", "Pressure", "Divergence", "Density", "DensityColor", "Curl", "Vorticity" };
+				ImGui::Combo("display mode", &settings.displayMode, displayModes, IM_ARRAYSIZE(displayModes));
+				ImGui::SliderInt("pressure iterations", &settings.pressureIterations, 1, 200);
+				ImGui::SliderFloat("timestep", &settings.timestep, 0.01f, 5.0f);
+				settings.standardTimestep = settings.timestep / 60.0f;
+				ImGui::SliderFloat("velocity dissipation", &settings.velocityDissipation, 0.9f, 1.0f);
+				ImGui::SliderFloat("density dissipation", &settings.densityDissipation, 0.9f, 1.0f);
+				ImGui::Checkbox("vorticity enabled", &settings.vorticityEnabled);
+				ImGui::SliderFloat("vorticity", &settings.vorticity, 0.0f, 10.0f);
+				ImGui::TreePop();
+			}
+			
+			if (ImGui::TreeNode("Mouse Interaction"))
 			{
 				ImGui::SliderFloat("radius", &settings.mouseSplatRadius, 1.0f, 150.0f);
 				ImGui::SliderFloat("velocity add scalar", &settings.mouseVelocityAddScalar, 0.00f, 15.0f);
@@ -298,7 +345,7 @@ int fluidSimulation()
 			bool changed = false;
 			if (ImGui::TreeNode("Density Color Gradient"))
 			{
-				changed = ImGui::GradientEditor(&densityGradient);
+				changed = ImGui::GradientEditor(&settings.densityGradient);
 				ImGui::TreePop();
 			}
 			if (changed)
@@ -307,7 +354,7 @@ int fluidSimulation()
 				int numColors = densityColorCurve->width;
 				for (int i = 0; i < numColors; i++)
 				{
-					ImVec4 color = densityGradient.getColorAt((float)i / (float)(numColors - 1));
+					ImVec4 color = settings.densityGradient.getColorAt((float)i / (float)(numColors - 1));
 					colors[i] = glm::vec3(color.x, color.y, color.z);
 				}
 				densityColorCurve->unmapPixelBuffer();
@@ -317,7 +364,7 @@ int fluidSimulation()
 
 			// Control the frequency amplitude curve
 			changed = false;
-			if (ImGui::TreeNode("Frequency Amplitude Curve"))
+			if (ImGui::TreeNode("Frequency Amplitude Curve (not saved)"))
 			{
 				changed = ImGui::Bezier("", frequencyAmplitudeCurve.controlPoints);
 				ImGui::TreePop();
@@ -329,7 +376,7 @@ int fluidSimulation()
 			}
 
 			// Control the frequency peak curve
-			if (ImGui::TreeNode("Frequency Peak Curve"))
+			if (ImGui::TreeNode("Frequency Peak Curve (not saved)"))
 			{
 				changed = ImGui::SliderFloat("Blur Radius", &peakRadius, 0.0f, 0.1f);
 				changed |= ImGui::Bezier("", peakShapingCurve.controlPoints);
@@ -488,4 +535,76 @@ int fluidSimulation()
 	// terminate glfw, clearing all previously allocated GLFW resources.
 	glfwTerminate();
 	return 0;
+}
+
+void savePreset(Settings & settings, json & jsonPresets, const char * presetName)
+{
+	json newPreset =
+	{
+		{"pressureIterations", settings.pressureIterations},
+		{"timestep", settings.timestep},
+		{"displayMode", settings.displayMode},
+		{"velocityDissipation", settings.velocityDissipation},
+		{"densityDissipation", settings.densityDissipation},
+		{"vorticityEnabled", settings.vorticityEnabled},
+		{"vorticity", settings.vorticity},
+		{"mouseSplatRadius", settings.mouseSplatRadius},
+		{"mouseVelocityAddScalar", settings.mouseVelocityAddScalar},
+		{"mousePressureAddScalar", settings.mousePressureAddScalar},
+		{"mouseDensityAddScalar", settings.mouseDensityAddScalar},
+		{"spiralEnabled", settings.spiralEnabled},
+		{"spiralCurl", settings.spiralCurl},
+		{"spiralSpin", settings.spiralSpin},
+		{"spiralSplatRadius", settings.spiralSplatRadius},
+		{"spiralVelocityAddScalar", settings.spiralVelocityAddScalar},
+		{"spiralPressureAddScalar", settings.spiralPressureAddScalar},
+		{"spiralDensityAddScalar", settings.spiralDensityAddScalar},
+		{"gradient", {
+			{"colorSpace", settings.densityGradient.getColorSpace()}
+		}}
+	};
+	for (auto * mark : settings.densityGradient.getMarks())
+	{
+		newPreset["gradient"]["marks"].push_back({
+			{"position", mark->position},
+			{"r", mark->color.x},
+			{"g", mark->color.y},
+			{"b", mark->color.z},
+			{"a", mark->color.w},
+		});
+	}
+	jsonPresets[presetName] = newPreset;
+	std::ofstream outFile("presets.json");
+	outFile << jsonPresets.dump(2) << std::endl;
+}
+
+void loadPreset(Settings & settings, json & jsonPresets, const char * presetName)
+{
+	json preset = jsonPresets[presetName];
+	settings.pressureIterations = preset["pressureIterations"];
+	settings.timestep = preset["timestep"];
+	settings.displayMode = preset["displayMode"];
+	settings.velocityDissipation = preset["velocityDissipation"];
+	settings.densityDissipation = preset["densityDissipation"];
+	settings.vorticityEnabled = preset["vorticityEnabled"];
+	settings.vorticity = preset["vorticity"];
+	settings.mouseSplatRadius = preset["mouseSplatRadius"];
+	settings.mouseVelocityAddScalar = preset["mouseVelocityAddScalar"];
+	settings.mousePressureAddScalar = preset["mousePressureAddScalar"];
+	settings.mouseDensityAddScalar = preset["mouseDensityAddScalar"];
+	settings.spiralEnabled = preset["spiralEnabled"];
+	settings.spiralCurl = preset["spiralCurl"];
+	settings.spiralSpin = preset["spiralSpin"];
+	settings.spiralSplatRadius = preset["spiralSplatRadius"];
+	settings.spiralVelocityAddScalar = preset["spiralVelocityAddScalar"];
+	settings.spiralPressureAddScalar = preset["spiralPressureAddScalar"];
+	settings.spiralDensityAddScalar = preset["spiralDensityAddScalar"];
+	settings.densityGradient.setColorSpace(preset["gradient"]["colorSpace"]);
+	for (auto & element : preset["gradient"]["marks"]) 
+	{
+		settings.densityGradient.addMark(
+			element["position"], 
+			ImVec4(element["r"], element["g"], element["b"], element["a"])
+		);
+	}
 }

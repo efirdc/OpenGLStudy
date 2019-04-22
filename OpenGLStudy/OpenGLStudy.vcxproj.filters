@@ -290,5 +290,6 @@
     <None Include="shaders\fluid\curl.fs">
       <Filter>shaders\fluid</Filter>
     </None>
+    <None Include="presets.json" />
   </ItemGroup>
 </Project>
