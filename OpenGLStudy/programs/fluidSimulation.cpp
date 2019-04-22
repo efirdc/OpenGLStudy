@@ -266,7 +266,7 @@ int fluidSimulation()
 		
 		ImGui::Begin("Settings");
 		{
-			ImGui::PushItemWidth(-180);
+			ImGui::PushItemWidth(-160);
 
 			if (ImGui::TreeNode("Presets"))
 			{
@@ -581,24 +581,25 @@ void savePreset(Settings & settings, json & jsonPresets, const char * presetName
 void loadPreset(Settings & settings, json & jsonPresets, const char * presetName)
 {
 	json preset = jsonPresets[presetName];
-	settings.pressureIterations = preset["pressureIterations"];
-	settings.timestep = preset["timestep"];
-	settings.displayMode = preset["displayMode"];
-	settings.velocityDissipation = preset["velocityDissipation"];
-	settings.densityDissipation = preset["densityDissipation"];
-	settings.vorticityEnabled = preset["vorticityEnabled"];
-	settings.vorticity = preset["vorticity"];
-	settings.mouseSplatRadius = preset["mouseSplatRadius"];
-	settings.mouseVelocityAddScalar = preset["mouseVelocityAddScalar"];
-	settings.mousePressureAddScalar = preset["mousePressureAddScalar"];
-	settings.mouseDensityAddScalar = preset["mouseDensityAddScalar"];
-	settings.spiralEnabled = preset["spiralEnabled"];
-	settings.spiralCurl = preset["spiralCurl"];
-	settings.spiralSpin = preset["spiralSpin"];
-	settings.spiralSplatRadius = preset["spiralSplatRadius"];
-	settings.spiralVelocityAddScalar = preset["spiralVelocityAddScalar"];
-	settings.spiralPressureAddScalar = preset["spiralPressureAddScalar"];
-	settings.spiralDensityAddScalar = preset["spiralDensityAddScalar"];
+	Settings d;
+	settings.pressureIterations = preset.contains("pressureIterations") ? preset["pressureIterations"].get<int>() : d.pressureIterations;
+	settings.timestep = preset.contains("timestep") ? preset["timestep"].get<float>() : d.timestep;
+	settings.displayMode = preset.contains("displayMode") ? preset["displayMode"].get<int>() : d.displayMode;
+	settings.velocityDissipation = preset.contains("velocityDissipation") ? preset["velocityDissipation"].get<float>() : d.velocityDissipation;
+	settings.densityDissipation = preset.contains("densityDissipation") ? preset["densityDissipation"].get<float>() : d.densityDissipation;
+	settings.vorticityEnabled = preset.contains("vorticityEnabled") ? preset["vorticityEnabled"].get<bool>() : d.vorticityEnabled;
+	settings.vorticity = preset.contains("vorticity") ? preset["vorticity"].get<float>() : d.vorticity;
+	settings.mouseSplatRadius = preset.contains("mouseSplatRadius") ? preset["mouseSplatRadius"].get<float>() : d.mouseSplatRadius;
+	settings.mouseVelocityAddScalar = preset.contains("mouseVelocityAddScalar") ? preset["mouseVelocityAddScalar"].get<float>() : d.mouseVelocityAddScalar;
+	settings.mousePressureAddScalar = preset.contains("mousePressureAddScalar") ? preset["mousePressureAddScalar"].get<float>() : d.mousePressureAddScalar;
+	settings.mouseDensityAddScalar = preset.contains("mouseDensityAddScalar") ? preset["mouseDensityAddScalar"].get<float>() : d.mouseDensityAddScalar;
+	settings.spiralEnabled = preset.contains("spiralEnabled") ? preset["spiralEnabled"].get<bool>() : d.spiralEnabled;
+	settings.spiralCurl = preset.contains("spiralCurl") ? preset["spiralCurl"].get<float>() : d.spiralCurl;
+	settings.spiralSpin = preset.contains("spiralSpin") ? preset["spiralSpin"].get<float>() : d.spiralSpin;
+	settings.spiralSplatRadius = preset.contains("spiralSplatRadius") ? preset["spiralSplatRadius"].get<float>() : d.spiralSplatRadius;
+	settings.spiralVelocityAddScalar = preset.contains("spiralVelocityAddScalar") ? preset["spiralVelocityAddScalar"].get<float>() : d.spiralVelocityAddScalar;
+	settings.spiralPressureAddScalar = preset.contains("spiralPressureAddScalar") ? preset["spiralPressureAddScalar"].get<float>() : d.spiralPressureAddScalar;
+	settings.spiralDensityAddScalar = preset.contains("spiralDensityAddScalar") ? preset["spiralDensityAddScalar"].get<float>() : d.spiralDensityAddScalar;
 	settings.densityGradient.setColorSpace(preset["gradient"]["colorSpace"]);
 	for (auto & element : preset["gradient"]["marks"]) 
 	{
