@@ -268,6 +268,7 @@ int fluidSimulation()
 		{
 			ImGui::PushItemWidth(-160);
 
+			float loadedPreset = false;
 			if (ImGui::TreeNode("Presets"))
 			{
 				static std::string selection = "default";
@@ -286,7 +287,10 @@ int fluidSimulation()
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("Load"))
+				{
 					loadPreset(settings, jsonPresets, selection.c_str());
+					loadedPreset = true;
+				}
 				ImGui::SameLine();
 				if (ImGui::Button("Delete"))
 				{
@@ -348,7 +352,7 @@ int fluidSimulation()
 				changed = ImGui::GradientEditor(&settings.densityGradient);
 				ImGui::TreePop();
 			}
-			if (changed)
+			if (changed || loadedPreset)
 			{
 				glm::vec3 * colors = (glm::vec3 *)densityColorCurve->getPixelBuffer();
 				int numColors = densityColorCurve->width;
@@ -601,6 +605,7 @@ void loadPreset(Settings & settings, json & jsonPresets, const char * presetName
 	settings.spiralPressureAddScalar = preset.contains("spiralPressureAddScalar") ? preset["spiralPressureAddScalar"].get<float>() : d.spiralPressureAddScalar;
 	settings.spiralDensityAddScalar = preset.contains("spiralDensityAddScalar") ? preset["spiralDensityAddScalar"].get<float>() : d.spiralDensityAddScalar;
 	settings.densityGradient.setColorSpace(preset["gradient"]["colorSpace"]);
+	settings.densityGradient.getMarks().clear();
 	for (auto & element : preset["gradient"]["marks"]) 
 	{
 		settings.densityGradient.addMark(

@@ -1,7 +1,38 @@
 {
+  "curl!": {
+    "densityDissipation": 1.0,
+    "displayMode": 6,
+    "gradient": {
+      "colorSpace": 3,
+      "marks": [
+        {
+          "a": 1.0,
+          "b": 0.0,
+          "g": 9.999999974752427e-07,
+          "position": 1.0,
+          "r": 9.64285732152348e-07
+        }
+      ]
+    },
+    "mouseDensityAddScalar": 0.0,
+    "mousePressureAddScalar": 24.125001907348633,
+    "mouseSplatRadius": 28.249000549316406,
+    "mouseVelocityAddScalar": 2.68500018119812,
+    "pressureIterations": 69,
+    "spiralCurl": 0.009999999776482582,
+    "spiralDensityAddScalar": 0.0,
+    "spiralEnabled": true,
+    "spiralPressureAddScalar": 0.0,
+    "spiralSpin": 1.0120000839233398,
+    "spiralSplatRadius": 0.0004799999878741801,
+    "spiralVelocityAddScalar": 15.000000953674316,
+    "timestep": 1.0390000343322754,
+    "velocityDissipation": 0.9890000224113464,
+    "vorticity": 2.015000104904175,
+    "vorticityEnabled": true
+  },
   "default": {
     "densityDissipation": 0.9700000286102295,
-    "displayMode": 5,
     "gradient": {
       "colorSpace": 0,
       "marks": [
@@ -58,5 +89,337 @@
     "velocityDissipation": 1.0,
     "vorticity": 1.0,
     "vorticityEnabled": true
+  },
+  "fire": {
+    "densityDissipation": 0.9750000238418579,
+    "displayMode": 5,
+    "gradient": {
+      "colorSpace": 3,
+      "marks": [
+        {
+          "a": 1.0,
+          "b": 0.0,
+          "g": 9.999999974752427e-07,
+          "position": 0.0,
+          "r": 8.607595987086825e-07
+        },
+        {
+          "a": 1.0,
+          "b": 0.0,
+          "g": 0.10045354813337326,
+          "position": 0.036496348679065704,
+          "r": 0.11021987348794937
+        },
+        {
+          "a": 1.0,
+          "b": 0.0,
+          "g": 0.0,
+          "position": 0.1386861354112625,
+          "r": 0.6329113841056824
+        },
+        {
+          "a": 1.0,
+          "b": 0.8000000715255737,
+          "g": 1.0,
+          "position": 1.0,
+          "r": 0.9780346751213074
+        }
+      ]
+    },
+    "mouseDensityAddScalar": 0.4000000059604645,
+    "mousePressureAddScalar": 1.0,
+    "mouseSplatRadius": 25.0,
+    "mouseVelocityAddScalar": 0.75,
+    "pressureIterations": 50,
+    "spiralCurl": 0.007000000216066837,
+    "spiralDensityAddScalar": 0.8170000314712524,
+    "spiralEnabled": true,
+    "spiralPressureAddScalar": 0.0,
+    "spiralSpin": 0.35100001096725464,
+    "spiralSplatRadius": 0.00019999999494757503,
+    "spiralVelocityAddScalar": 5.019000053405762,
+    "timestep": 1.0,
+    "velocityDissipation": 1.0,
+    "vorticity": 0.8170000314712524,
+    "vorticityEnabled": true
+  },
+  "ink": {
+    "densityDissipation": 0.987000048160553,
+    "displayMode": 5,
+    "gradient": {
+      "colorSpace": 3,
+      "marks": [
+        {
+          "a": 1.0,
+          "b": 0.9470126628875732,
+          "g": 0.9335576891899109,
+          "position": 0.0,
+          "r": 0.9578059315681458
+        },
+        {
+          "a": 1.0,
+          "b": 0.746835470199585,
+          "g": 0.6560887694358826,
+          "position": 0.3406326174736023,
+          "r": 0.19537466764450073
+        },
+        {
+          "a": 1.0,
+          "b": 0.0,
+          "g": 0.2109704613685608,
+          "position": 0.9051094651222229,
+          "r": 0.070685476064682
+        },
+        {
+          "a": 1.0,
+          "b": 0.0,
+          "g": 9.999999974752427e-07,
+          "position": 1.0,
+          "r": 3.544304263414233e-07
+        }
+      ]
+    },
+    "mouseDensityAddScalar": 0.4000000059604645,
+    "mousePressureAddScalar": 1.0,
+    "mouseSplatRadius": 25.0,
+    "mouseVelocityAddScalar": 0.75,
+    "pressureIterations": 69,
+    "spiralCurl": 0.005000000353902578,
+    "spiralDensityAddScalar": 1.1090000867843628,
+    "spiralEnabled": true,
+    "spiralPressureAddScalar": 6.615000247955322,
+    "spiralSpin": 0.15600000321865082,
+    "spiralSplatRadius": 0.00016999999934341758,
+    "spiralVelocityAddScalar": 6.770000457763672,
+    "timestep": 1.5630000829696655,
+    "velocityDissipation": 0.9860000610351563,
+    "vorticity": 5.175000190734863,
+    "vorticityEnabled": true
+  },
+  "islands": {
+    "densityDissipation": 0.9900000691413879,
+    "displayMode": 5,
+    "gradient": {
+      "colorSpace": 3,
+      "marks": [
+        {
+          "a": 1.0,
+          "b": 0.8665276765823364,
+          "g": 0.8776371479034424,
+          "position": 0.0,
+          "r": 0.0
+        },
+        {
+          "a": 1.0,
+          "b": 0.7619073987007141,
+          "g": 0.9367088675498962,
+          "position": 0.014598540030419827,
+          "r": 0.3873310685157776
+        },
+        {
+          "a": 1.0,
+          "b": 0.859121561050415,
+          "g": 0.8764652609825134,
+          "position": 0.058394160121679306,
+          "r": 0.8776371479034424
+        },
+        {
+          "a": 1.0,
+          "b": 0.0,
+          "g": 0.594936728477478,
+          "position": 0.12652067840099335,
+          "r": 0.3464188575744629
+        },
+        {
+          "a": 1.0,
+          "b": 0.05607238784432411,
+          "g": 0.1831900030374527,
+          "position": 0.14598539471626282,
+          "r": 0.1670764982700348
+        },
+        {
+          "a": 1.0,
+          "b": 0.1868906170129776,
+          "g": 0.6371307969093323,
+          "position": 0.3720930218696594,
+          "r": 0.0
+        },
+        {
+          "a": 1.0,
+          "b": 0.5022342801094055,
+          "g": 0.9156118035316467,
+          "position": 0.6082724928855896,
+          "r": 0.5022342801094055
+        },
+        {
+          "a": 1.0,
+          "b": 0.8576794862747192,
+          "g": 0.9763088226318359,
+          "position": 1.0,
+          "r": 0.9915611743927002
+        }
+      ]
+    },
+    "mouseDensityAddScalar": 0.4000000059604645,
+    "mousePressureAddScalar": 1.0,
+    "mouseSplatRadius": 25.0,
+    "mouseVelocityAddScalar": 0.75,
+    "pressureIterations": 50,
+    "spiralCurl": 0.0,
+    "spiralDensityAddScalar": 0.2580000162124634,
+    "spiralEnabled": true,
+    "spiralPressureAddScalar": 24.514001846313477,
+    "spiralSpin": 0.15600000321865082,
+    "spiralSplatRadius": 0.00016999999934341758,
+    "spiralVelocityAddScalar": 6.309000492095947,
+    "timestep": 0.7870000600814819,
+    "velocityDissipation": 0.9310000538825989,
+    "vorticity": 5.794000148773193,
+    "vorticityEnabled": true
+  },
+  "magic": {
+    "densityDissipation": 0.9750000238418579,
+    "displayMode": 5,
+    "gradient": {
+      "colorSpace": 3,
+      "marks": [
+        {
+          "a": 1.0,
+          "b": 9.999999974752427e-07,
+          "g": 0.0,
+          "position": 0.0,
+          "r": 1.7721509948387393e-07
+        },
+        {
+          "a": 1.0,
+          "b": 0.6962025165557861,
+          "g": 0.0,
+          "position": 0.20681264996528625,
+          "r": 0.193879172205925
+        },
+        {
+          "a": 1.0,
+          "b": 0.9999899864196777,
+          "g": 1.0,
+          "position": 1.0,
+          "r": 0.9999920129776001
+        }
+      ]
+    },
+    "mouseDensityAddScalar": 0.4000000059604645,
+    "mousePressureAddScalar": 1.0,
+    "mouseSplatRadius": 25.0,
+    "mouseVelocityAddScalar": 0.75,
+    "pressureIterations": 50,
+    "spiralCurl": 0.009999999776482582,
+    "spiralDensityAddScalar": 0.8170000314712524,
+    "spiralEnabled": true,
+    "spiralPressureAddScalar": 1.0,
+    "spiralSpin": 1.399999976158142,
+    "spiralSplatRadius": 0.00019999999494757503,
+    "spiralVelocityAddScalar": 5.019000053405762,
+    "timestep": 1.0,
+    "velocityDissipation": 1.0,
+    "vorticity": 0.7780000567436218,
+    "vorticityEnabled": true
+  },
+  "magma": {
+    "densityDissipation": 0.9980000257492065,
+    "displayMode": 5,
+    "gradient": {
+      "colorSpace": 3,
+      "marks": [
+        {
+          "a": 1.0,
+          "b": 6.008148145664194e-11,
+          "g": 0.0,
+          "position": 0.0,
+          "r": 9.999999974752427e-07
+        },
+        {
+          "a": 1.0,
+          "b": 0.0,
+          "g": 0.0,
+          "position": 0.11678832024335861,
+          "r": 0.5822784900665283
+        },
+        {
+          "a": 1.0,
+          "b": 0.0,
+          "g": 1.0,
+          "position": 0.7080292105674744,
+          "r": 0.9367090463638306
+        },
+        {
+          "a": 1.0,
+          "b": 0.8143459558486938,
+          "g": 1.0,
+          "position": 1.0,
+          "r": 0.9929498434066772
+        }
+      ]
+    },
+    "mouseDensityAddScalar": 0.4090000092983246,
+    "mousePressureAddScalar": 0.0,
+    "mouseSplatRadius": 25.0,
+    "mouseVelocityAddScalar": 0.5840000510215759,
+    "pressureIterations": 75,
+    "spiralCurl": 0.009999999776482582,
+    "spiralDensityAddScalar": 0.800000011920929,
+    "spiralEnabled": false,
+    "spiralPressureAddScalar": 1.0,
+    "spiralSpin": 1.399999976158142,
+    "spiralSplatRadius": 0.00019999999494757503,
+    "spiralVelocityAddScalar": 5.0,
+    "timestep": 1.0,
+    "velocityDissipation": 1.0,
+    "vorticity": 0.0,
+    "vorticityEnabled": false
+  },
+  "pressure cells": {
+    "densityDissipation": 0.9730000495910645,
+    "displayMode": 5,
+    "gradient": {
+      "colorSpace": 3,
+      "marks": [
+        {
+          "a": 1.0,
+          "b": 9.999982921726769e-07,
+          "g": 9.999999974752427e-07,
+          "position": 0.0,
+          "r": 9.999899930335232e-07
+        },
+        {
+          "a": 1.0,
+          "b": 0.9529989957809448,
+          "g": 1.0,
+          "position": 0.4549878239631653,
+          "r": 0.6624472141265869
+        },
+        {
+          "a": 1.0,
+          "b": 0.03375530242919922,
+          "g": 0.006551661528646946,
+          "position": 0.9756690859794617,
+          "r": 0.02790135331451893
+        }
+      ]
+    },
+    "mouseDensityAddScalar": 0.0,
+    "mousePressureAddScalar": 0.0,
+    "mouseSplatRadius": 150.0,
+    "mouseVelocityAddScalar": 60.0,
+    "pressureIterations": 50,
+    "spiralCurl": 0.0,
+    "spiralDensityAddScalar": 0.058000002056360245,
+    "spiralEnabled": true,
+    "spiralPressureAddScalar": 200.0,
+    "spiralSpin": 0.8560000658035278,
+    "spiralSplatRadius": 0.0020000000949949026,
+    "spiralVelocityAddScalar": 0.0,
+    "timestep": 1.7960001230239868,
+    "velocityDissipation": 0.9010000228881836,
+    "vorticity": 0.0,
+    "vorticityEnabled": false
   }
 }
