@@ -4,7 +4,7 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
-#include "glDebug.h"
+//#include "glDebug.h"
 
 #include "utilities.h"
 
@@ -105,7 +105,7 @@ int fluidSimulation()
 		return -1;
 	}
 
-	glDebug_init();
+	//glDebug_init();
 
 	// Setup ImGui
 	ImGui::CreateContext();
@@ -447,7 +447,7 @@ int fluidSimulation()
 		uniformBinds.mousePosition = texCoordMousePos * glm::vec2(fluidWidth, fluidHeight);
 		uniformBinds.mouseDelta = sceneManager->deltaMousePos * glm::vec2(1.0f, -1.0f);
 		uniformBinds.leftMouseDown = sceneManager->leftMouseDown ? 1.0f : 0.0f;
-		uniformBinds.rightMouseDown = sceneManager->rightMouseDown ? 1.0f : 0.0f;
+		uniformBinds.rightMouseDown = sceneManager->leftMouseDown ? 1.0f : 0.0f;
 
 		// Splat step
 		fluidBuffer.bind();

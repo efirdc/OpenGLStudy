@@ -179,9 +179,9 @@
         }
       ]
     },
-    "mouseDensityAddScalar": 1.6570000648498535,
+    "mouseDensityAddScalar": -0.5,
     "mousePressureAddScalar": 0.0,
-    "mouseSplatRadius": 2.7330000400543213,
+    "mouseSplatRadius": 1.0,
     "mouseVelocityAddScalar": 0.4360000193119049,
     "pressureIterations": 50,
     "spiralCurl": 0.0,

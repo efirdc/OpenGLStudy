@@ -121,6 +121,9 @@
     <ClCompile Include="core\glDebug.cpp">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="core\WindowsTouch.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\glad\glad.h">
@@ -223,6 +226,9 @@
       <Filter>imgui_extensions</Filter>
     </ClInclude>
     <ClInclude Include="core\glDebug.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\WindowsTouch.h">
       <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>

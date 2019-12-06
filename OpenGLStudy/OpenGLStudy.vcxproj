@@ -150,6 +150,7 @@
     <ClCompile Include="core\SpectrumFilter.cpp" />
     <ClCompile Include="core\StreamTexture.cpp" />
     <ClCompile Include="core\utilities.cpp" />
+    <ClCompile Include="core\WindowsTouch.cpp" />
     <ClCompile Include="dependencies\glad\glad.c" />
     <ClCompile Include="dependencies\hsluv\hsluv.c" />
     <ClCompile Include="dependencies\imgui\imgui.cpp" />
@@ -186,6 +187,7 @@
     <ClInclude Include="core\SpectrumFilter.h" />
     <ClInclude Include="core\StreamTexture.h" />
     <ClInclude Include="core\utilities.h" />
+    <ClInclude Include="core\WindowsTouch.h" />
     <ClInclude Include="dependencies\glad\glad.h" />
     <ClInclude Include="dependencies\GLFW\glfw3.h" />
     <ClInclude Include="dependencies\GLFW\glfw3native.h" />
