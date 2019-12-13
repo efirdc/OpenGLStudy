@@ -2,10 +2,6 @@
 
 void SceneManager::newFrame()
 {
-	// esc to quit
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-
 	// update framebuffer size
 	sizeFramebufferToWindow();
 

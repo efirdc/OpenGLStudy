@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -169,6 +169,7 @@
     <ClCompile Include="programs\audioVisualizer.cpp" />
     <ClCompile Include="programs\basicWindow.cpp" />
     <ClCompile Include="programs\fluidSimulation.cpp" />
+    <ClCompile Include="programs\raymarch.cpp" />
     <ClCompile Include="programs\sphereParticles.cpp" />
     <ClCompile Include="programs\shaderTest.cpp" />
     <ClCompile Include="programs\textures.cpp" />
@@ -206,6 +207,7 @@
     <ClInclude Include="dependencies\kissfft\kiss_fftr.h" />
     <ClInclude Include="dependencies\kissfft\_kiss_fft_guts.h" />
     <ClInclude Include="dependencies\nlohmann\json.hpp" />
+    <ClInclude Include="dependencies\Shadinclude\Shadinclude.hpp" />
     <ClInclude Include="dependencies\stb\stb_image.h" />
     <ClInclude Include="imgui_extensions\imgui_bezier_curve.h" />
     <ClInclude Include="imgui_extensions\imgui_color_gradient.h" />
@@ -215,6 +217,8 @@
     <None Include="presets.json" />
     <None Include="shaders\basicFrag.fs" />
     <None Include="shaders\basicVertex.vs" />
+    <None Include="shaders\cubeParticle.fs" />
+    <None Include="shaders\cubeParticle.vs" />
     <None Include="shaders\fluid\advection.fs" />
     <None Include="shaders\fluid\audioSpiral.fs" />
     <None Include="shaders\fluid\curl.fs" />
@@ -226,8 +230,32 @@
     <None Include="shaders\fluid\subtractPressure.fs" />
     <None Include="shaders\fluid\velocitySplat.fs" />
     <None Include="shaders\fluid\vorticity.fs" />
+    <None Include="shaders\include_test\a.frag" />
+    <None Include="shaders\include_test\b1.glsl" />
+    <None Include="shaders\include_test\b2.glsl" />
+    <None Include="shaders\include_test\c.glsl" />
+    <None Include="shaders\light.fs" />
+    <None Include="shaders\light.vs" />
     <None Include="shaders\loopbackTexture.fs" />
     <None Include="shaders\loopbackTexture.vs" />
+    <None Include="shaders\noise\cellular2D.glsl" />
+    <None Include="shaders\noise\cellular2x2.glsl" />
+    <None Include="shaders\noise\cellular2x2x2.glsl" />
+    <None Include="shaders\noise\cellular3D.glsl" />
+    <None Include="shaders\noise\classicnoise2D.glsl" />
+    <None Include="shaders\noise\classicnoise3D.glsl" />
+    <None Include="shaders\noise\classicnoise4D.glsl" />
+    <None Include="shaders\noise\noise2D.glsl" />
+    <None Include="shaders\noise\noise3D.glsl" />
+    <None Include="shaders\noise\noise3Dgrad.glsl" />
+    <None Include="shaders\noise\noise4D.glsl" />
+    <None Include="shaders\noise\noiseutil.glsl" />
+    <None Include="shaders\noise\psrdnoise2D.glsl" />
+    <None Include="shaders\raymarch\light.glsl" />
+    <None Include="shaders\raymarch\material.glsl" />
+    <None Include="shaders\raymarch\raymarch.frag" />
+    <None Include="shaders\raymarch\raymarch.vert" />
+    <None Include="shaders\raymarch\sdf.glsl" />
     <None Include="shaders\shaderTest.fs" />
     <None Include="shaders\shaderTest.vs" />
     <None Include="shaders\textureQuad.fs" />

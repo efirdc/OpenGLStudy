@@ -53,17 +53,15 @@ Shader::Shader(const char * vertexPath, const char * fragmentPath) :
 	fragmentPath(fragmentPath)
 {
 	// Retrieve the vertex/fragment source code from the filepaths
-	string vertexCode;
-	string fragmentCode;
-	const char * cVertexCode = getCode(vertexPath, vertexCode);
-	const char * cFragmentCode = getCode(fragmentPath, fragmentCode);
+	string vertexCode = Shadinclude::load(vertexPath);
+	string fragmentCode = Shadinclude::load(fragmentPath);
 
 	// Save the last modified times of the vertex and fragment shader
 	vertexModifiedTime = getModificationTime(vertexPath);
 	fragmentModifiedTime = getModificationTime(fragmentPath);
 	
 	// Make the shader program
-	makeProgram(cVertexCode, cFragmentCode, ID);
+	makeProgram(vertexCode.c_str() , fragmentCode.c_str(), ID);
 
 	// Get shader uniforms
 	getActiveUniforms();
@@ -93,19 +91,17 @@ bool Shader::update()
 	if (newVTime == vertexModifiedTime && newFTime == fragmentModifiedTime)
 		return false;
 	
-	// Update modification times
-	vertexModifiedTime = newVTime;
-	fragmentModifiedTime = newFTime;
-
 	// Retrieve the vertex/fragment source code from the filepaths
-	string vertexCode;
-	string fragmentCode;
-	const char * cVertexCode = getCode(vertexPath, vertexCode);
-	const char * cFragmentCode = getCode(fragmentPath, fragmentCode);
+	string vertexCode = Shadinclude::load(vertexPath);
+	string fragmentCode = Shadinclude::load(fragmentPath);
+
+	// Save the last modified times of the vertex and fragment shader
+	vertexModifiedTime = getModificationTime(vertexPath);
+	fragmentModifiedTime = getModificationTime(fragmentPath);
 
 	// Make the shader program
 	unsigned int newProgramID;
-	if (makeProgram(cVertexCode, cFragmentCode, newProgramID))
+	if (makeProgram(vertexCode.c_str(), fragmentCode.c_str(), newProgramID))
 	{
 		glDeleteProgram(ID);
 		ID = newProgramID;
@@ -122,30 +118,6 @@ bool Shader::update()
 	}
 	glDeleteProgram(newProgramID);
 	return false;
-}
-
-const char * Shader::getCode(const char * codePath, string & code)
-{
-	// Declare the shaderfile and make sure it can throw errors
-	ifstream shaderFile;
-	shaderFile.exceptions(ifstream::failbit | ifstream::badbit);
-
-	// Open the file, read the file buffer contents, close the file, and then convert the stream into a string
-	try
-	{
-		shaderFile.open(codePath);
-		stringstream shaderStream;
-		shaderStream << shaderFile.rdbuf();
-		shaderFile.close();
-		code = shaderStream.str();
-	}
-	catch (ifstream::failure e)
-	{
-		cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ::" << codePath << endl;
-	}
-	
-	// Return as a c string
-	return code.c_str();
 }
 
 bool Shader::makeProgram(const char * vShaderCode, const char * fShaderCode, unsigned int & newProgramID)

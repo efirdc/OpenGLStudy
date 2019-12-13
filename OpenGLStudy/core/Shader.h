@@ -26,6 +26,7 @@ Licensed under the terms of the CC BY-NC 4.0 license as published by Creative Co
 
 #include "glad/glad.h"
 #include "glm/glm.hpp"
+#include "Shadinclude/Shadinclude.hpp"
 
 class Shader
 {
@@ -112,17 +113,6 @@ private:
 
 	bool hasActiveUniform(const std::string & name);
 	bool setUniformErrorCheck(const std::string & name);
-
-	const char * getCode(const char * codePath, std::string & code);
-	/*
-	* Gets shader code from a file as a c string
-	* Pre:
-	*	code is a new empty string object
-	*	codePath is a path to the shader file
-	* Post:
-	*	the shader files code is copied into the code string
-	*	returns the code as a c string
-	*/
 
 	bool makeProgram(const char * vShaderCode, const char * fShaderCode, unsigned int & newProgramID);
 	/*

@@ -19,6 +19,15 @@
     <Filter Include="shaders\fluid">
       <UniqueIdentifier>{8c6bf05b-e0c0-4604-9047-0ccbc7608722}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\raymarch">
+      <UniqueIdentifier>{01775f1b-44b3-491d-a39e-fa62a0478099}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\noise">
+      <UniqueIdentifier>{cdf2130e-d3e6-4cd1-b509-b12a41434796}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\includetest">
+      <UniqueIdentifier>{d5a04bb1-95c4-4491-972f-bb1d2215f17a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dependencies\glad\glad.c">
@@ -123,6 +132,9 @@
     </ClCompile>
     <ClCompile Include="core\WindowsTouch.cpp">
       <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="programs\raymarch.cpp">
+      <Filter>programs</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -231,6 +243,9 @@
     <ClInclude Include="core\WindowsTouch.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="dependencies\Shadinclude\Shadinclude.hpp">
+      <Filter>dependencies</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\basicFrag.fs">
@@ -297,5 +312,83 @@
       <Filter>shaders\fluid</Filter>
     </None>
     <None Include="presets.json" />
+    <None Include="shaders\cubeParticle.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\cubeParticle.vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\noise\cellular2D.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\cellular2x2.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\cellular2x2x2.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\cellular3D.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\classicnoise2D.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\classicnoise3D.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\classicnoise4D.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\noise2D.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\noise3D.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\noise3Dgrad.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\noise4D.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\psrdnoise2D.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\noise\noiseutil.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\include_test\b1.glsl">
+      <Filter>shaders\includetest</Filter>
+    </None>
+    <None Include="shaders\include_test\b2.glsl">
+      <Filter>shaders\includetest</Filter>
+    </None>
+    <None Include="shaders\include_test\c.glsl">
+      <Filter>shaders\includetest</Filter>
+    </None>
+    <None Include="shaders\raymarch\raymarch.frag">
+      <Filter>shaders\raymarch</Filter>
+    </None>
+    <None Include="shaders\raymarch\raymarch.vert">
+      <Filter>shaders\raymarch</Filter>
+    </None>
+    <None Include="shaders\include_test\a.frag">
+      <Filter>shaders\includetest</Filter>
+    </None>
+    <None Include="shaders\light.vs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\light.fs">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="shaders\raymarch\sdf.glsl">
+      <Filter>shaders\raymarch</Filter>
+    </None>
+    <None Include="shaders\raymarch\light.glsl">
+      <Filter>shaders\raymarch</Filter>
+    </None>
+    <None Include="shaders\raymarch\material.glsl">
+      <Filter>shaders\raymarch</Filter>
+    </None>
   </ItemGroup>
 </Project>
