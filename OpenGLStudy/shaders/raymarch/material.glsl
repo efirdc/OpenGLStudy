@@ -1,11 +1,20 @@
 #ifndef _MATERIAL
 #define _MATERIAL
 
-struct Material 
+#include "../color/colorconvert.glsl"
+
+struct BlinnPhongMaterial 
 {
     vec3 color;  
     float shininess;
-    bool blinn;
 };
+
+BlinnPhongMaterial materialMix(BlinnPhongMaterial a, BlinnPhongMaterial b, float t)
+{
+	return BlinnPhongMaterial(
+		mix(a.color, b.color, t),
+		mix(a.shininess, b.shininess, t)
+	);
+}
 
 #endif

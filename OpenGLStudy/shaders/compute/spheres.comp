@@ -1,0 +1,28 @@
+#version 430
+layout(local_size_x = 1, local_size_y = 1) in;
+layout(location = 0, binding = 0, rgba32f) uniform image3D sphereData1;
+layout(location = 1, binding = 1, rgba32f) uniform image3D sphereData2;
+
+#include "../noise/hash.glsl"
+#include "../color/colorconvert.glsl"
+
+uniform float time;
+uniform float gamma;
+
+void main()
+{
+	vec3 coords = vec3(gl_GlobalInvocationID.xyz);
+	ivec3 icoords = ivec3(gl_GlobalInvocationID.xyz);
+
+	vec3 h33 = hash33(coords);
+	vec3 spherePos = sin(time * 0.1 * (h33 * 2 - 1) * 5) * 0.5 + 0.5;
+	float sphereRadius = mix(5.0, 25.0, h33.x * h33.x);
+	vec3 sphereColor = pow(pal( h33.x * 2 - 1, vec3(0.5,0.5,0.5),vec3(0.5,0.5,0.5),vec3(2.0,1.0,0.0),vec3(0.5,0.20,0.25)), vec3(gamma));
+	float shininess = mix(5.0, 70.0, h33.x * h33.x);
+
+	vec4 voxel1 = vec4(spherePos, sphereRadius);
+	vec4 voxel2 = vec4(sphereColor, shininess);
+
+	imageStore(sphereData1, icoords, voxel1);
+	imageStore(sphereData2, icoords, voxel2);
+}

@@ -1,0 +1,21 @@
+#version 440 core
+
+#include "fluidCommon.glsl"
+
+layout(local_size_x = LOCAL_SIZE_X, local_size_y = LOCAL_SIZE_Y, local_size_z = LOCAL_SIZE_Z) in;
+
+void main()
+{
+	vec3 coords = vec3(gl_GlobalInvocationID.xyz);
+	ivec3 icoords = ivec3(gl_GlobalInvocationID.xyz);
+
+	vec4 center, left, right, top, bottom, front, back;
+
+	center = texelFetch(fluidSampler, icoords, 0);
+	texelFetchAdjacent(fluidSampler, icoords, left, right, top, bottom, front, back);
+
+	vec3 pressureGradient = vec3(right.w - left.w, top.w - bottom.w, front.w - back.w) * 0.5;
+	center.xyz -= pressureGradient;
+	
+	imageStore(fluidImage, icoords, center);
+}

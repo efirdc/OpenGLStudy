@@ -6,7 +6,7 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
-void glDebug_init();
+void glDebug_enable();
 
 void APIENTRY glDebugOutput(GLenum source,
 	GLenum type,

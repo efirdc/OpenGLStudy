@@ -28,6 +28,15 @@
     <Filter Include="shaders\includetest">
       <UniqueIdentifier>{d5a04bb1-95c4-4491-972f-bb1d2215f17a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\color">
+      <UniqueIdentifier>{cb4a0ad3-d47c-46b4-9f51-e21947f9418c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\compute">
+      <UniqueIdentifier>{f42a2ce8-7814-41e1-ac23-474649eb032e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GLPrograms">
+      <UniqueIdentifier>{58145ff5-3791-40e8-8330-5db7796878a8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dependencies\glad\glad.c">
@@ -133,8 +142,26 @@
     <ClCompile Include="core\WindowsTouch.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="programs\raymarch.cpp">
+    <ClCompile Include="core\ComputeShader.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\BaseShader.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="programs\raymarchSpheres.cpp">
       <Filter>programs</Filter>
+    </ClCompile>
+    <ClCompile Include="core\View.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="programs\raymarchNoise.cpp">
+      <Filter>programs</Filter>
+    </ClCompile>
+    <ClCompile Include="core\ColorGradientTexture.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="GLProgram.cpp">
+      <Filter>core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -245,6 +272,33 @@
     </ClInclude>
     <ClInclude Include="dependencies\Shadinclude\Shadinclude.hpp">
       <Filter>dependencies</Filter>
+    </ClInclude>
+    <ClInclude Include="core\ComputeShader.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\BaseShader.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\View.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_extensions\imgui_preset_menu.h">
+      <Filter>imgui_extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_extensions\imgui_boost_serialization.h">
+      <Filter>imgui_extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="core\ColorGradientTexture.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\GLProgram.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="GLPrograms\GLFeedbackProgram.h">
+      <Filter>GLPrograms</Filter>
+    </ClInclude>
+    <ClInclude Include="core\glmSerialization.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -366,9 +420,6 @@
     <None Include="shaders\include_test\c.glsl">
       <Filter>shaders\includetest</Filter>
     </None>
-    <None Include="shaders\raymarch\raymarch.frag">
-      <Filter>shaders\raymarch</Filter>
-    </None>
     <None Include="shaders\raymarch\raymarch.vert">
       <Filter>shaders\raymarch</Filter>
     </None>
@@ -389,6 +440,54 @@
     </None>
     <None Include="shaders\raymarch\material.glsl">
       <Filter>shaders\raymarch</Filter>
+    </None>
+    <None Include="shaders\noise\hash.glsl">
+      <Filter>shaders\noise</Filter>
+    </None>
+    <None Include="shaders\color\hsluv.glsl">
+      <Filter>shaders\color</Filter>
+    </None>
+    <None Include="shaders\color\colorconvert.glsl">
+      <Filter>shaders\color</Filter>
+    </None>
+    <None Include="shaders\compute\noiseVolume.comp">
+      <Filter>shaders\compute</Filter>
+    </None>
+    <None Include="shaders\compute\spheres.comp">
+      <Filter>shaders\compute</Filter>
+    </None>
+    <None Include="shaders\raymarch\spheres.frag">
+      <Filter>shaders\raymarch</Filter>
+    </None>
+    <None Include="shaders\raymarch\volumetric.frag">
+      <Filter>shaders\raymarch</Filter>
+    </None>
+    <None Include="shaders\compute\feedback.comp">
+      <Filter>shaders\compute</Filter>
+    </None>
+    <None Include="shaders\raymarch\feedback.frag">
+      <Filter>shaders\raymarch</Filter>
+    </None>
+    <None Include="shaders\compute\curl.comp">
+      <Filter>shaders\compute</Filter>
+    </None>
+    <None Include="shaders\compute\divergence.comp">
+      <Filter>shaders\compute</Filter>
+    </None>
+    <None Include="shaders\compute\pressure.comp">
+      <Filter>shaders\compute</Filter>
+    </None>
+    <None Include="shaders\compute\subtractPressureGradient.comp">
+      <Filter>shaders\compute</Filter>
+    </None>
+    <None Include="shaders\compute\vorticity.comp">
+      <Filter>shaders\compute</Filter>
+    </None>
+    <None Include="shaders\compute\advection.comp">
+      <Filter>shaders\compute</Filter>
+    </None>
+    <None Include="shaders\compute\fluidCommon.glsl">
+      <Filter>shaders\compute</Filter>
     </None>
   </ItemGroup>
 </Project>

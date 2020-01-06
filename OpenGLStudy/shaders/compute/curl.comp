@@ -1,0 +1,22 @@
+#version 440 core
+
+#include "fluidCommon.glsl"
+
+layout(local_size_x = LOCAL_SIZE_X, local_size_y = LOCAL_SIZE_Y, local_size_z = LOCAL_SIZE_Z) in;
+
+void main()
+{
+	vec3 coords = vec3(gl_GlobalInvocationID.xyz);
+	ivec3 icoords = ivec3(gl_GlobalInvocationID.xyz);
+
+	vec4 center, left, right, top, bottom, front, back;
+
+	// Vorticity
+	texelFetchAdjacent(fluidSampler, icoords, left, right, top, bottom, front, back);
+	vec3 curl = vec3(
+		top.z - front.y - bottom.z + back.z, 
+		front.x - right.z - back.x + left.z,
+		right.y - top.x - left.y + bottom.x);
+
+	imageStore(vorticityImage, icoords, vec4(curl, length(curl)));
+}

@@ -77,7 +77,7 @@ int shaderTest()
 		basicShader.use();
 		basicShader.setUniform("time", (float)glfwGetTime());
 
-		basicShader.setUniform("modulate", 1.0, 1.0, 1.0, 1.0);
+		basicShader.setUniform("modulate", 1.0f, 1.0f, 1.0f, 1.0f);
 		glBindVertexArray(VAO);
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 

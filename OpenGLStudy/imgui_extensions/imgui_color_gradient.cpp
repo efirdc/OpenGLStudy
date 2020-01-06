@@ -39,26 +39,34 @@ ImGradient::ImGradient()
 
 ImGradient::~ImGradient()
 {
-	for (Mark * mark : m_marks)
+	for (Mark* mark : m_marks)
 		delete mark;
+}
+
+ImGradient::ImGradient(const ImGradient & copy)
+{
+	m_colorSpace = copy.m_colorSpace;
+	for (Mark * mark : copy.m_marks)
+		addMark(mark->position, mark->color);
 }
 
 void ImGradient::addMark(float position, ImColor color)
 {
 	// Create the new mark, and set it as the selected mark
 	Mark* newMark = new Mark();
-    newMark->position = ImClamp(position, 0.0f, 1.0f);
+	newMark->position = ImClamp(position, 0.0f, 1.0f);
 	newMark->color = color;
 	selectedMark = newMark;
 
 	// Add mark to mark list and refresh cache
-    m_marks.push_back(newMark);
-    refreshCache();
+	m_marks.push_back(newMark);
+	refreshCache();
 }
 
 void ImGradient::removeMark(Mark* mark)
 {
     m_marks.remove(mark);
+	delete mark;
     refreshCache();
 }
 
@@ -86,16 +94,16 @@ void ImGradient::computeColorAt(float position, ImVec4 & color) const
 	position = ImClamp(position, 0.0f, 1.0f);
 
 	// Find the closest marks on the left and ride side of the position
-    Mark * leftMark = nullptr;
-	Mark * rightMark = nullptr;
-	for (Mark * mark : m_marks)
+	Mark* leftMark = nullptr;
+	Mark* rightMark = nullptr;
+	for (Mark* mark : m_marks)
 	{
 		if (mark->position <= position && (!leftMark || leftMark->position < mark->position))
 			leftMark = mark;
 		if (mark->position >= position && (!rightMark || rightMark->position > mark->position))
 			rightMark = mark;
 	}
-    
+
 	// Make the left and right mark the same if there is no mark on one side of position
     if(leftMark && !rightMark)
 		rightMark = leftMark;

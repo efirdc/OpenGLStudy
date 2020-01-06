@@ -10,8 +10,8 @@
 //               https://github.com/stegu/webgl-noise
 //
 
-#ifndef NOISE3D_GRAD
-#define NOISE3D_GRAD
+#ifndef _NOISE3D_GRAD
+#define _NOISE3D_GRAD
 
 #include "noiseutil.glsl"
 

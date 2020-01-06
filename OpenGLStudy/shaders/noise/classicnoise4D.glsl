@@ -12,27 +12,10 @@
 // https://github.com/stegu/webgl-noise
 //
 
-vec4 mod289(vec4 x)
-{
-  return x - floor(x * (1.0 / 289.0)) * 289.0;
-}
-
-vec4 permute(vec4 x)
-{
-  return mod289(((x*34.0)+1.0)*x);
-}
-
-vec4 taylorInvSqrt(vec4 r)
-{
-  return 1.79284291400159 - 0.85373472095314 * r;
-}
-
-vec4 fade(vec4 t) {
-  return t*t*t*(t*(t*6.0-15.0)+10.0);
-}
+#include "noiseutil.glsl"
 
 // Classic Perlin noise
-float cnoise(vec4 P)
+float cnoise4D(vec4 P)
 {
   vec4 Pi0 = floor(P); // Integer part for indexing
   vec4 Pi1 = Pi0 + 1.0; // Integer part + 1

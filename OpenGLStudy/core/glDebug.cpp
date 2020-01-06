@@ -1,6 +1,6 @@
 #include "glDebug.h"
 
-void glDebug_init() 
+void glDebug_enable() 
 {
 	// enable OpenGL debug context if context allows for debug context
 	GLint flags; glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
@@ -11,6 +11,11 @@ void glDebug_init()
 		glDebugMessageCallback(glDebugOutput, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 	}
+}
+
+void glDebug_disable()
+{
+	glDisable(GL_DEBUG_OUTPUT);
 }
 
 void APIENTRY glDebugOutput(GLenum source,

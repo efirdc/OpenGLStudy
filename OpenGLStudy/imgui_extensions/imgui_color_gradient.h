@@ -51,8 +51,14 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "hsluv/hsluv.h"
+#include "imgui_boost_serialization.h"
 
 #include <list>
+
+#include <boost/archive/text_oarchive.hpp>
+#include <boost/archive/text_iarchive.hpp>
+#include <boost/serialization/list.hpp>
+#include <boost/serialization/split_member.hpp>
 
 static const int GRADIENT_CACHE_SIZE = 256;
 
@@ -62,8 +68,14 @@ public:
 
 	struct Mark
 	{
+		friend class boost::serialization::access;
 		float position;
 		ImVec4 color;
+		template<class Archive>
+		void serialize(Archive & ar, const unsigned int version)
+		{
+			ar & position & color;
+		}
 	};
 
 	enum class ColorSpace
@@ -75,23 +87,42 @@ public:
 	};
 
     ImGradient();
+	ImGradient(const ImGradient & copy);
     ~ImGradient();
     ImVec4 getColorAt(float position) const;
     void addMark(float position, ImColor const color);
     void removeMark(Mark * mark);
 	void setColorSpace(int colorSpace);
     void refreshCache();
-    std::list<Mark *> & getMarks(){ return m_marks; }
+    std::list<Mark *> & getMarks() { return m_marks; }
 	int getColorSpace() { return m_colorSpace; }
-
+	
 	Mark * draggingMark;
 	Mark * selectedMark;
+
 private:
-	
     void computeColorAt(float position, ImVec4 & color) const;
-    std::list<Mark *> m_marks;
+    
     ImVec4 m_cachedValues[GRADIENT_CACHE_SIZE];
 	int m_colorSpace;
+	std::list<Mark *> m_marks;
+
+	friend class boost::serialization::access;
+
+	template<class Archive>
+	void save(Archive & ar, const unsigned int version) const
+	{
+		ar & m_colorSpace;
+		ar & m_marks;
+	}
+    template<class Archive>
+    void load(Archive & ar, const unsigned int version)
+    {
+        ar& m_colorSpace;
+        ar& m_marks;
+        refreshCache();
+    }
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 namespace ImGui

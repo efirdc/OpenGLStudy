@@ -5,10 +5,15 @@ int textures();
 int sphereParticles();
 int audioVisualizer();
 int fluidSimulation();
-int raymarch();
+int raymarchSpheres();
+int raymarchNoise();
+
+#include <list>
+#include "GLFeedbackProgram.h"
 
 int main()
 {
-	return raymarch();
+	GLFeedbackProgram program;
+	program.run();
 }
 

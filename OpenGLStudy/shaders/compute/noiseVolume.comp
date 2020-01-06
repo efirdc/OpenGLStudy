@@ -1,0 +1,53 @@
+#version 430
+layout(local_size_x = 1, local_size_y = 1) in;
+layout(location = 0, binding = 0, rgba32f) uniform image3D noiseData;
+
+#include "../noise/noise3Dgrad.glsl"
+#include "../noise/noise3D.glsl"
+#include "../noise/cellular3D.glsl"
+#include "../noise/classicnoise3d.glsl"
+#include "../noise/classicnoise4d.glsl"
+
+uniform float time;
+
+vec2 fbm( in vec3 x)
+{
+    float H = 0.25;
+    float G = exp2(-H);
+    float f = 1.0;
+    float a = 1.0;
+    vec2 t = vec2(0.0);
+    for( int i=0; i<4; i++ )
+    {
+        t += a*cellular(f*x);
+        f *= 2.0;
+        a *= G;
+    }
+    return t;
+}
+
+vec2 pattern( in vec3 p )
+{
+    vec2 q = vec2( fbm( p + vec3(0.0,0.0, 0.0) ).x, fbm(p + vec3(5.2,1.3, -5.3) ).x );
+
+    return fbm( p + 4.0*q.xyx );
+}
+
+void main()
+{
+	vec3 coords = vec3(gl_GlobalInvocationID.xyz);
+	ivec3 icoords = ivec3(gl_GlobalInvocationID.xyz);
+
+	//vec3 gradient;
+	//float v = snoisegrad(coords / 32.0 + time, gradient);
+
+
+	vec3 p = coords / 16.0 ;
+	vec2 v = fbm(p+ vec3(0, time * -0.6, 0)) * cnoise4D(vec4(p + vec3(0, -time * 0.2, 0), time * 0.05)) * 0.7;
+
+	vec4 voxel = vec4(v, 0, 0);
+
+	imageStore(noiseData, icoords, voxel);
+}
+
+

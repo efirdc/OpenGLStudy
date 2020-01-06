@@ -22,34 +22,36 @@
     <VCProjectVersion>15.0</VCProjectVersion>
     <ProjectGuid>{097E778D-DE8F-4B4D-B15E-538A981305CA}</ProjectGuid>
     <RootNamespace>OpenGLStudy</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v141</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
+    <EnableASAN>true</EnableASAN>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -71,19 +73,19 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LibraryPath>$(ProjectDir)libraries;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(ProjectDir)GLPrograms;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LibraryPath>$(ProjectDir)libraries;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(ProjectDir)GLPrograms;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LibraryPath>$(ProjectDir)libraries;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(ProjectDir)GLPrograms;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LibraryPath>$(ProjectDir)libraries;$(LibraryPath)</LibraryPath>
-    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)core;$(ProjectDir)dependencies;$(ProjectDir)imgui_extensions;$(ProjectDir)GLPrograms;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -91,6 +93,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -102,6 +105,8 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>
+      </LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -115,6 +120,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -130,6 +136,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -138,7 +145,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="core\BaseShader.cpp" />
     <ClCompile Include="core\Camera.cpp" />
+    <ClCompile Include="core\ColorGradientTexture.cpp" />
+    <ClCompile Include="core\ComputeShader.cpp" />
     <ClCompile Include="core\glDebug.cpp" />
     <ClCompile Include="core\PingPongBuffer.cpp" />
     <ClCompile Include="core\FrequencySpectrum.cpp" />
@@ -150,6 +160,7 @@
     <ClCompile Include="core\SpectrumFilter.cpp" />
     <ClCompile Include="core\StreamTexture.cpp" />
     <ClCompile Include="core\utilities.cpp" />
+    <ClCompile Include="core\View.cpp" />
     <ClCompile Include="core\WindowsTouch.cpp" />
     <ClCompile Include="dependencies\glad\glad.c" />
     <ClCompile Include="dependencies\hsluv\hsluv.c" />
@@ -169,15 +180,22 @@
     <ClCompile Include="programs\audioVisualizer.cpp" />
     <ClCompile Include="programs\basicWindow.cpp" />
     <ClCompile Include="programs\fluidSimulation.cpp" />
-    <ClCompile Include="programs\raymarch.cpp" />
+    <ClCompile Include="programs\raymarchNoise.cpp" />
+    <ClCompile Include="programs\raymarchSpheres.cpp" />
     <ClCompile Include="programs\sphereParticles.cpp" />
     <ClCompile Include="programs\shaderTest.cpp" />
     <ClCompile Include="programs\textures.cpp" />
     <ClCompile Include="programs\transformations.cpp" />
+    <ClCompile Include="GLProgram.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="core\BaseShader.h" />
     <ClInclude Include="core\Camera.h" />
+    <ClInclude Include="core\ColorGradientTexture.h" />
+    <ClInclude Include="core\ComputeShader.h" />
     <ClInclude Include="core\glDebug.h" />
+    <ClInclude Include="core\glmSerialization.h" />
+    <ClInclude Include="core\GLProgram.h" />
     <ClInclude Include="core\PingPongBuffer.h" />
     <ClInclude Include="core\FrequencySpectrum.h" />
     <ClInclude Include="core\loopback.h" />
@@ -188,6 +206,7 @@
     <ClInclude Include="core\SpectrumFilter.h" />
     <ClInclude Include="core\StreamTexture.h" />
     <ClInclude Include="core\utilities.h" />
+    <ClInclude Include="core\View.h" />
     <ClInclude Include="core\WindowsTouch.h" />
     <ClInclude Include="dependencies\glad\glad.h" />
     <ClInclude Include="dependencies\GLFW\glfw3.h" />
@@ -209,14 +228,29 @@
     <ClInclude Include="dependencies\nlohmann\json.hpp" />
     <ClInclude Include="dependencies\Shadinclude\Shadinclude.hpp" />
     <ClInclude Include="dependencies\stb\stb_image.h" />
+    <ClInclude Include="GLPrograms\GLFeedbackProgram.h" />
     <ClInclude Include="imgui_extensions\imgui_bezier_curve.h" />
+    <ClInclude Include="imgui_extensions\imgui_boost_serialization.h" />
     <ClInclude Include="imgui_extensions\imgui_color_gradient.h" />
     <ClInclude Include="imgui_extensions\imgui_extras.h" />
+    <ClInclude Include="imgui_extensions\imgui_preset_menu.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="presets.json" />
     <None Include="shaders\basicFrag.fs" />
     <None Include="shaders\basicVertex.vs" />
+    <None Include="shaders\color\colorconvert.glsl" />
+    <None Include="shaders\color\hsluv.glsl" />
+    <None Include="shaders\compute\advection.comp" />
+    <None Include="shaders\compute\curl.comp" />
+    <None Include="shaders\compute\divergence.comp" />
+    <None Include="shaders\compute\feedback.comp" />
+    <None Include="shaders\compute\fluidCommon.glsl" />
+    <None Include="shaders\compute\noiseVolume.comp" />
+    <None Include="shaders\compute\pressure.comp" />
+    <None Include="shaders\compute\spheres.comp" />
+    <None Include="shaders\compute\subtractPressureGradient.comp" />
+    <None Include="shaders\compute\vorticity.comp" />
     <None Include="shaders\cubeParticle.fs" />
     <None Include="shaders\cubeParticle.vs" />
     <None Include="shaders\fluid\advection.fs" />
@@ -245,17 +279,20 @@
     <None Include="shaders\noise\classicnoise2D.glsl" />
     <None Include="shaders\noise\classicnoise3D.glsl" />
     <None Include="shaders\noise\classicnoise4D.glsl" />
+    <None Include="shaders\noise\hash.glsl" />
     <None Include="shaders\noise\noise2D.glsl" />
     <None Include="shaders\noise\noise3D.glsl" />
     <None Include="shaders\noise\noise3Dgrad.glsl" />
     <None Include="shaders\noise\noise4D.glsl" />
     <None Include="shaders\noise\noiseutil.glsl" />
     <None Include="shaders\noise\psrdnoise2D.glsl" />
+    <None Include="shaders\raymarch\feedback.frag" />
     <None Include="shaders\raymarch\light.glsl" />
     <None Include="shaders\raymarch\material.glsl" />
-    <None Include="shaders\raymarch\raymarch.frag" />
     <None Include="shaders\raymarch\raymarch.vert" />
     <None Include="shaders\raymarch\sdf.glsl" />
+    <None Include="shaders\raymarch\spheres.frag" />
+    <None Include="shaders\raymarch\volumetric.frag" />
     <None Include="shaders\shaderTest.fs" />
     <None Include="shaders\shaderTest.vs" />
     <None Include="shaders\textureQuad.fs" />

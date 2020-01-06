@@ -1,13 +1,13 @@
 #pragma once
 
+#include <algorithm> 
+
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 
 namespace ImGui
 {
-
-
 	bool Bezier(const char *label, ImVec2 controlPoints[2]);
 
 	template <class T>
