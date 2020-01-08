@@ -1,0 +1,62 @@
+#version 450 core
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+layout(binding = 5, rgba32f) writeonly uniform image3D shadowMapImage;
+
+layout(binding = 3) uniform sampler3D densitySampler;
+
+#include "../raymarch/light.glsl"
+
+uniform ivec3 fluidSize;
+
+uniform float shadowStepSize;
+uniform float maxShadowingLength;
+
+#define MAX_SCATTERING_OCTAVES 8
+struct ScatteringData
+{
+	vec3 extinction;
+	vec3 scattering;
+	float phaseScalar;
+};
+uniform ScatteringData scatteringData[MAX_SCATTERING_OCTAVES];
+uniform int multiScatteringOctaves;
+
+uniform DirectionalLight dirLight;
+
+vec4 sampleFluid(sampler3D s, vec3 p, vec3 boxMin, vec3 boxMax)
+{
+	return texture(s, (p - boxMin) / (boxMax - boxMin));
+}
+
+vec2 intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax) 
+{
+  vec3 tMin = (boxMin - rayOrigin) / rayDir;
+  vec3 tMax = (boxMax - rayOrigin) / rayDir;
+  vec3 t1 = min(tMin, tMax);
+  vec3 t2 = max(tMin, tMax);
+  float tNear = max(max(t1.x, t1.y), t1.z);
+  float tFar = min(min(t2.x, t2.y), t2.z);
+  return vec2(tNear, tFar);
+}
+
+void main()
+{
+	vec3 coords = vec3(gl_GlobalInvocationID.xyz);
+	ivec3 icoords = ivec3(gl_GlobalInvocationID.xyz);
+
+	float depth = 0.0;
+	vec3 shadow = vec3(1);
+    vec3 boxMax = vec3( fluidSize);
+	vec3 boxMin = vec3(0);
+    float shadowingLength = min(maxShadowingLength, intersectBox(coords, -dirLight.direction, boxMin, boxMax ).y);
+	int numShadowSteps = int(shadowingLength / shadowStepSize) + 1;
+	for (int j = 0; j < numShadowSteps; j++)
+	{
+		vec3 lightRayPos = coords + depth * -dirLight.direction;
+		vec4 ld = sampleFluid(densitySampler, lightRayPos, boxMin, boxMax);
+		shadow *= exp(-ld.r * scatteringData[0].extinction * shadowStepSize);
+		depth += shadowStepSize;
+	}
+	imageStore(shadowMapImage, icoords, vec4(shadow, 0.0) );
+}

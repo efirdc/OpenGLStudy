@@ -1,26 +1,24 @@
-#version 440 core
+#version 450 core
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-#define SAFE_MODE 2
+#define SAFE_MODE 0
 #if SAFE_MODE == 2
 	#define COHERENT coherent
-	#define BARRIER memoryBarrierImage();
+	#define BARRIER //
 #elif SAFE_MODE == 1
 	#define COHERENT 
-	#define BARRIER memoryBarrierImage();
+	#define BARRIER memoryBarrierBuffer();
 #else
 	#define COHERENT
 	#define BARRIER //
 #endif
 
 
-layout(binding = 0, rgba32f) COHERENT uniform image3D velocityImage;
-//layout(binding = 1, r32f) COHERENT uniform image3D pressureImage;
+layout(binding = 0, rgba32f) COHERENT uniform image3D fluidImage;
 layout(binding = 2, rgba32f) COHERENT uniform image3D curlImage;
 layout(binding = 3, rgba32f) COHERENT uniform image3D densityImage;
 
-layout(binding = 0) uniform sampler3D velocitySampler;
-//layout(binding = 1) uniform sampler3D pressureSampler;
+layout(binding = 0) uniform sampler3D fluidSampler;
 layout(binding = 2) uniform sampler3D curlSampler;
 layout(binding = 3) uniform sampler3D densitySampler;
 
@@ -73,11 +71,11 @@ void main()
 	
 	// Advection
 	vec4 center, left, right, top, bottom, front, back;
-	center = texelFetch(velocitySampler, icoords, 0);
+	center = texelFetch(fluidSampler, icoords, 0);
 	//IMAGE_LOAD_ADJACENT(fluidImage, icoords, left, right, top, bottom, front, back)
 	float dt = min(deltaTime, 1.0 / 60.0);
 	vec3 backCoords = ((coords + 0.5) - center.xyz * dt * timeScale) + vec3(0.0, -0.01, 0.0);
-	vec4 backFluid = texture(velocitySampler, backCoords / vec3(fluidSize));
+	vec4 backFluid = texture(fluidSampler, backCoords / vec3(fluidSize));
 	vec4 density = texture(densitySampler, backCoords / vec3(fluidSize));
 	center.xyz = backFluid.xyz;
 	center.xyz *= velocityDissipation;
@@ -93,11 +91,11 @@ void main()
 	density *= densityDissipation;
 	BARRIER
 	imageStore(densityImage, icoords, density);
-	imageStore(velocityImage, icoords, center);
+	imageStore(fluidImage, icoords, center);
 	BARRIER
 
 	// Vorticity
-	IMAGE_LOAD_ADJACENT(velocityImage, icoords, left, right, top, bottom, front, back)
+	IMAGE_LOAD_ADJACENT(fluidImage, icoords, left, right, top, bottom, front, back)
 	vec3 curl = vec3(
 		top.z - front.y - bottom.z + back.z, 
 		front.x - right.z - back.x + left.z,
@@ -113,33 +111,33 @@ void main()
 					  eta.x * curl.y - eta.y * curl.x);
 	center.xyz += force * vorticityScalar;
 	BARRIER
-	imageStore(velocityImage, icoords, center);
+	imageStore(fluidImage, icoords, center);
 	BARRIER
 	
 	// Divergence, 1 pressure iteration
-	IMAGE_LOAD_ADJACENT(velocityImage, icoords, left, right, top, bottom, front, back)
+	IMAGE_LOAD_ADJACENT(fluidImage, icoords, left, right, top, bottom, front, back)
 	float divergence = (right.x - left.x + top.y - bottom.y + front.z - back.z) * 0.5;
 	center.w = (left.w + right.w + top.w + bottom.w + front.w + back.w - divergence) / 6.0;
 	BARRIER
-	imageStore(velocityImage, icoords, center);
+	imageStore(fluidImage, icoords, center);
 	BARRIER
 	
 	// Additional pressure iterations
 	for (int i = 0; i < numPressureIterations; i++)
 	{
-		IMAGE_LOAD_ADJACENT(velocityImage, icoords, left, right, top, bottom, front, back)
+		IMAGE_LOAD_ADJACENT(fluidImage, icoords, left, right, top, bottom, front, back)
 		center.w = (left.w + right.w + top.w + bottom.w + front.w + back.w - divergence) / 6.0;
 		BARRIER
-		imageStore(velocityImage, icoords, center);
+		imageStore(fluidImage, icoords, center);
 		BARRIER
 	}
 
 	// Subtract pressure gradient
-	IMAGE_LOAD_ADJACENT(velocityImage, icoords, left, right, top, bottom, front, back)
+	IMAGE_LOAD_ADJACENT(fluidImage, icoords, left, right, top, bottom, front, back)
 	vec3 pressureGradient = vec3(right.w - left.w, top.w - bottom.w, front.w - back.w) * 0.5;
 	center.xyz -= pressureGradient;
 	BARRIER
-	imageStore(velocityImage, icoords, center);
+	imageStore(fluidImage, icoords, center);
 	BARRIER
 }
 

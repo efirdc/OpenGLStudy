@@ -173,6 +173,7 @@
     <ClCompile Include="dependencies\kissfft\kiss_fft.c" />
     <ClCompile Include="dependencies\kissfft\kiss_fftr.c" />
     <ClCompile Include="dependencies\stb\stb_image.cpp" />
+    <ClCompile Include="imgui_extensions\imGuIZMOquat.cpp" />
     <ClCompile Include="imgui_extensions\imgui_bezier_curve.cpp" />
     <ClCompile Include="imgui_extensions\imgui_color_gradient.cpp" />
     <ClCompile Include="imgui_extensions\imgui_extras.cpp" />
@@ -229,11 +230,16 @@
     <ClInclude Include="dependencies\Shadinclude\Shadinclude.hpp" />
     <ClInclude Include="dependencies\stb\stb_image.h" />
     <ClInclude Include="GLPrograms\GLFeedbackProgram.h" />
+    <ClInclude Include="imgui_extensions\imGuIZMOquat.h" />
     <ClInclude Include="imgui_extensions\imgui_bezier_curve.h" />
     <ClInclude Include="imgui_extensions\imgui_boost_serialization.h" />
     <ClInclude Include="imgui_extensions\imgui_color_gradient.h" />
     <ClInclude Include="imgui_extensions\imgui_extras.h" />
     <ClInclude Include="imgui_extensions\imgui_preset_menu.h" />
+    <ClInclude Include="imgui_extensions\vgConfig.h" />
+    <ClInclude Include="imgui_extensions\vGizmo.h" />
+    <ClInclude Include="imgui_extensions\vGizmoMath.h" />
+    <ClInclude Include="imgui_extensions\vgMath.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="presets.json" />
@@ -248,6 +254,7 @@
     <None Include="shaders\compute\fluidCommon.glsl" />
     <None Include="shaders\compute\noiseVolume.comp" />
     <None Include="shaders\compute\pressure.comp" />
+    <None Include="shaders\compute\shadowMap.comp" />
     <None Include="shaders\compute\spheres.comp" />
     <None Include="shaders\compute\subtractPressureGradient.comp" />
     <None Include="shaders\compute\vorticity.comp" />

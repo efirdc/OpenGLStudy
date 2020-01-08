@@ -4,22 +4,6 @@
 
 layout(local_size_x = LOCAL_SIZE_X, local_size_y = LOCAL_SIZE_Y, local_size_z = LOCAL_SIZE_Z) in;
 
-uniform float time;
-uniform float deltaTime;
-uniform float timeScale;
-uniform mat4 view;
-
-struct FluidSplat { 
-	float radius, velocity, pressure, density;
-};
-
-uniform ivec3 fluidSize;
-uniform float velocityDissipation;
-uniform float densityDissipation;
-
-uniform FluidSplat mouseSplat;
-uniform FluidSplat externalSplat;
-
 float gauss(vec3 p, float r)
 {
   return exp(-dot(p, p) / r);
@@ -31,24 +15,29 @@ void main()
 	ivec3 icoords = ivec3(gl_GlobalInvocationID.xyz);
 	
 	// Advection
-	vec4 center, left, right, top, bottom, front, back;
+	vec4 center;
 	center = texelFetch(fluidSampler, icoords, 0);
-	vec3 backCoords = ((coords + 0.5) - center.xyz * deltaTime * timeScale) + vec3(0.0, -0.01, 0.0);
+	float dt = min(deltaTime, 1.0 / 60.0);
+	vec3 backCoords = ((coords + 0.5) - center.xyz * dt * timeScale);
 	vec4 backFluid = texture(fluidSampler, backCoords / vec3(fluidSize));
 	vec4 density = texture(densitySampler, backCoords / vec3(fluidSize));
 	center.xyz = backFluid.xyz;
 	center.xyz *= velocityDissipation;
 
+
 	// External forces
 	vec3 h33 = vec3(0.23, 0.3, 0.35);
-	vec3 asd = sin(time * 1.5 * (h33 * 2 - 1)) ;
-	vec3 deltaCenter = coords - (asd * 0.05 + 0.5) * vec3(fluidSize);
+	vec3 asd = sin(time * 0.5 * (h33 * 2 - 1)) ;
+	vec3 deltaCenter = coords - (asd * 0.2 + 0.5) * vec3(fluidSize);
 	float splat = gauss(deltaCenter, externalSplat.radius);
 	center.xyz += asd * splat * externalSplat.velocity;
-	center.w += splat * externalSplat.pressure;
 	density += splat * externalSplat.density;
 	density *= densityDissipation;
 
-	imageStore(densityImage, icoords, density);
+	vec4 pressure = texelFetch(pressureSampler, icoords, 0);
+	pressure.r += splat * externalSplat.pressure;
+
 	imageStore(fluidImage, icoords, center);
+	imageStore(pressureImage, icoords, pressure);
+	imageStore(densityImage, icoords, density);
 }

@@ -4,8 +4,6 @@
 
 layout(local_size_x = LOCAL_SIZE_X, local_size_y = LOCAL_SIZE_Y, local_size_z = LOCAL_SIZE_Z) in;
 
-uniform float vorticityScalar;
-
 void main()
 {
 	vec3 coords = vec3(gl_GlobalInvocationID.xyz);
@@ -13,11 +11,11 @@ void main()
 
 	vec4 left, right, top, bottom, front, back;
 
-	vec3 curl = texelFetch(vorticitySampler, icoords, 0).xyz;
-	texelFetchAdjacent(vorticitySampler, icoords, left, right, top, bottom, front, back);
+	vec3 curl = texelFetch(curlSampler, icoords, 0).xyz;
+	texelFetchAdjacent(curlSampler, icoords, left, right, top, bottom, front, back);
 
 	vec3 eta = vec3( right.w - left.w, top.w - bottom.w, front.w - back.w) * 0.5;
-	eta = normalize(eta + vec3(0.0001));
+	eta = eta / (length(eta) + 0.000001);
 	vec3 force = vec3(eta.y * curl.z - eta.z * curl.y, 
 					  eta.z * curl.x - eta.x * curl.z,
 					  eta.x * curl.y - eta.y * curl.x);

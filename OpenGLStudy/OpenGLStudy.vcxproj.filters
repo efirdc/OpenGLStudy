@@ -163,6 +163,9 @@
     <ClCompile Include="GLProgram.cpp">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="imgui_extensions\imGuIZMOquat.cpp">
+      <Filter>imgui_extensions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\glad\glad.h">
@@ -299,6 +302,21 @@
     </ClInclude>
     <ClInclude Include="core\glmSerialization.h">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_extensions\imGuIZMOquat.h">
+      <Filter>imgui_extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_extensions\vgConfig.h">
+      <Filter>imgui_extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_extensions\vGizmo.h">
+      <Filter>imgui_extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_extensions\vGizmoMath.h">
+      <Filter>imgui_extensions</Filter>
+    </ClInclude>
+    <ClInclude Include="imgui_extensions\vgMath.h">
+      <Filter>imgui_extensions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -488,6 +506,9 @@
     </None>
     <None Include="shaders\compute\fluidCommon.glsl">
       <Filter>shaders\compute</Filter>
+    </None>
+    <None Include="shaders\compute\shadowMap.comp">
+      <Filter>shaders\raymarch</Filter>
     </None>
   </ItemGroup>
 </Project>

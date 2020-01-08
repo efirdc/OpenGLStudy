@@ -12,9 +12,9 @@ void main()
 	vec4 center, left, right, top, bottom, front, back;
 
 	center = texelFetch(fluidSampler, icoords, 0);
-	texelFetchAdjacent(fluidSampler, icoords, left, right, top, bottom, front, back);
+	texelFetchAdjacent(pressureSampler, icoords, left, right, top, bottom, front, back);
 
-	vec3 pressureGradient = vec3(right.w - left.w, top.w - bottom.w, front.w - back.w) * 0.5;
+	vec3 pressureGradient = vec3(right.r - left.r, top.r - bottom.r, front.r - back.r) * 0.5;
 	center.xyz -= pressureGradient;
 	
 	imageStore(fluidImage, icoords, center);
