@@ -66,7 +66,7 @@ public:
 		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
 		glBindTexture(GL_TEXTURE_3D, ID);
 		if (defn.image)
-			glBindImageTexture(defn.textureUnit, ID, 0, GL_FALSE, 0, defn.imageMode, defn.internalFormat);
+			glBindImageTexture(defn.textureUnit, ID, 0, GL_TRUE, 0, defn.imageMode, defn.internalFormat);
 	}
 
 	void initialize()
@@ -115,7 +115,11 @@ public:
 		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
 		glBindTexture(GL_TEXTURE_3D, sourceID);
 		if (defn.image)
-			glBindImageTexture(defn.textureUnit, destID, 0, GL_FALSE, 0, defn.imageMode, defn.internalFormat);
+		{
+			glBindImageTexture(defn.textureUnit, destID, 0, GL_TRUE, 0, defn.imageMode, defn.internalFormat);
+
+		}
+			
 	}
 
 	void swap()
@@ -128,7 +132,8 @@ public:
 
 	void configure()
 	{
-		bind();
+		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
+		glBindTexture(GL_TEXTURE_3D, sourceID);
 		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, defn.filter);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, defn.filter);
@@ -138,7 +143,8 @@ public:
 		if (defn.wrap == GL_CLAMP_TO_BORDER)
 			glTexParameterfv(GL_TEXTURE_3D, GL_TEXTURE_BORDER_COLOR, (float*)&defn.borderColor);
 
-		swap();
+		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
+		glBindTexture(GL_TEXTURE_3D, destID);
 		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, defn.filter);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, defn.filter);
@@ -147,8 +153,6 @@ public:
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, defn.wrap);
 		if (defn.wrap == GL_CLAMP_TO_BORDER)
 			glTexParameterfv(GL_TEXTURE_3D, GL_TEXTURE_BORDER_COLOR, (float*)&defn.borderColor);
-
-		swap();
 	}
 
 	void setSize(glm::vec3 newSize)
@@ -272,8 +276,9 @@ public:
 	ComputeShader compute;
 	ComputeShader shadowMap;
 	ComputeShader advection, curl, vorticity, divergence, pressure, subtractPressureGradient;
+	ComputeShader noiseComputeShader;
 	ImguiPresetMenu<Settings> presetMenu;
-	ColorGradientTexture fluidGradientTexture;
+	//ColorGradientTexture fluidGradientTexture;
 
 	/*
 	struct TextureDefinition {
@@ -308,6 +313,10 @@ public:
 		{ 5, settings.gridSize, GL_RGBA32F, GL_RGBA,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
+	Texture3D noiseTexture{
+		{6, glm::vec3(32), GL_RGBA32F, GL_RGBA,
+			GL_LINEAR, GL_CLAMP_TO_EDGE, true, GL_WRITE_ONLY}
+	};
 	
 	//Texture3D pressureTexture{ 1, GL_R32F, settings.gridSize, GL_RED, GL_LINEAR, GL_CLAMP_TO_EDGE, true };
 	//Texture3D curlTexture{ 2, GL_RGBA32F, settings.gridSize, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_BORDER, true };
@@ -320,7 +329,7 @@ public:
 	ScatteringData scatteringData[MAX_SCATTERING_OCTAVES];
 	
 	GLFeedbackProgram() :
-		GLProgram(4, 3, true, 1600, 900, "Fluid sim", true),
+		GLProgram(4, 4, true, 1600, 900, "Fluid sim", true),
 		raymarch("shaders/raymarch/raymarch.vert", "shaders/raymarch/feedback.frag"),
 		compute("shaders/compute/feedback.comp"),
 		shadowMap("shaders/compute/shadowMap.comp"),
@@ -330,9 +339,11 @@ public:
 		divergence("shaders/compute/divergence.comp"),
 		pressure("shaders/compute/pressure.comp"),
 		subtractPressureGradient("shaders/compute/subtractPressureGradient.comp"),
-		presetMenu(settings, "fluidSettings.txt"),
-		fluidGradientTexture(4, settings.fluidGradient)
+		noiseComputeShader("shaders/compute/noiseVolume.comp"),
+		presetMenu(settings, "fluidSettings.txt")
+		//fluidGradientTexture(4, settings.fluidGradient)
 	{
+		advection.printSizes();
 		settings.directionalLightDirection = glm::normalize(settings.directionalLightDirection);
 		float quadVertices[] = {
 			// positions   // texCoords
@@ -355,6 +366,12 @@ public:
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 		glEnableVertexAttribArray(1);
+
+		BaseShader::bindGlobalUniform("noiseData", (void*)&noiseTexture.defn.textureUnit);
+		noiseTexture.bind();
+		noiseComputeShader.use();
+		glDispatchCompute(32 / 8, 32 / 8, 32 / 8);
+		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		
 		initializeScatteringData();
 		
@@ -408,7 +425,7 @@ public:
 			computeShader.update();
 			computeShader.use();
 			glDispatchCompute(gridSize.x / 8, gridSize.y / 8, gridSize.z / 8);
-			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+			glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		};
 
 		fluidStep(advection, settings.gridSize);
@@ -467,7 +484,7 @@ public:
 		Shader::bindGlobalUniform("densitySampler", &densityTexture.defn.textureUnit);
 		Shader::bindGlobalUniform("shadowMapImage", &shadowMapTexture.defn.textureUnit);
 		Shader::bindGlobalUniform("shadowMapSampler", &shadowMapTexture.defn.textureUnit);
-		Shader::bindGlobalUniform("cloudColorCurve", &fluidGradientTexture.textureUnit);
+		//Shader::bindGlobalUniform("cloudColorCurve", &fluidGradientTexture.textureUnit);
 
 		Shader::bindGlobalUniform("fluidSize", &settings.gridSize);
 		Shader::bindGlobalUniform("numPressureIterations", &settings.numPressureIterations);
@@ -517,7 +534,7 @@ public:
 			const bool presetLoaded = presetMenu.Menu();
 			if (presetLoaded)
 			{
-				fluidGradientTexture.upload(settings.fluidGradient);
+				//fluidGradientTexture.upload(settings.fluidGradient);
 				resizeFluidTextures();
 				updateImageModes();
 			}
@@ -548,7 +565,7 @@ public:
 
 			if (ImGui::TreeNode("Rendering"))
 			{
-				fluidGradientTexture.Menu("Color Gradient", settings.fluidGradient);
+				//fluidGradientTexture.Menu("Color Gradient", settings.fluidGradient);
 				ImGui::ColorEdit3("background color", (float*)&settings.backgroundColor);
 				
 				ImGui::SliderFloat("ray step size", &settings.rayStepSize, 0.1f, 4.0f);

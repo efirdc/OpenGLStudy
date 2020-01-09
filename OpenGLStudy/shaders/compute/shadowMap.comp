@@ -1,13 +1,10 @@
 #version 440 core
-layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-layout(binding = 5, rgba32f) writeonly uniform image3D shadowMapImage;
+#include "fluidCommon.glsl"
 
-layout(binding = 3) uniform sampler3D densitySampler;
+layout(local_size_x = LOCAL_SIZE_X, local_size_y = LOCAL_SIZE_Y, local_size_z = LOCAL_SIZE_Z) in;
 
 #include "../raymarch/light.glsl"
-
-uniform ivec3 fluidSize;
 
 uniform float shadowStepSize;
 uniform float maxShadowingLength;

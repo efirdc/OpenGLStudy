@@ -56,6 +56,7 @@ layout(binding = 2) uniform sampler3D curlSampler;
 layout(binding = 3) uniform sampler3D densitySampler;
 layout(binding = 4) uniform sampler1D cloudColorCurve;
 layout(binding = 5) uniform sampler3D shadowMapSampler;
+layout(binding = 6) uniform sampler3D noiseData;
 
 uniform DirectionalLight dirLight;
 

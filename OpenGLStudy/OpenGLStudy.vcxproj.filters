@@ -508,7 +508,7 @@
       <Filter>shaders\compute</Filter>
     </None>
     <None Include="shaders\compute\shadowMap.comp">
-      <Filter>shaders\raymarch</Filter>
+      <Filter>shaders\compute</Filter>
     </None>
   </ItemGroup>
 </Project>

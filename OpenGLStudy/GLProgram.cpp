@@ -119,7 +119,7 @@ void GLProgram::newFrame()
 
 void GLProgram::sizeFramebufferToWindow()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	int frameBufferWidth, frameBufferHeight;
 	glfwGetFramebufferSize(window, &frameBufferWidth, &frameBufferHeight);
 	glViewport(0, 0, frameBufferWidth, frameBufferHeight);

@@ -1,6 +1,6 @@
-#version 430
-layout(local_size_x = 1, local_size_y = 1) in;
-layout(location = 0, binding = 0, rgba32f) uniform image3D noiseData;
+#version 440
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+layout(binding = 6, rgba32f) uniform image3D noiseData;
 
 #include "../noise/noise3Dgrad.glsl"
 #include "../noise/noise3D.glsl"

@@ -10,11 +10,13 @@ layout(binding = 0, rgba32f) COHERENT writeonly uniform image3D fluidImage;
 layout(binding = 1, rg32f) COHERENT writeonly uniform image3D pressureImage;
 layout(binding = 2, rgba32f) COHERENT writeonly uniform image3D curlImage;
 layout(binding = 3, rgba32f) COHERENT writeonly uniform image3D densityImage;
+layout(binding = 5, rgba32f) COHERENT writeonly uniform image3D shadowMapImage;
 
 layout(binding = 0) uniform sampler3D fluidSampler;
 layout(binding = 1) uniform sampler3D pressureSampler;
 layout(binding = 2) uniform sampler3D curlSampler;
 layout(binding = 3) uniform sampler3D densitySampler;
+layout(binding = 5) uniform sampler3D shadowMapSampler;
 
 uniform float time;
 uniform float deltaTime;
