@@ -20,6 +20,8 @@ GLProgram::GLProgram(
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, versionMajor);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, versionMinor);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	if (glDebug)
+		glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
 
 	window = glfwCreateWindow(screenSize.x, screenSize.y, windowName.c_str(), NULL, NULL);
 	if (window == NULL)
@@ -42,6 +44,8 @@ GLProgram::GLProgram(
 
 	if (glDebug)
 		glDebug_enable();
+
+		
 
 	// Setup ImGui
 	ImGui::CreateContext();
