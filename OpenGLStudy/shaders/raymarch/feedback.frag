@@ -185,7 +185,12 @@ void main()
 	vec2 boxIntersections = intersectBox(Eye, rayDir, boxMin + 0.5, boxMax - 0.5);
 
 	vec3 scatteredLuminance = vec3(0.0);
-	vec3 transmittance[MAX_SCATTERING_OCTAVES] = vec3[MAX_SCATTERING_OCTAVES](1.0);
+	vec3 transmittance[MAX_SCATTERING_OCTAVES] = vec3[MAX_SCATTERING_OCTAVES]
+	(
+		vec3(1), vec3(1), vec3(1), vec3(1),
+		vec3(1), vec3(1), vec3(1), vec3(1)
+	);
+
 	if (boxIntersections.y > boxIntersections.x)
 	{
 		// Snap step size to view alligned planes
