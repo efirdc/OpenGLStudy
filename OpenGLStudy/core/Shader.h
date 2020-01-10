@@ -12,7 +12,7 @@ Licensed under the terms of the CC BY-NC 4.0 license as published by Creative Co
 class Shader : public BaseShader
 {
 public:
-	Shader(const char * vertexPath, const char * fragmentPath);
+	Shader(const char * vertexPath, const char * fragmentPath, std::vector<std::string> extraCode = {});
 	/*
 	* Constructor
 	* Pre:

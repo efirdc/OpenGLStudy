@@ -7,6 +7,7 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <sstream>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -33,6 +34,9 @@ public:
 
 	~BaseShader();
 
+	void setExtraCode(std::vector<std::string> & newExtraCode);
+	std::vector<std::string> getExtraCode();
+	
 	virtual bool update() = 0;
 	/*
 	* Recompiles the shader program if there are any changes to the vertex or fragment shader files
@@ -85,6 +89,10 @@ public:
 	
 
 protected:
+	BaseShader(std::vector<std::string> extraCode);
+
+	std::vector<std::string> extraCode;
+
 	struct Uniform
 	{
 		std::string name;
@@ -100,6 +108,8 @@ protected:
 	unsigned int ID;
 	static std::vector<BaseShader *> allShaders;
 	static std::unordered_map<std::string, void *> globalUniformBindings;
+
+	std::string loadShaderCode(std::string path);
 
 	Uniform * getBoundUniform(const std::string & name);
 	void bindGlobalUniforms();

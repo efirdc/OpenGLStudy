@@ -58,7 +58,7 @@ public:
 	Texture3D(TextureDefinition defn) : defn(defn)
 	{
 		glGenTextures(1, &ID);
-		initialize();
+		configure();
 	}
 
 	void bind()
@@ -69,7 +69,7 @@ public:
 			glBindImageTexture(defn.textureUnit, ID, 0, GL_TRUE, 0, defn.imageMode, defn.internalFormat);
 	}
 
-	void initialize()
+	void configure()
 	{
 		bind();
 		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
@@ -98,79 +98,46 @@ public:
 
 class SlabTexture3D
 {
+private:
+	Texture3D source, dest;
 public:
-	unsigned int sourceID, destID;
 	TextureDefinition defn{};
 
-	SlabTexture3D(TextureDefinition defn) : defn(defn)
+	SlabTexture3D(TextureDefinition defn) : defn(defn), source(defn), dest(defn)
 	{
-		defn.image = true;
-		glGenTextures(1, &sourceID);
-		glGenTextures(1, &destID);
-		configure();
 	}
 
 	void bind()
 	{
 		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
-		glBindTexture(GL_TEXTURE_3D, sourceID);
-		if (defn.image)
-		{
-			glBindImageTexture(defn.textureUnit, destID, 0, GL_TRUE, 0, defn.imageMode, defn.internalFormat);
-
-		}
-			
+		glBindTexture(GL_TEXTURE_3D, source.ID);
+		glBindImageTexture(defn.textureUnit, dest.ID, 0, GL_TRUE, 0, defn.imageMode, defn.internalFormat);
 	}
 
 	void swap()
 	{
-		unsigned int temp = sourceID;
-		sourceID = destID;
-		destID = temp;
+		std::swap(source, dest);
 		bind();
 	}
 
 	void configure()
 	{
-		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
-		glBindTexture(GL_TEXTURE_3D, sourceID);
-		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, defn.filter);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, defn.filter);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, defn.wrap);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, defn.wrap);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, defn.wrap);
-		if (defn.wrap == GL_CLAMP_TO_BORDER)
-			glTexParameterfv(GL_TEXTURE_3D, GL_TEXTURE_BORDER_COLOR, (float*)&defn.borderColor);
-
-		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
-		glBindTexture(GL_TEXTURE_3D, destID);
-		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, defn.filter);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, defn.filter);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, defn.wrap);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, defn.wrap);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, defn.wrap);
-		if (defn.wrap == GL_CLAMP_TO_BORDER)
-			glTexParameterfv(GL_TEXTURE_3D, GL_TEXTURE_BORDER_COLOR, (float*)&defn.borderColor);
+		source.configure();
+		dest.configure();
 	}
 
 	void setSize(glm::vec3 newSize)
 	{
 		defn.size = newSize;
-		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
-		glBindTexture(GL_TEXTURE_3D, sourceID);
-		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
-
-		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
-		glBindTexture(GL_TEXTURE_3D, destID);
-		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
+		source.setSize(newSize);
+		dest.setSize(newSize);
 	}
 
 	void setImageMode(GLenum imageMode)
 	{
 		defn.imageMode = imageMode;
-		bind();
+		source.setImageMode(imageMode);
+		dest.setImageMode(imageMode);
 	}
 };
 
@@ -277,6 +244,7 @@ public:
 	ComputeShader shadowMap;
 	ComputeShader advection, curl, vorticity, divergence, pressure, subtractPressureGradient;
 	ImguiPresetMenu<Settings> presetMenu;
+	std::vector<std::string> csExtraCode{ "#define FMTRGBA rgba32f", "#define FMTRG rg32f", "#define FMTR r32f" };
 	//ColorGradientTexture fluidGradientTexture;
 
 	/*
@@ -291,7 +259,7 @@ public:
 		GLenum imageMode{ GL_READ_WRITE };
 		glm::vec4 borderColor{ 0.0f };
 	};*/
-	
+
 	SlabTexture3D fluidTexture{
 		{ 0, settings.gridSize, GL_RGBA32F, GL_RGBA,
 			GL_LINEAR, GL_CLAMP_TO_EDGE, true, GL_WRITE_ONLY}

@@ -6,11 +6,21 @@
 
 #define IMAGE_QUALIFIERS
 
-layout(binding = 0, rgba32f) IMAGE_QUALIFIERS uniform image3D fluidImage;
-layout(binding = 1, rg32f) IMAGE_QUALIFIERS uniform image3D pressureImage;
-layout(binding = 2, rgba32f) IMAGE_QUALIFIERS uniform image3D curlImage;
-layout(binding = 3, r32f) IMAGE_QUALIFIERS uniform image3D densityImage;
-layout(binding = 5, rgba32f) IMAGE_QUALIFIERS uniform image3D shadowMapImage;
+#ifndef FMTRGBA
+#define FMTRGBA rgba32f
+#endif
+#ifndef FMTRG
+#define FMTRG rg32f
+#endif
+#ifndef FMTR
+#define FMTR r32f
+#endif
+
+layout(binding = 0, FMTRGBA) IMAGE_QUALIFIERS uniform image3D fluidImage;
+layout(binding = 1, FMTRG) IMAGE_QUALIFIERS uniform image3D pressureImage;
+layout(binding = 2, FMTRGBA) IMAGE_QUALIFIERS uniform image3D curlImage;
+layout(binding = 3, FMTR) IMAGE_QUALIFIERS uniform image3D densityImage;
+layout(binding = 5, FMTRGBA) IMAGE_QUALIFIERS uniform image3D shadowMapImage;
 
 layout(binding = 0) uniform sampler3D fluidSampler;
 layout(binding = 1) uniform sampler3D pressureSampler;

@@ -8,13 +8,14 @@ Licensed under the terms of the CC BY-NC 4.0 license as published by Creative Co
 
 using namespace std;
 
-Shader::Shader(const char * vertexPath, const char * fragmentPath) :
+Shader::Shader(const char * vertexPath, const char * fragmentPath, std::vector<std::string> extraCode) :
+	BaseShader(extraCode),
 	vertexPath(vertexPath),
 	fragmentPath(fragmentPath)
 {
 	// Retrieve the vertex/fragment source code from the filepaths
-	string vertexCode = Shadinclude::load(vertexPath);
-	string fragmentCode = Shadinclude::load(fragmentPath);
+	string vertexCode = loadShaderCode(vertexPath);
+	string fragmentCode = loadShaderCode(fragmentPath);
 
 	// Save the last modified times of the vertex and fragment shader
 	vertexModifiedTime = getModificationTime(vertexPath);
@@ -25,9 +26,6 @@ Shader::Shader(const char * vertexPath, const char * fragmentPath) :
 
 	// Get shader uniforms
 	getActiveUniforms();
-
-	// Add to vector of all shaders
-	allShaders.push_back(this);
 
 	// Bind global uniforms
 	bindGlobalUniforms();
@@ -42,8 +40,8 @@ bool Shader::update()
 		return false;
 	
 	// Retrieve the vertex/fragment source code from the filepaths
-	string vertexCode = Shadinclude::load(vertexPath);
-	string fragmentCode = Shadinclude::load(fragmentPath);
+	string vertexCode = loadShaderCode(vertexPath);
+	string fragmentCode = loadShaderCode(fragmentPath);
 
 	// Save the last modified times of the vertex and fragment shader
 	vertexModifiedTime = getModificationTime(vertexPath);

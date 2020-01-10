@@ -6,6 +6,13 @@ std::vector<BaseShader *> BaseShader::allShaders;
 std::unordered_map<std::string, void *> BaseShader::globalUniformBindings;
 bool BaseShader::inactiveUniformWarnings = false;
 
+BaseShader::BaseShader(std::vector<std::string> extraCode)
+	: extraCode(extraCode)
+{
+	allShaders.push_back(this);
+};
+
+
 BaseShader::~BaseShader()
 {
 	allShaders.erase(find(allShaders.begin(), allShaders.end(), this));
@@ -14,6 +21,34 @@ BaseShader::~BaseShader()
 	for (auto & pair : activeUniforms)
 		delete pair.second;
 	glDeleteProgram(ID);
+}
+
+void BaseShader::setExtraCode(std::vector<std::string> & newExtraCode)
+{
+	extraCode = newExtraCode;
+	update();
+}
+
+std::vector<std::string> BaseShader::getExtraCode()
+{
+	return extraCode;
+}
+
+std::string BaseShader::loadShaderCode(std::string path)
+{
+	std::string code = Shadinclude::load(path);
+	std::istringstream iss(code);
+	std::string result;
+
+	int i = 0;
+	for (std::string line; std::getline(iss, line);)
+	{
+		result += line;
+		if (i == 1)
+			for (const std::string& extraLine : extraCode)
+				result += extraLine + '\n';
+		i++;
+	}
 }
 
 void BaseShader::setGlobalUniform(const std::string & name, void * data)

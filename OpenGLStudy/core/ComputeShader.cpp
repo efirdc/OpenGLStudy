@@ -21,11 +21,12 @@ void ComputeShader::printSizes()
 	printf("max local work group invocations %i\n", workGroupInvocations);
 }
 
-ComputeShader::ComputeShader(const char * path) :
+ComputeShader::ComputeShader(const char * path, std::vector<std::string> extraCode) :
+	BaseShader(extraCode),
 	path(path)
 {
 	// Retrieve the vertex/fragment source code from the filepaths
-	string code = Shadinclude::load(path);
+	string code = loadShaderCode(path);
 
 	// Save the last modified times of the vertex and fragment shader
 	modifiedTime = getModificationTime(path);
@@ -35,10 +36,7 @@ ComputeShader::ComputeShader(const char * path) :
 
 	// Get shader uniforms
 	getActiveUniforms();
-
-	// Add to vector of all shaders
-	allShaders.push_back(this);
-
+	
 	// Bind global uniforms
 	bindGlobalUniforms();
 }
@@ -49,7 +47,7 @@ bool ComputeShader::update()
 	if (newTime == modifiedTime)
 		return false;
 
-	string code = Shadinclude::load(path);
+	string code = loadShaderCode(path);
 
 	modifiedTime = getModificationTime(path);
 

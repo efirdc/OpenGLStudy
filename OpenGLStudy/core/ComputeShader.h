@@ -8,7 +8,7 @@ class ComputeShader : public BaseShader
 public:
 	static void printSizes();
 
-	ComputeShader(const char * path);
+	ComputeShader(const char* path, std::vector<std::string> extraCode = {});
 
 	bool update();
 
