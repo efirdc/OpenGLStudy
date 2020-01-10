@@ -158,13 +158,13 @@ public:
 	void setSize(glm::vec3 newSize)
 	{
 		defn.size = newSize;
-		bind();
+		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
+		glBindTexture(GL_TEXTURE_3D, sourceID);
 		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
 
-		swap();
+		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
+		glBindTexture(GL_TEXTURE_3D, destID);
 		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
-
-		swap();
 	}
 
 	void setImageMode(GLenum imageMode)
@@ -276,7 +276,6 @@ public:
 	ComputeShader compute;
 	ComputeShader shadowMap;
 	ComputeShader advection, curl, vorticity, divergence, pressure, subtractPressureGradient;
-	ComputeShader noiseComputeShader;
 	ImguiPresetMenu<Settings> presetMenu;
 	//ColorGradientTexture fluidGradientTexture;
 
@@ -313,10 +312,6 @@ public:
 		{ 5, settings.gridSize, GL_RGBA32F, GL_RGBA,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
-	Texture3D noiseTexture{
-		{6, glm::vec3(32), GL_RGBA32F, GL_RGBA,
-			GL_LINEAR, GL_CLAMP_TO_EDGE, true, GL_WRITE_ONLY}
-	};
 	
 	//Texture3D pressureTexture{ 1, GL_R32F, settings.gridSize, GL_RED, GL_LINEAR, GL_CLAMP_TO_EDGE, true };
 	//Texture3D curlTexture{ 2, GL_RGBA32F, settings.gridSize, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_BORDER, true };
@@ -339,11 +334,9 @@ public:
 		divergence("shaders/compute/divergence.comp"),
 		pressure("shaders/compute/pressure.comp"),
 		subtractPressureGradient("shaders/compute/subtractPressureGradient.comp"),
-		noiseComputeShader("shaders/compute/noiseVolume.comp"),
 		presetMenu(settings, "fluidSettings.txt")
 		//fluidGradientTexture(4, settings.fluidGradient)
 	{
-		advection.printSizes();
 		settings.directionalLightDirection = glm::normalize(settings.directionalLightDirection);
 		float quadVertices[] = {
 			// positions   // texCoords
@@ -366,12 +359,6 @@ public:
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 		glEnableVertexAttribArray(1);
-
-		BaseShader::bindGlobalUniform("noiseData", (void*)&noiseTexture.defn.textureUnit);
-		noiseTexture.bind();
-		noiseComputeShader.use();
-		glDispatchCompute(32 / 8, 32 / 8, 32 / 8);
-		glMemoryBarrier(GL_ALL_BARRIER_BITS);
 		
 		initializeScatteringData();
 		
@@ -450,7 +437,7 @@ public:
 		fluidTexture.swap();
 
 		fluidStep(shadowMap, settings.gridSize);
-		
+
 		// clear stuff
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -484,6 +471,7 @@ public:
 		Shader::bindGlobalUniform("densitySampler", &densityTexture.defn.textureUnit);
 		Shader::bindGlobalUniform("shadowMapImage", &shadowMapTexture.defn.textureUnit);
 		Shader::bindGlobalUniform("shadowMapSampler", &shadowMapTexture.defn.textureUnit);
+
 		//Shader::bindGlobalUniform("cloudColorCurve", &fluidGradientTexture.textureUnit);
 
 		Shader::bindGlobalUniform("fluidSize", &settings.gridSize);

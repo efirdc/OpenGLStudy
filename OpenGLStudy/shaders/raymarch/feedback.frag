@@ -1,4 +1,4 @@
-#version 440 core
+#version 440
 
 out vec4 FragColor;
 
@@ -56,7 +56,7 @@ layout(binding = 2) uniform sampler3D curlSampler;
 layout(binding = 3) uniform sampler3D densitySampler;
 layout(binding = 4) uniform sampler1D cloudColorCurve;
 layout(binding = 5) uniform sampler3D shadowMapSampler;
-layout(binding = 6) uniform sampler3D noiseData;
+layout(binding = 6) uniform sampler3D noiseSampler;
 
 uniform DirectionalLight dirLight;
 
@@ -180,6 +180,8 @@ void marchStep(
 
 void main()
 {
+	//FragColor = texture(densitySampler, vec3(UV, 0.5));
+	//return;
     vec3 rayDir = normalize(FragPos - Eye);
 	vec3 boxMax = vec3( fluidSize) * 0.5;
 	vec3 boxMin = vec3(-fluidSize) * 0.5;

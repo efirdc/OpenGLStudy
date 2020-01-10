@@ -1,6 +1,9 @@
 #version 440
+
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
 layout(binding = 6, rgba32f) uniform image3D noiseData;
+layout(binding = 6) uniform sampler3D noiseSampler;
 
 #include "../noise/noise3Dgrad.glsl"
 #include "../noise/noise3D.glsl"
@@ -41,11 +44,17 @@ void main()
 	//vec3 gradient;
 	//float v = snoisegrad(coords / 32.0 + time, gradient);
 
+    vec4 voxel;
+    if (time < 2.0)
+    {
+        vec3 p = coords / 16.0 ;
+	    vec2 v = fbm(p+ vec3(0, time * -0.6, 0)) * cnoise4D(vec4(p + vec3(0, -time * 0.2, 0), time * 0.05)) * 0.7;
+	    voxel = vec4(v, 0, 0);
+    } else {
+        voxel = fract(texelFetch(noiseSampler, icoords, 0) + 0.001);
+    }
 
-	vec3 p = coords / 16.0 ;
-	vec2 v = fbm(p+ vec3(0, time * -0.6, 0)) * cnoise4D(vec4(p + vec3(0, -time * 0.2, 0), time * 0.05)) * 0.7;
-
-	vec4 voxel = vec4(v, 0, 0);
+	
 
 	imageStore(noiseData, icoords, voxel);
 }
