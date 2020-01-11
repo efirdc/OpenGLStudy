@@ -25,8 +25,8 @@ BaseShader::~BaseShader()
 
 void BaseShader::setExtraCode(std::vector<std::string> & newExtraCode)
 {
+	shouldUpdate = true;
 	extraCode = newExtraCode;
-	update();
 }
 
 std::vector<std::string> BaseShader::getExtraCode()
@@ -34,28 +34,53 @@ std::vector<std::string> BaseShader::getExtraCode()
 	return extraCode;
 }
 
+void BaseShader::setDefinition(const std::string& name, const std::string& definition)
+{
+	shouldUpdate = true;
+	defines[name] = definition;
+}
+
 std::string BaseShader::loadShaderCode(std::string path)
 {
 	std::string code = Shadinclude::load(path);
+
+	// Replace #define's
+	auto definesCopy = defines;
+	std::vector<std::string> replacedDefines;
+	for (auto const & x : definesCopy)
+	{
+		std::regex re("#define " + x.first + ".+");
+		if (std::regex_search(code, re))
+		{
+			code = std::regex_replace(code, re, "#define " + x.first + " " + x.second);
+			replacedDefines.push_back(x.first);
+		}
+	}
+	for (const std::string define : replacedDefines)
+		definesCopy.erase(define);
+	
 	std::istringstream iss(code);
 	std::string result;
 
 	int i = 0;
 	for (std::string line; std::getline(iss, line);)
 	{
-		result += line;
+		result += line + "\n";
 		if (i == 1)
 		{
-			for (auto const& x : defines)
-				result += x.first + " " + x.second + "\n";
+			for (auto const& x : definesCopy)
+				result += "#define " + x.first + " " + x.second + "\n";
 			for (const std::string& extraLine : extraCode)
 				result += extraLine + '\n';
 		}
 			
 		i++;
 	}
+	std::cout << result << std::endl;
+	return result;
 }
 
+/*
 void BaseShader::setGlobalUniform(const std::string & name, void * data)
 {
 	for (BaseShader * shader : allShaders)
@@ -65,6 +90,7 @@ void BaseShader::setGlobalUniform(const std::string & name, void * data)
 			shader->setUniform(name, data);
 		}
 }
+*/
 
 void BaseShader::bindGlobalUniform(const std::string & name, void * data)
 {

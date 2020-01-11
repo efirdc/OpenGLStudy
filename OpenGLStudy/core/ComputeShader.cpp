@@ -44,9 +44,10 @@ ComputeShader::ComputeShader(const char * path, std::vector<std::string> extraCo
 bool ComputeShader::update()
 {
 	long long int newTime = getModificationTime(path);
-	if (newTime == modifiedTime)
+	if (newTime == modifiedTime && !shouldUpdate)
 		return false;
-
+	shouldUpdate = false;
+	
 	string code = loadShaderCode(path);
 
 	modifiedTime = getModificationTime(path);

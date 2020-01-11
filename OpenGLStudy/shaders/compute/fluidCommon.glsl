@@ -4,29 +4,25 @@
 #define LOCAL_SIZE_Y 8
 #define LOCAL_SIZE_Z 8
 
-#define IMAGE_QUALIFIERS
+#define IMAGE_QUALIFIERS writeonly restrict
 
-#ifndef FMT_FLUID 
-#define FMT_FLUID rgba32f
-#endif
-#ifndef FMT_PRESSURE
-#define FMT_PRESSURE rg32f
-#endif
-#ifndef FMT_CURL
-#define FMT_CURL rgba32f
-#endif
-#ifndef FMT_DENSITY
-#define FMT_DENSITY r32f
-#endif
-#ifndef FMT_SHADOWMAP
-#define FMT_SHADOWMAP rgba32f
-#endif
+#define FLUID_FORMAT rgba32f
+#define PRESSURE_FORMAT rg32f
+#define CURL_FORMAT rgba32f
+#define DENSITY_FORMAT r32f
+#define SHADOWMAP_FORMAT rgba32f
 
-layout(binding = 0, FMT_FLUID) IMAGE_QUALIFIERS uniform image3D fluidImage;
-layout(binding = 1, FMT_PRESSURE) IMAGE_QUALIFIERS uniform image3D pressureImage;
-layout(binding = 2, FMT_CURL) IMAGE_QUALIFIERS uniform image3D curlImage;
-layout(binding = 3, FMT_DENSITY) IMAGE_QUALIFIERS uniform image3D densityImage;
-layout(binding = 5, FMT_SHADOWMAP) IMAGE_QUALIFIERS uniform image3D shadowMapImage;
+#define FLUID_IMAGE_TYPE image3D
+#define PRESSURE_IMAGE_TYPE image3D
+#define CURL_IMAGE_TYPE image3D
+#define DENSITY_IMAGE_TYPE image3D
+#define SHADOWMAP_IMAGE_TYPE image3D
+
+layout(binding = 0, FLUID_FORMAT) IMAGE_QUALIFIERS uniform FLUID_IMAGE_TYPE fluidImage;
+layout(binding = 1, PRESSURE_FORMAT) IMAGE_QUALIFIERS uniform PRESSURE_IMAGE_TYPE pressureImage;
+layout(binding = 2, CURL_FORMAT) IMAGE_QUALIFIERS uniform CURL_IMAGE_TYPE curlImage;
+layout(binding = 3, DENSITY_FORMAT) IMAGE_QUALIFIERS uniform DENSITY_IMAGE_TYPE densityImage;
+layout(binding = 5, SHADOWMAP_FORMAT) IMAGE_QUALIFIERS uniform SHADOWMAP_IMAGE_TYPE shadowMapImage;
 
 layout(binding = 0) uniform sampler3D fluidSampler;
 layout(binding = 1) uniform sampler3D pressureSampler;

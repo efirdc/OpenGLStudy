@@ -9,6 +9,7 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <regex>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -27,7 +28,17 @@
 class BaseShader
 {
 public:
-	static void setGlobalUniform(const std::string & name, void * data);
+	template<typename T>
+	static void setGlobalUniform(const std::string & name, T data)
+	{
+		for (BaseShader* shader : allShaders)
+			if (shader->hasActiveUniform(name) > 0)
+			{
+				shader->use();
+				shader->setUniform(name, data);
+			}
+	}
+	
 	static void bindGlobalUniform(const std::string & name, void * data);
 	static void unbindGlobalUniform(const std::string & name);
 
@@ -38,8 +49,7 @@ public:
 	void setExtraCode(std::vector<std::string> & newExtraCode);
 	std::vector<std::string> getExtraCode();
 	
-	std::map<std::string, std::string> defines;
-
+	void setDefinition(const std::string& name, const std::string& definition);
 	
 	virtual bool update() = 0;
 	/*
@@ -96,6 +106,8 @@ protected:
 	BaseShader(std::vector<std::string> extraCode);
 
 	std::vector<std::string> extraCode;
+	std::map<std::string, std::string> defines;
+	bool shouldUpdate = false;
 
 	struct Uniform
 	{

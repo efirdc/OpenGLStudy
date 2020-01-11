@@ -55,5 +55,5 @@ void main()
 		shadow *= exp(-ld.r * scatteringData[0].extinction * shadowStepSize);
 		depth += shadowStepSize;
 	}
-	imageStore(shadowMapImage, icoords, vec4(shadow, 0.0) );
+	imageStore(shadowMapImage, icoords, ivec4(shadow, 0.0) );
 }

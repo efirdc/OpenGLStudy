@@ -400,7 +400,7 @@ public:
 			else if (numBits == 16)
 				internalFormat = GL_RGBA16F;
 			else if (numBits == 8)
-				internalFormat = GL_RGBA8;
+				internalFormat = GL_RGBA8I;
 		}
 		if (numChannels == 2)
 		{
@@ -410,7 +410,7 @@ public:
 			if (numBits == 16)
 				internalFormat = GL_RG16F;
 			if (numBits == 8)
-				internalFormat = GL_RG8;
+				internalFormat = GL_RG8I;
 		}
 		if (numChannels == 1)
 		{
@@ -420,7 +420,7 @@ public:
 			if (numBits == 16)
 				internalFormat = GL_R16F;
 			if (numBits == 8)
-				internalFormat = GL_R8;
+				internalFormat = GL_R8I;
 		}
 	}
 
@@ -540,9 +540,9 @@ public:
 			int bits;
 			switch (bitMode)
 			{
-			case 0: bits = 8;
-			case 1: bits = 16;
-			case 2: bits = 32;
+			case 0: bits = 8; break;
+			case 1: bits = 16; break;
+			case 2: bits = 32; break;
 			}
 			getFormats(bits, numChannels, internalFormat, format);
 			texture.setFormat(internalFormat, format);
@@ -559,20 +559,48 @@ public:
 			{
 			case GL_RGBA32F: return "rgba32f";
 			case GL_RGBA16F: return "rgba16f";
-			case GL_RGBA8: return "rgba8";
+			case GL_RGBA8I: return "rgba8i";
 			case GL_RG32F: return "rg32f";
 			case GL_RG16F: return "rg16f";
-			case GL_RG8: return "rg8";
+			case GL_RG8I: return "rg8i";
 			case GL_R32F: return "r32f";
 			case GL_R16F: return "r16f";
-			case GL_R8: return "r8";
+			case GL_R8I: return "r8i";
 			}
 		};
-		auto setDefines = [](ComputeShader& cs)
+		auto imageTypeString = [](GLenum internalFormat)
 		{
-			cs.defines["FMT_FLUID"] = imageFormatString(fluidTexture.defn.internalFormat);
-		}
-
+			switch (internalFormat)
+			{
+			case GL_RGBA32F: return "image3D";
+			case GL_RGBA16F: return "image3D";
+			case GL_RGBA8I: return "iimage3D";
+			case GL_RG32F: return "image3D";
+			case GL_RG16F: return "image3D";
+			case GL_RG8I: return "iimage3D";
+			case GL_R32F: return "image3D";
+			case GL_R16F: return "image3D";
+			case GL_R8I: return "iimage3D";
+			}
+		};
+		auto setDefines = [this, imageFormatString, imageTypeString](ComputeShader& cs ...)
+		{
+			cs.setDefinition("FLUID_FORMAT", imageFormatString(fluidTexture.defn.internalFormat));
+			cs.setDefinition("PRESSURE_FORMAT", imageFormatString(pressureTexture.defn.internalFormat));
+			cs.setDefinition("CURL_FORMAT", imageFormatString(curlTexture.defn.internalFormat));
+			cs.setDefinition("DENSITY_FORMAT", imageFormatString(densityTexture.defn.internalFormat));
+			cs.setDefinition("SHADOWMAP_FORMAT", imageFormatString(shadowMapTexture.defn.internalFormat));
+			
+			cs.setDefinition("FLUID_IMAGE_TYPE", imageTypeString(fluidTexture.defn.internalFormat));
+			cs.setDefinition("PRESSURE_IMAGE_TYPE", imageTypeString(pressureTexture.defn.internalFormat));
+			cs.setDefinition("CURL_IMAGE_TYPE", imageTypeString(curlTexture.defn.internalFormat));
+			cs.setDefinition("DENSITY_IMAGE_TYPE", imageTypeString(densityTexture.defn.internalFormat));
+			cs.setDefinition("SHADOWMAP_IMAGE_TYPE", imageTypeString(shadowMapTexture.defn.internalFormat));
+			
+			cs.update();
+		};
+		setDefines(advection); setDefines(curl);  setDefines(vorticity); setDefines(divergence);
+		setDefines(pressure); setDefines(shadowMap); setDefines(subtractPressureGradient);
 	}
 
 	void menu()
@@ -599,14 +627,14 @@ public:
 					//updateImageModes();
 				if (ImGui::TreeNode("Texture bits"))
 				{
-					
-
 					static int velocityBitMode = 2, pressureBitMode = 2, curlBitMode = 2, densityBitMode = 2, shadowBitMode = 2;
 					bool changed = textureBitSelectionMenu(std::string("velocity"), fluidTexture, velocityBitMode, 4);
-					bool changed = textureBitSelectionMenu(std::string("pressure"), pressureTexture, pressureBitMode, 2);
-					bool changed = textureBitSelectionMenu(std::string("curl"), curlTexture, curlBitMode, 4);
-					bool changed = textureBitSelectionMenu(std::string("density"), densityTexture, densityBitMode, 1);
-					bool changed = textureBitSelectionMenu(std::string("shadow"), shadowMapTexture, shadowBitMode, 4);
+					changed |= textureBitSelectionMenu(std::string("pressure"), pressureTexture, pressureBitMode, 2);
+					changed |= textureBitSelectionMenu(std::string("curl"), curlTexture, curlBitMode, 4);
+					changed |= textureBitSelectionMenu(std::string("density"), densityTexture, densityBitMode, 1);
+					changed |= textureBitSelectionMenu(std::string("shadow"), shadowMapTexture, shadowBitMode, 4);
+					if (changed)
+						setComputeShaderDefines();
 					ImGui::TreePop();
 				}
 				

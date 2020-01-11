@@ -45,8 +45,6 @@ GLProgram::GLProgram(
 	if (glDebug)
 		glDebug_enable();
 
-		
-
 	// Setup ImGui
 	ImGui::CreateContext();
 	imguiIO = &ImGui::GetIO(); (void)imguiIO;
