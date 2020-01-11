@@ -94,6 +94,14 @@ public:
 		defn.imageMode = imageMode;
 		bind();
 	}
+
+	void setFormat(GLenum internalFormat, GLenum format)
+	{
+		defn.internalFormat = internalFormat;
+		defn.format = format;
+		bind();
+		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
+	}
 };
 
 class SlabTexture3D
@@ -131,6 +139,14 @@ public:
 		defn.size = newSize;
 		source.setSize(newSize);
 		dest.setSize(newSize);
+	}
+
+	void setFormat(GLenum internalFormat, GLenum format)
+	{
+		defn.internalFormat = internalFormat;
+		defn.format = format;
+		source.setFormat(internalFormat, format);
+		dest.setFormat(internalFormat, format);
 	}
 
 	void setImageMode(GLenum imageMode)
@@ -244,7 +260,10 @@ public:
 	ComputeShader shadowMap;
 	ComputeShader advection, curl, vorticity, divergence, pressure, subtractPressureGradient;
 	ImguiPresetMenu<Settings> presetMenu;
-	std::vector<std::string> csExtraCode{ "#define FMTRGBA rgba32f", "#define FMTRG rg32f", "#define FMTR r32f" };
+	std::vector<std::string> csExtraCode { 
+		"#define FMT_FLUID rgba32f", "#define FMT_PRESSURE rg32f", "#define FMT_CURL rgba32f"
+		"#define FMT_DENSITY r32f", "#define FMT_SHADOWMAP rgba32f"
+	};
 	//ColorGradientTexture fluidGradientTexture;
 
 	/*
@@ -371,6 +390,40 @@ public:
 		shadowMapTexture.setImageMode(GL_WRITE_ONLY);
 	}
 
+	void getFormats(int numBits, int numChannels, GLenum& internalFormat, GLenum& format)
+	{
+		if (numChannels == 4)
+		{
+			format = GL_RGBA;
+			if (numBits == 32)
+				internalFormat = GL_RGBA32F;
+			else if (numBits == 16)
+				internalFormat = GL_RGBA16F;
+			else if (numBits == 8)
+				internalFormat = GL_RGBA8;
+		}
+		if (numChannels == 2)
+		{
+			format = GL_RG;
+			if (numBits == 32)
+				internalFormat = GL_RG32F;
+			if (numBits == 16)
+				internalFormat = GL_RG16F;
+			if (numBits == 8)
+				internalFormat = GL_RG8;
+		}
+		if (numChannels == 1)
+		{
+			format = GL_RED;
+			if (numBits == 32)
+				internalFormat = GL_R32F;
+			if (numBits == 16)
+				internalFormat = GL_R16F;
+			if (numBits == 8)
+				internalFormat = GL_R8;
+		}
+	}
+
 	void update() override
 	{
 		menu();
@@ -477,6 +530,51 @@ public:
 			scatteringData[i].bindGlobalUniforms("scatteringData[" + std::to_string(i) + "]");
 	}
 
+	template <class Tex>
+	bool textureBitSelectionMenu(std::string label, Tex& texture, int& bitMode, int numChannels)
+	{
+		const char* bitModes[] = { "8 bit", "16 bit", "32 bit" };
+		if (ImGui::Combo((label + " format").c_str(), &bitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+		{
+			GLenum internalFormat, format;
+			int bits;
+			switch (bitMode)
+			{
+			case 0: bits = 8;
+			case 1: bits = 16;
+			case 2: bits = 32;
+			}
+			getFormats(bits, numChannels, internalFormat, format);
+			texture.setFormat(internalFormat, format);
+			return true;
+		}
+		return false;
+	};
+
+	void setComputeShaderDefines()
+	{
+		auto imageFormatString = [](GLenum internalFormat)
+		{
+			switch (internalFormat)
+			{
+			case GL_RGBA32F: return "rgba32f";
+			case GL_RGBA16F: return "rgba16f";
+			case GL_RGBA8: return "rgba8";
+			case GL_RG32F: return "rg32f";
+			case GL_RG16F: return "rg16f";
+			case GL_RG8: return "rg8";
+			case GL_R32F: return "r32f";
+			case GL_R16F: return "r16f";
+			case GL_R8: return "r8";
+			}
+		};
+		auto setDefines = [](ComputeShader& cs)
+		{
+			cs.defines["FMT_FLUID"] = imageFormatString(fluidTexture.defn.internalFormat);
+		}
+
+	}
+
 	void menu()
 	{
 
@@ -497,8 +595,21 @@ public:
 				
 			if (ImGui::TreeNode("Fluid Behavior"))
 			{
-				if (ImGui::Checkbox("single compute shader", &settings.singleComputeShader))
-					updateImageModes();
+				//if (ImGui::Checkbox("single compute shader", &settings.singleComputeShader))
+					//updateImageModes();
+				if (ImGui::TreeNode("Texture bits"))
+				{
+					
+
+					static int velocityBitMode = 2, pressureBitMode = 2, curlBitMode = 2, densityBitMode = 2, shadowBitMode = 2;
+					bool changed = textureBitSelectionMenu(std::string("velocity"), fluidTexture, velocityBitMode, 4);
+					bool changed = textureBitSelectionMenu(std::string("pressure"), pressureTexture, pressureBitMode, 2);
+					bool changed = textureBitSelectionMenu(std::string("curl"), curlTexture, curlBitMode, 4);
+					bool changed = textureBitSelectionMenu(std::string("density"), densityTexture, densityBitMode, 1);
+					bool changed = textureBitSelectionMenu(std::string("shadow"), shadowMapTexture, shadowBitMode, 4);
+					ImGui::TreePop();
+				}
+				
 				static glm::ivec3 gridSizeTemp = settings.gridSize;
 				ImGui::SliderInt3("fluid size", (int*)&gridSizeTemp, 8, 256);
 				const glm::ivec3 localWorkGroupSize(8, 8, 8);

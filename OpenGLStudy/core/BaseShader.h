@@ -8,6 +8,7 @@
 #include <sstream>
 #include <iostream>
 #include <sstream>
+#include <map>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -36,6 +37,9 @@ public:
 
 	void setExtraCode(std::vector<std::string> & newExtraCode);
 	std::vector<std::string> getExtraCode();
+	
+	std::map<std::string, std::string> defines;
+
 	
 	virtual bool update() = 0;
 	/*

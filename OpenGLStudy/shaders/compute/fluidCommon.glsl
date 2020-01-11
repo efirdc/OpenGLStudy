@@ -6,21 +6,27 @@
 
 #define IMAGE_QUALIFIERS
 
-#ifndef FMTRGBA
-#define FMTRGBA rgba32f
+#ifndef FMT_FLUID 
+#define FMT_FLUID rgba32f
 #endif
-#ifndef FMTRG
-#define FMTRG rg32f
+#ifndef FMT_PRESSURE
+#define FMT_PRESSURE rg32f
 #endif
-#ifndef FMTR
-#define FMTR r32f
+#ifndef FMT_CURL
+#define FMT_CURL rgba32f
+#endif
+#ifndef FMT_DENSITY
+#define FMT_DENSITY r32f
+#endif
+#ifndef FMT_SHADOWMAP
+#define FMT_SHADOWMAP rgba32f
 #endif
 
-layout(binding = 0, FMTRGBA) IMAGE_QUALIFIERS uniform image3D fluidImage;
-layout(binding = 1, FMTRG) IMAGE_QUALIFIERS uniform image3D pressureImage;
-layout(binding = 2, FMTRGBA) IMAGE_QUALIFIERS uniform image3D curlImage;
-layout(binding = 3, FMTR) IMAGE_QUALIFIERS uniform image3D densityImage;
-layout(binding = 5, FMTRGBA) IMAGE_QUALIFIERS uniform image3D shadowMapImage;
+layout(binding = 0, FMT_FLUID) IMAGE_QUALIFIERS uniform image3D fluidImage;
+layout(binding = 1, FMT_PRESSURE) IMAGE_QUALIFIERS uniform image3D pressureImage;
+layout(binding = 2, FMT_CURL) IMAGE_QUALIFIERS uniform image3D curlImage;
+layout(binding = 3, FMT_DENSITY) IMAGE_QUALIFIERS uniform image3D densityImage;
+layout(binding = 5, FMT_SHADOWMAP) IMAGE_QUALIFIERS uniform image3D shadowMapImage;
 
 layout(binding = 0) uniform sampler3D fluidSampler;
 layout(binding = 1) uniform sampler3D pressureSampler;

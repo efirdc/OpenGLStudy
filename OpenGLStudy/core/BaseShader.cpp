@@ -45,8 +45,13 @@ std::string BaseShader::loadShaderCode(std::string path)
 	{
 		result += line;
 		if (i == 1)
+		{
+			for (auto const& x : defines)
+				result += x.first + " " + x.second + "\n";
 			for (const std::string& extraLine : extraCode)
 				result += extraLine + '\n';
+		}
+			
 		i++;
 	}
 }
