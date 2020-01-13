@@ -26,6 +26,7 @@ void main()
 
 
 	// External forces
+	/*
 	vec3 h33 = vec3(0.23, 0.3, 0.35);
 	vec3 asd = sin(time * 0.5 * (h33 * 2 - 1)) ;
 	vec3 deltaCenter = coords - (asd * 0.2 + 0.5) * vec3(fluidSize);
@@ -33,11 +34,24 @@ void main()
 	center.xyz += asd * splat * externalSplat.velocity;
 	density += splat * externalSplat.density;
 	density *= densityDissipation;
+	*/
 
+	float freq = texture(audioFrequencySampler, coords.y / float(fluidSize.y), 0).r;
+	vec3 delta = (coords - vec3(fluidSize) * 0.5) * vec3(1.0, 0.0, 1.0);
+	vec3 deltaNorm = normalize(delta);
+	float splat = gauss(delta, externalSplat.radius * freq);
+
+	vec3 rotational = cross(deltaNorm, vec3(0, 1, 0));
+	center.xyz += splat * (deltaNorm + rotational * 1.0 + vec3(0, 0, 0)) * externalSplat.velocity;
+	density += splat * externalSplat.density;
+	density *= densityDissipation;
 	vec4 pressure = texelFetch(pressureSampler, icoords, 0);
+
 	pressure.r += splat * externalSplat.pressure;
 
-	imageStore(fluidImage, icoords, center);
-	imageStore(pressureImage, icoords, pressure);
-	imageStore(densityImage, icoords, density);
+	deleteError(center); deleteError(pressure); deleteError(density);
+
+	imageStore(fluidImage, icoords, FLUID_STORE_OP(center));
+	imageStore(pressureImage, icoords, PRESSURE_STORE_OP(pressure));
+	imageStore(densityImage, icoords, DENSITY_STORE_OP(density));
 }

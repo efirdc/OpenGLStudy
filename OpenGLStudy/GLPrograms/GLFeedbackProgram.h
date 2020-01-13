@@ -4,6 +4,12 @@
 #include <math.h>
 #include <map>
 #include <array>
+#include "imgui_bezier_curve.h"
+#include "SpectrumFilter.h"
+#include "SpectrumAnalyzer.h"
+#include "imgui_extras.h"
+
+using namespace std::string_literals;
 
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
@@ -13,6 +19,8 @@
 #include "glm/gtc/type_ptr.hpp"
 
 #include "glDebug.h"
+
+#include "loopback.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
@@ -30,6 +38,9 @@
 #include "ColorGradientTexture.h"
 #include "GLProgram.h"
 
+#include "nlohmann/json.hpp"
+using json = nlohmann::json;
+
 #include "utilities.h"
 
 #include <boost/serialization/version.hpp>
@@ -39,14 +50,181 @@
 
 struct TextureDefinition {
 	unsigned int textureUnit;
-	glm::vec3 size;
+	glm::ivec3 size;
 	GLenum internalFormat{ GL_RGBA32F };
 	GLenum format{ GL_RGBA };
+	GLenum type{ GL_FLOAT };
 	GLenum filter{ GL_LINEAR };
 	GLenum wrap{ GL_CLAMP_TO_EDGE };
 	bool image{ false };
 	GLenum imageMode{ GL_READ_WRITE };
 	glm::vec4 borderColor{ 0.0f };
+};
+
+class AudioTexture
+{
+public:
+	AudioTexture(unsigned int textureUnit, int frameSize, int frameGap, int frequencyBins, int spectrumsInAverage, float domainShift, float peakRadius) :
+		textureUnit(textureUnit),
+		frameSize(frameSize),
+		frameGap(frameGap),
+		frequencyBins(frequencyBins),
+		numAudioSamples(frameSize * 2),
+		spectrumsInAverage(spectrumsInAverage),
+		domainShift(domainShift),
+		peakRadius(peakRadius),
+		analyzer{frameSize},
+		peakCurveSize((int)((float)frequencyBins* peakRadius)),
+		frequencyTexture{ GL_R32F, frequencyBins, GL_RED, GL_FLOAT, 1, 4, true },
+		fAmpControlPoints{ { 0.016f, 0.016f },{ 0.0f, 1.0f } },
+		frequencyAmplitudeCurve(fAmpControlPoints, bezierCurveSize, bezierCurveSize),
+		peakControlPoints{ { 1.00f, 0.00f },{ 0.0f, 1.00f } },
+		peakShapingCurve{ peakControlPoints, peakCurveSize, bezierCurveSize },
+		amplitudeFilter{ frequencyAmplitudeCurve.curve1D, frequencyAmplitudeCurve.curve1DSize },
+		domainShiftFilter{ domainShift, frequencyBins },
+		peakFilter{ peakShapingCurve.curve1D, peakShapingCurve.curve1DSize },
+		averageFilter{ spectrumsInAverage },
+		audioBuffer{ new float[numAudioSamples]() }
+	{
+		bind();
+		loopback_init();
+		float* frequencyPixelBuffer = (float*)frequencyTexture.getPixelBuffer();
+		for (int i = 0; i < frequencyTexture.width; i++)
+			frequencyPixelBuffer[i] = 0.0f;
+		
+	}
+
+	~AudioTexture()
+	{
+		delete[] audioBuffer;
+	}
+
+	void bind()
+	{
+		glActiveTexture(GL_TEXTURE0 + textureUnit);
+		glBindTexture(GL_TEXTURE_1D, frequencyTexture.textureID);
+	}
+	unsigned int textureUnit;
+	
+	const int bezierCurveSize = 4096;
+	int frameSize;
+	int frameGap;
+	int numAudioSamples;
+	int frequencyBins;
+	int spectrumsInAverage;
+	float domainShift;
+
+	float peakRadius;
+	int peakCurveSize;
+	StreamTexture1D frequencyTexture;
+	float * audioBuffer;
+
+	ImVec2 fAmpControlPoints[2];
+	ImBezierCurve frequencyAmplitudeCurve;
+	
+	ImVec2 peakControlPoints[2];
+	ImBezierCurve peakShapingCurve;
+
+	SpectrumAnalyzer analyzer;
+	AmplitudeFilter amplitudeFilter;
+	DomainShiftFilter domainShiftFilter;
+	PeakFilter peakFilter;
+	AverageFilter averageFilter;
+
+	void update()
+	{
+		static int newSamples = 0;
+		newSamples += loopback_getSound(audioBuffer, numAudioSamples);
+		static const FrequencySpectrum* frequencySpectrum = averageFilter.getFrequencySpectrum();
+		while (newSamples >= frameGap)
+		{
+			newSamples -= frameGap;
+			float* inputBuffer = analyzer.getFrameInputBuffer();
+			int frameSize = analyzer.getFrameSize();
+			int frameStart = frameSize - newSamples;
+			for (int i = 0; i < frameSize; i++)
+				inputBuffer[i] = audioBuffer[frameStart + i];
+			analyzer.processFrame();
+			frequencySpectrum = analyzer.getFrequencySpectrum();
+			frequencySpectrum = amplitudeFilter.applyFilter(frequencySpectrum);
+			frequencySpectrum = domainShiftFilter.applyFilter(frequencySpectrum);
+			frequencySpectrum = peakFilter.applyFilter(frequencySpectrum);
+			frequencySpectrum = averageFilter.applyFilter(frequencySpectrum);
+		}
+		float* frequencyData = frequencySpectrum->data;
+		float* frequencyPixelBuffer = (float*)frequencyTexture.getPixelBuffer();
+		for (int i = 0; i < frequencySpectrum->size; i++)
+			frequencyPixelBuffer[i] = frequencyData[i];
+		frequencyTexture.unmapPixelBuffer();
+	}
+
+	void menu()
+	{
+		if(ImGui::TreeNode("Audio Visualizer"))
+		{
+			int ival = analyzer.getFrameSize();
+			if (ImGui::expArrowButtons("audio frame size: %d", &ival, 2, 65536))
+			{
+				analyzer.setFrameSize(ival);
+				numAudioSamples = ival * 2;
+				delete[] audioBuffer;
+				audioBuffer = new float[numAudioSamples]();
+			}
+			ImGui::SameLine(); ImGui::ShowHelpMarker("Number of audio samples used in the fourier transform.\nHigher values have more frequency information, but less time information.");
+			ImGui::TreePop();
+
+			int audioFPS = loopback_samplesPerSec() / frameGap;
+			if (ImGui::SliderInt("audio frames per sec", &audioFPS, 20, 600))
+			{
+				audioFPS = utl::clamp(audioFPS, 1, 3000);
+				frameGap = loopback_samplesPerSec() / audioFPS;
+			}
+			ImGui::SameLine(); ImGui::ShowHelpMarker("Controls how many fourier transforms happen per second.\nThis is essentially the framerate of the frequency spectrum.");
+
+			ival = averageFilter.getNumSpectrumsInAverage();
+			if (ImGui::SliderInt("audio frames used", &ival, 1, 40))
+				averageFilter.setNumSpectrumsInAverage(utl::clamp(ival, 1, 200));
+			ImGui::SameLine(); ImGui::ShowHelpMarker("The final displayed frequency spectrum is an average of this many spectrums.\nRaise to increase smoothness.");
+
+			int totalSamples = analyzer.getFrameSize() + frameGap * averageFilter.getNumSpectrumsInAverage();
+			ImGui::Text("time of utilized audio: %.3f sec", (float)totalSamples / (float)loopback_samplesPerSec());
+
+			float fval = domainShiftFilter.getDomainShiftFactor();
+			ImGui::SliderFloat("log domain shift factor", &fval, 1.0f, 10.0f);
+			domainShiftFilter.setDomainShiftFactor(fval);
+			ImGui::SameLine(); ImGui::ShowHelpMarker("Shifts frequency domain onto a logarithmic scale.\
+				\n1.0: all frequency bins are spaced evenly.\
+				\n10.0: frequency bins are spaced at powers of 10\
+				\nIt looks good to use values greater than 10.0 with very large frame sizes. CTRL + CLICK the slider to enter a value manually.");
+
+			bool changed = false;
+			if (ImGui::TreeNode("Frequency Amplitude Curve"))
+			{
+				changed = ImGui::Bezier("", frequencyAmplitudeCurve.controlPoints);
+				ImGui::TreePop();
+			}
+			if (changed)
+			{
+				frequencyAmplitudeCurve.recalculate();
+				amplitudeFilter.setAmplitudeCurve(frequencyAmplitudeCurve.curve1D, frequencyAmplitudeCurve.curve1DSize);
+			}
+
+			// Control the frequency peak curve
+			if (ImGui::TreeNode("Frequency Peak Curve"))
+			{
+				changed = ImGui::SliderFloat("Blur Radius", &peakRadius, 0.0f, 0.1f);
+				changed |= ImGui::Bezier("", peakShapingCurve.controlPoints);
+				ImGui::TreePop();
+			}
+			if (changed)
+			{
+				peakCurveSize = (int)((float)frequencyBins * peakRadius);
+				peakShapingCurve.curve1DSize = peakCurveSize;
+				peakShapingCurve.recalculate();
+				peakFilter.setPeakCurve(peakShapingCurve.curve1D, peakShapingCurve.curve1DSize);
+			}
+		}
+	}
 };
 
 class Texture3D
@@ -72,7 +250,7 @@ public:
 	void configure()
 	{
 		bind();
-		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
+		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, defn.type, NULL);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, defn.filter);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, defn.filter);
 		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, defn.wrap);
@@ -86,7 +264,7 @@ public:
 	{
 		defn.size = newSize;
 		bind();
-		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
+		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, defn.type, NULL);
 	}
 
 	void setImageMode(GLenum imageMode)
@@ -95,12 +273,13 @@ public:
 		bind();
 	}
 
-	void setFormat(GLenum internalFormat, GLenum format)
+	void setFormat(GLenum internalFormat, GLenum format, GLenum type)
 	{
 		defn.internalFormat = internalFormat;
 		defn.format = format;
+		defn.type = type;
 		bind();
-		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, GL_FLOAT, NULL);
+		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, defn.type, NULL);
 	}
 };
 
@@ -141,12 +320,13 @@ public:
 		dest.setSize(newSize);
 	}
 
-	void setFormat(GLenum internalFormat, GLenum format)
+	void setFormat(GLenum internalFormat, GLenum format, GLenum type)
 	{
 		defn.internalFormat = internalFormat;
 		defn.format = format;
-		source.setFormat(internalFormat, format);
-		dest.setFormat(internalFormat, format);
+		defn.type = type;
+		source.setFormat(internalFormat, format, type);
+		dest.setFormat(internalFormat, format, type);
 	}
 
 	void setImageMode(GLenum imageMode)
@@ -260,10 +440,6 @@ public:
 	ComputeShader shadowMap;
 	ComputeShader advection, curl, vorticity, divergence, pressure, subtractPressureGradient;
 	ImguiPresetMenu<Settings> presetMenu;
-	std::vector<std::string> csExtraCode { 
-		"#define FMT_FLUID rgba32f", "#define FMT_PRESSURE rg32f", "#define FMT_CURL rgba32f"
-		"#define FMT_DENSITY r32f", "#define FMT_SHADOWMAP rgba32f"
-	};
 	//ColorGradientTexture fluidGradientTexture;
 
 	/*
@@ -280,30 +456,27 @@ public:
 	};*/
 
 	SlabTexture3D fluidTexture{
-		{ 0, settings.gridSize, GL_RGBA32F, GL_RGBA,
-			GL_LINEAR, GL_CLAMP_TO_EDGE, true, GL_WRITE_ONLY}
+		{ 0, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
+			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
 	SlabTexture3D pressureTexture{
-		{ 1, settings.gridSize, GL_RG32F, GL_RG,
+		{ 1, settings.gridSize, GL_RG32F, GL_RG, GL_FLOAT,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
 	Texture3D curlTexture{
-		{ 2, settings.gridSize, GL_RGBA32F, GL_RGBA,
+		{ 2, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
 	SlabTexture3D densityTexture{
-		{ 3, settings.gridSize, GL_R32F, GL_RED,
+		{ 3, settings.gridSize, GL_R32F, GL_RED, GL_FLOAT,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
 	Texture3D shadowMapTexture{
-		{ 5, settings.gridSize, GL_RGBA32F, GL_RGBA,
+		{ 5, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
-	
-	//Texture3D pressureTexture{ 1, GL_R32F, settings.gridSize, GL_RED, GL_LINEAR, GL_CLAMP_TO_EDGE, true };
-	//Texture3D curlTexture{ 2, GL_RGBA32F, settings.gridSize, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_BORDER, true };
-	//Texture3D densityTexture{ 3, GL_RGBA32F, settings.gridSize, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_EDGE, true };
-	//Texture3D shadowMapTexture{ 5, GL_RGBA32F, settings.gridSize, GL_RGBA, GL_LINEAR, GL_CLAMP_TO_BORDER, true , GL_WRITE_ONLY};
+
+	AudioTexture audioTexture{ 7, 4096, 128, 1024, 18, 10.0f, 0.05f };
 	
 	unsigned int quadVAO{};
 
@@ -369,6 +542,7 @@ public:
 	void resizeFluidTextures()
 	{
 		fluidTexture.setSize(settings.gridSize);
+		pressureTexture.setSize(settings.gridSize);
 		curlTexture.setSize(settings.gridSize);
 		densityTexture.setSize(settings.gridSize);
 		shadowMapTexture.setSize(settings.gridSize);
@@ -390,39 +564,6 @@ public:
 		shadowMapTexture.setImageMode(GL_WRITE_ONLY);
 	}
 
-	void getFormats(int numBits, int numChannels, GLenum& internalFormat, GLenum& format)
-	{
-		if (numChannels == 4)
-		{
-			format = GL_RGBA;
-			if (numBits == 32)
-				internalFormat = GL_RGBA32F;
-			else if (numBits == 16)
-				internalFormat = GL_RGBA16F;
-			else if (numBits == 8)
-				internalFormat = GL_RGBA8I;
-		}
-		if (numChannels == 2)
-		{
-			format = GL_RG;
-			if (numBits == 32)
-				internalFormat = GL_RG32F;
-			if (numBits == 16)
-				internalFormat = GL_RG16F;
-			if (numBits == 8)
-				internalFormat = GL_RG8I;
-		}
-		if (numChannels == 1)
-		{
-			format = GL_RED;
-			if (numBits == 32)
-				internalFormat = GL_R32F;
-			if (numBits == 16)
-				internalFormat = GL_R16F;
-			if (numBits == 8)
-				internalFormat = GL_R8I;
-		}
-	}
 
 	void update() override
 	{
@@ -433,8 +574,10 @@ public:
 			computeShader.update();
 			computeShader.use();
 			glDispatchCompute(gridSize.x / 8, gridSize.y / 8, gridSize.z / 8);
-			glMemoryBarrier(GL_ALL_BARRIER_BITS);
+			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 		};
+
+		audioTexture.update();
 
 		fluidStep(advection, settings.gridSize);
 		fluidTexture.swap();
@@ -530,78 +673,54 @@ public:
 			scatteringData[i].bindGlobalUniforms("scatteringData[" + std::to_string(i) + "]");
 	}
 
-	template <class Tex>
-	bool textureBitSelectionMenu(std::string label, Tex& texture, int& bitMode, int numChannels)
+	template <typename Tex>
+	void configureFluidTexture(Tex& texture, const std::string& macroPrefix, int numChannels, int bits, bool signedTex)
 	{
-		const char* bitModes[] = { "8 bit", "16 bit", "32 bit" };
-		if (ImGui::Combo((label + " format").c_str(), &bitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+		auto SetTexData = [&texture, &macroPrefix](GLenum iFmt, GLenum fmt, GLenum type,
+			const std::string& imgFmt, const std::string& imgType, const std::string& samplerType, const std::string& storeOp)
 		{
-			GLenum internalFormat, format;
-			int bits;
-			switch (bitMode)
-			{
-			case 0: bits = 8; break;
-			case 1: bits = 16; break;
-			case 2: bits = 32; break;
-			}
-			getFormats(bits, numChannels, internalFormat, format);
-			texture.setFormat(internalFormat, format);
-			return true;
-		}
-		return false;
-	};
+			texture.setFormat(iFmt, fmt, type);
+			Shader::setGlobalDefinition(macroPrefix + "_FORMAT", imgFmt);
+			Shader::setGlobalDefinition(macroPrefix + "_IMAGE_TYPE", imgType);
+			Shader::setGlobalDefinition(macroPrefix + "_SAMPLER_TYPE", samplerType);
+			Shader::setGlobalDefinition(macroPrefix + "_STORE_OP(data)", storeOp);
+		};
 
-	void setComputeShaderDefines()
-	{
-		auto imageFormatString = [](GLenum internalFormat)
+		switch (numChannels)
 		{
-			switch (internalFormat)
+		case 4:
+			switch (bits)
 			{
-			case GL_RGBA32F: return "rgba32f";
-			case GL_RGBA16F: return "rgba16f";
-			case GL_RGBA8I: return "rgba8i";
-			case GL_RG32F: return "rg32f";
-			case GL_RG16F: return "rg16f";
-			case GL_RG8I: return "rg8i";
-			case GL_R32F: return "r32f";
-			case GL_R16F: return "r16f";
-			case GL_R8I: return "r8i";
+			case 2: SetTexData(GL_RGBA32F, GL_RGBA, GL_FLOAT, "rgba32f"s, "image3D"s, "sampler3D"s, "data"s); break;
+			case 1: SetTexData(GL_RGBA16F, GL_RGBA, GL_HALF_FLOAT, "rgba16f"s, "image3D"s, "sampler3D"s, "data"s); break;
+			case 0: signedTex ?
+				SetTexData(GL_RGBA8I, GL_RGBA_INTEGER, GL_BYTE, "rgba8i"s, "iimage3D"s, "isampler3D"s, "ivec4(data * 255.0 - 128.0)"s) :
+				SetTexData(GL_RGBA8UI, GL_RGBA_INTEGER, GL_UNSIGNED_BYTE, "rgba8ui"s, "uimage3D"s, "usampler3D"s, "uvec4(data * 255.0)"s); break;
 			}
-		};
-		auto imageTypeString = [](GLenum internalFormat)
-		{
-			switch (internalFormat)
+			break;
+		case 2:
+			switch (bits)
 			{
-			case GL_RGBA32F: return "image3D";
-			case GL_RGBA16F: return "image3D";
-			case GL_RGBA8I: return "iimage3D";
-			case GL_RG32F: return "image3D";
-			case GL_RG16F: return "image3D";
-			case GL_RG8I: return "iimage3D";
-			case GL_R32F: return "image3D";
-			case GL_R16F: return "image3D";
-			case GL_R8I: return "iimage3D";
+			case 2: SetTexData(GL_RG32F, GL_RG, GL_FLOAT, "rg32f"s, "image3D"s, "sampler3D"s, "data"s); break;
+			case 1: SetTexData(GL_RG16F, GL_RG, GL_HALF_FLOAT, "rg16f"s, "image3D"s, "sampler3D"s, "data"s); break;
+			case 0: signedTex ?
+				SetTexData(GL_RG8I, GL_RG_INTEGER, GL_BYTE, "rg8i"s, "iimage3D"s, "isampler3D"s, "ivec4(data * 255.0 - 128.0)"s) :
+				SetTexData(GL_RG8UI, GL_RG_INTEGER, GL_UNSIGNED_BYTE, "rg8ui"s, "uimage3D"s, "usampler3D"s, "uvec4(data * 255.0)"s); break;
 			}
-		};
-		auto setDefines = [this, imageFormatString, imageTypeString](ComputeShader& cs ...)
-		{
-			cs.setDefinition("FLUID_FORMAT", imageFormatString(fluidTexture.defn.internalFormat));
-			cs.setDefinition("PRESSURE_FORMAT", imageFormatString(pressureTexture.defn.internalFormat));
-			cs.setDefinition("CURL_FORMAT", imageFormatString(curlTexture.defn.internalFormat));
-			cs.setDefinition("DENSITY_FORMAT", imageFormatString(densityTexture.defn.internalFormat));
-			cs.setDefinition("SHADOWMAP_FORMAT", imageFormatString(shadowMapTexture.defn.internalFormat));
-			
-			cs.setDefinition("FLUID_IMAGE_TYPE", imageTypeString(fluidTexture.defn.internalFormat));
-			cs.setDefinition("PRESSURE_IMAGE_TYPE", imageTypeString(pressureTexture.defn.internalFormat));
-			cs.setDefinition("CURL_IMAGE_TYPE", imageTypeString(curlTexture.defn.internalFormat));
-			cs.setDefinition("DENSITY_IMAGE_TYPE", imageTypeString(densityTexture.defn.internalFormat));
-			cs.setDefinition("SHADOWMAP_IMAGE_TYPE", imageTypeString(shadowMapTexture.defn.internalFormat));
-			
-			cs.update();
-		};
-		setDefines(advection); setDefines(curl);  setDefines(vorticity); setDefines(divergence);
-		setDefines(pressure); setDefines(shadowMap); setDefines(subtractPressureGradient);
-	}
+			break;
+		case 1:
+			switch (bits)
+			{
+			case 2: SetTexData(GL_R32F, GL_RED, GL_FLOAT, "r32f"s, "image3D"s, "sampler3D"s, "data"s); break;
+			case 1: SetTexData(GL_R16F, GL_RED, GL_HALF_FLOAT, "r16f"s, "image3D"s, "sampler3D"s, "data"s); break;
+			case 0: signedTex ?
+				SetTexData(GL_R8I, GL_RED_INTEGER, GL_BYTE, "r8i"s, "iimage3D"s, "isampler3D"s, "ivec4(data * 255.0 - 128.0)"s) :
+				SetTexData(GL_R8UI, GL_RED_INTEGER, GL_UNSIGNED_BYTE, "r8ui"s, "uimage3D"s, "usampler3D"s, "uvec4(data * 255.0)"s); break;
+			}
+			break;
+		}
+
+	};
 
 	void menu()
 	{
@@ -625,16 +744,21 @@ public:
 			{
 				//if (ImGui::Checkbox("single compute shader", &settings.singleComputeShader))
 					//updateImageModes();
+				
 				if (ImGui::TreeNode("Texture bits"))
 				{
 					static int velocityBitMode = 2, pressureBitMode = 2, curlBitMode = 2, densityBitMode = 2, shadowBitMode = 2;
-					bool changed = textureBitSelectionMenu(std::string("velocity"), fluidTexture, velocityBitMode, 4);
-					changed |= textureBitSelectionMenu(std::string("pressure"), pressureTexture, pressureBitMode, 2);
-					changed |= textureBitSelectionMenu(std::string("curl"), curlTexture, curlBitMode, 4);
-					changed |= textureBitSelectionMenu(std::string("density"), densityTexture, densityBitMode, 1);
-					changed |= textureBitSelectionMenu(std::string("shadow"), shadowMapTexture, shadowBitMode, 4);
-					if (changed)
-						setComputeShaderDefines();
+					const char* bitModes[] = { "8 bit", "16 bit", "32 bit" };
+					if (ImGui::Combo("velocity format", &velocityBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+						configureFluidTexture(fluidTexture, "FLUID", 4, velocityBitMode, true);
+					if (ImGui::Combo("pressure format", &pressureBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+						configureFluidTexture(pressureTexture, "PRESSURE", 2, pressureBitMode,true);
+					if (ImGui::Combo("curl format", &curlBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+						configureFluidTexture(curlTexture, "CURL", 4, curlBitMode, true);
+					if (ImGui::Combo("density format", &densityBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+						configureFluidTexture(densityTexture, "DENSITY", 1, densityBitMode, false);
+					if (ImGui::Combo("shadow format", &shadowBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+						configureFluidTexture(shadowMapTexture, "SHADOWMAP", 4, shadowBitMode, false);
 					ImGui::TreePop();
 				}
 				
@@ -725,6 +849,8 @@ public:
 				}
 				ImGui::TreePop();
 			}
+
+			audioTexture.menu();
 			
 			static int lastError = 0;
 			const int currentError = glGetError();

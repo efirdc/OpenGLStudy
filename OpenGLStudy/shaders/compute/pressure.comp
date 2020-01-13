@@ -14,5 +14,5 @@ void main()
 	texelFetchAdjacent(pressureSampler, icoords, left, right, top, bottom, front, back);
 	center.r = (left.r + right.r + top.r + bottom.r + front.r + back.r - center.g) / 6.0;
 	
-	imageStore(pressureImage, icoords, center);
+	imageStore(pressureImage, icoords, PRESSURE_STORE_OP(center));
 }

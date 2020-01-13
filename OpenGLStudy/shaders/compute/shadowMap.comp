@@ -21,11 +21,6 @@ uniform int multiScatteringOctaves;
 
 uniform DirectionalLight dirLight;
 
-vec4 sampleFluid(sampler3D s, vec3 p, vec3 boxMin, vec3 boxMax)
-{
-	return texture(s, (p - boxMin) / (boxMax - boxMin));
-}
-
 vec2 intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax) 
 {
   vec3 tMin = (boxMin - rayOrigin) / rayDir;
@@ -55,5 +50,7 @@ void main()
 		shadow *= exp(-ld.r * scatteringData[0].extinction * shadowStepSize);
 		depth += shadowStepSize;
 	}
-	imageStore(shadowMapImage, icoords, ivec4(shadow, 0.0) );
+
+	vec4 shadow4 = vec4(shadow, 1.0);
+	imageStore(shadowMapImage, icoords, SHADOWMAP_STORE_OP(shadow4));
 }

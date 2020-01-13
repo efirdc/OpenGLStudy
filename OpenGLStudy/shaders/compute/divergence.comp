@@ -17,5 +17,5 @@ void main()
 	float divergence = (right.x - left.x + top.y - bottom.y + front.z - back.z) * 0.5;
 	center.g = divergence;
 	
-	imageStore(pressureImage, icoords, center);
+	imageStore(pressureImage, icoords, PRESSURE_STORE_OP(center));
 }

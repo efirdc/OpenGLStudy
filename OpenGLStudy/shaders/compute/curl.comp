@@ -19,5 +19,5 @@ void main()
 		front.x - right.z - back.x + left.z,
 		right.y - top.x - left.y + bottom.x);
 
-	imageStore(curlImage, icoords, vec4(curl, length(curl)));
+	imageStore(curlImage, icoords, CURL_STORE_OP(vec4(curl, length(curl))));
 }

@@ -36,8 +36,9 @@ bool Shader::update()
 	// Exit function if vertex and fragment shaders have not been modified
 	long long int newVTime = getModificationTime(vertexPath);
 	long long int newFTime = getModificationTime(fragmentPath);
-	if (newVTime == vertexModifiedTime && newFTime == fragmentModifiedTime)
+	if (newVTime == vertexModifiedTime && newFTime == fragmentModifiedTime && !shouldUpdate)
 		return false;
+	shouldUpdate = false;
 	
 	// Retrieve the vertex/fragment source code from the filepaths
 	string vertexCode = loadShaderCode(vertexPath);

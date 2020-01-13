@@ -28,19 +28,11 @@
 class BaseShader
 {
 public:
-	template<typename T>
-	static void setGlobalUniform(const std::string & name, T data)
-	{
-		for (BaseShader* shader : allShaders)
-			if (shader->hasActiveUniform(name) > 0)
-			{
-				shader->use();
-				shader->setUniform(name, data);
-			}
-	}
-	
+	static void setGlobalUniform(const std::string& name, void* data);
 	static void bindGlobalUniform(const std::string & name, void * data);
 	static void unbindGlobalUniform(const std::string & name);
+
+	static void setGlobalDefinition(const std::string& name, const std::string& definition);
 
 	static bool inactiveUniformWarnings;
 
@@ -104,6 +96,8 @@ public:
 
 protected:
 	BaseShader(std::vector<std::string> extraCode);
+
+	static std::map<std::string, std::string> globalDefines;
 
 	std::vector<std::string> extraCode;
 	std::map<std::string, std::string> defines;

@@ -22,5 +22,5 @@ void main()
 
 	vec4 center = texelFetch(fluidSampler, icoords, 0);
 	center.xyz += force * vorticityScalar;
-	imageStore(fluidImage, icoords, center);
+	imageStore(fluidImage, icoords, FLUID_STORE_OP(center));
 }

@@ -17,5 +17,5 @@ void main()
 	vec3 pressureGradient = vec3(right.r - left.r, top.r - bottom.r, front.r - back.r) * 0.5;
 	center.xyz -= pressureGradient;
 	
-	imageStore(fluidImage, icoords, center);
+	imageStore(fluidImage, icoords, FLUID_STORE_OP(center));
 }

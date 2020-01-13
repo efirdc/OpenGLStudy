@@ -10,13 +10,9 @@ in vec3 Eye;
 #include "sdf.glsl"
 #include "light.glsl"
 #include "../noise/hash.glsl"
+#include "../compute/fluidCommon.glsl"
 
-#define kPI 3.13415926
-
-uniform ivec3 fluidSize;
-
-uniform float time;
-uniform mat4 view;
+#define kPI 3.1415926
 
 uniform float rayStepSize;
 uniform float shadowStepSize;
@@ -51,12 +47,6 @@ struct ScatteringData
 uniform ScatteringData scatteringData[MAX_SCATTERING_OCTAVES];
 uniform int multiScatteringOctaves;
 
-layout(binding = 0) uniform sampler3D velocitySampler;
-layout(binding = 2) uniform sampler3D curlSampler;
-layout(binding = 3) uniform sampler3D densitySampler;
-layout(binding = 4) uniform sampler1D cloudColorCurve;
-layout(binding = 5) uniform sampler3D shadowMapSampler;
-layout(binding = 6) uniform sampler3D noiseSampler;
 
 uniform DirectionalLight dirLight;
 
@@ -91,11 +81,6 @@ vec3 snap(vec3 ray, float stepSize)
 	float planeDist = dot(ray, viewPlaneNormal);
 	float snapDist = floor(planeDist / stepSize) * stepSize;
 	return ray - (planeDist - snapDist) * viewPlaneNormal;
-}
-
-vec4 sampleFluid(sampler3D s, vec3 p, vec3 boxMin, vec3 boxMax)
-{
-	return texture(s, (p - boxMin) / (boxMax - boxMin));
 }
 
 /*

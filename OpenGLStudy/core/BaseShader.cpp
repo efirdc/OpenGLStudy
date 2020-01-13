@@ -4,6 +4,7 @@ using namespace std;
 
 std::vector<BaseShader *> BaseShader::allShaders;
 std::unordered_map<std::string, void *> BaseShader::globalUniformBindings;
+std::map<std::string, std::string> BaseShader::globalDefines;
 bool BaseShader::inactiveUniformWarnings = false;
 
 BaseShader::BaseShader(std::vector<std::string> extraCode)
@@ -46,10 +47,19 @@ std::string BaseShader::loadShaderCode(std::string path)
 
 	// Replace #define's
 	auto definesCopy = defines;
+	for (auto const & x : globalDefines)
+		definesCopy[x.first] = x.second;
 	std::vector<std::string> replacedDefines;
 	for (auto const & x : definesCopy)
 	{
-		std::regex re("#define " + x.first + ".+");
+		std::string reName;
+		for (auto c : x.first)
+		{
+			if (c == '(' || c == ')')
+				reName += '\\';
+			reName += c;
+		}
+		std::regex re("#define " + reName + ".+");
 		if (std::regex_search(code, re))
 		{
 			code = std::regex_replace(code, re, "#define " + x.first + " " + x.second);
@@ -76,11 +86,11 @@ std::string BaseShader::loadShaderCode(std::string path)
 			
 		i++;
 	}
-	std::cout << result << std::endl;
+	//std::cout << result << std::endl;
 	return result;
 }
 
-/*
+
 void BaseShader::setGlobalUniform(const std::string & name, void * data)
 {
 	for (BaseShader * shader : allShaders)
@@ -90,7 +100,7 @@ void BaseShader::setGlobalUniform(const std::string & name, void * data)
 			shader->setUniform(name, data);
 		}
 }
-*/
+
 
 void BaseShader::bindGlobalUniform(const std::string & name, void * data)
 {
@@ -117,6 +127,13 @@ void BaseShader::unbindGlobalUniform(const std::string & name)
 	for (BaseShader * shader : allShaders)
 		if (shader->getBoundUniform(name))
 			shader->unbindUniform(name);
+}
+
+void BaseShader::setGlobalDefinition(const std::string& name, const std::string& definition)
+{
+	for (BaseShader* shader : allShaders)
+		shader->shouldUpdate = true;
+	globalDefines[name] = definition;
 }
 
 void BaseShader::getActiveUniforms()
@@ -244,16 +261,6 @@ void BaseShader::setUniform(int location, GLenum type, void * data)
 	case GL_BOOL:
 		setUniform(location, *(bool *)data);
 		break;
-	case GL_INT:
-	case GL_SAMPLER_1D:
-	case GL_SAMPLER_2D:
-	case GL_SAMPLER_3D:
-	case GL_IMAGE_1D:
-	case GL_IMAGE_2D:
-	case GL_IMAGE_3D:
-	case GL_SAMPLER_CUBE:
-		setUniform(location, *(int *)data);
-		break;
 	case GL_UNSIGNED_INT:
 		setUniform(location, *(unsigned int *)data);
 		break;
@@ -288,10 +295,20 @@ void BaseShader::setUniform(int location, GLenum type, void * data)
 		setUniform(location, *(glm::ivec4 *)data);
 		break;
 	default:
+	case GL_INT:
+	case GL_SAMPLER_1D:
+	case GL_SAMPLER_2D:
+	case GL_SAMPLER_3D:
+	case GL_IMAGE_1D:
+	case GL_IMAGE_2D:
+	case GL_IMAGE_3D:
+	case GL_SAMPLER_CUBE:
+		setUniform(location, *(int*)data);
+		/*
 		cout << "ERROR::SHADER::UNIFORM::UNSUPPORTED_TYPE\n" <<
 			ID << "\n" <<
 			"Unsupported type: " << hex << type <<
-			endl;
+			endl;*/
 	}
 }
 
