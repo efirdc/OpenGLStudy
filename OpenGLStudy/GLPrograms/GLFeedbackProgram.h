@@ -341,12 +341,14 @@ class GLFeedbackProgram : public GLProgram {
 public:
 	struct FluidSplat {
 		float radius, velocity, pressure, density;
+		glm::mat3 rotation;
 		void bindGlobalUniforms(std::string uniformName) 
 		{
 			Shader::bindGlobalUniform(uniformName + ".radius", &radius);
 			Shader::bindGlobalUniform(uniformName + ".velocity", &velocity);
 			Shader::bindGlobalUniform(uniformName + ".pressure", &pressure);
 			Shader::bindGlobalUniform(uniformName + ".density", &density);
+			Shader::bindGlobalUniform(uniformName + ".rotation", &rotation);
 		}
 		void Menu(const char * name)
 		{
