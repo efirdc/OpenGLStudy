@@ -91,7 +91,6 @@ public:
 		float* frequencyPixelBuffer = (float*)frequencyTexture.getPixelBuffer();
 		for (int i = 0; i < frequencyTexture.width; i++)
 			frequencyPixelBuffer[i] = 0.0f;
-		
 	}
 
 	~AudioTexture()
@@ -156,6 +155,18 @@ public:
 		for (int i = 0; i < frequencySpectrum->size; i++)
 			frequencyPixelBuffer[i] = frequencyData[i];
 		frequencyTexture.unmapPixelBuffer();
+	}
+
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		int frameSize;
+		int frameGap;
+		int numAudioSamples;
+		int frequencyBins;
+		int spectrumsInAverage;
+		float domainShift;
 	}
 
 	void menu()
@@ -341,14 +352,16 @@ class GLFeedbackProgram : public GLProgram {
 public:
 	struct FluidSplat {
 		float radius, velocity, pressure, density;
-		glm::mat3 rotation;
+		glm::quat rotation;
+		glm::mat3 rotationMatrix;
+		
 		void bindGlobalUniforms(std::string uniformName) 
 		{
 			Shader::bindGlobalUniform(uniformName + ".radius", &radius);
 			Shader::bindGlobalUniform(uniformName + ".velocity", &velocity);
 			Shader::bindGlobalUniform(uniformName + ".pressure", &pressure);
 			Shader::bindGlobalUniform(uniformName + ".density", &density);
-			Shader::bindGlobalUniform(uniformName + ".rotation", &rotation);
+			Shader::bindGlobalUniform(uniformName + ".rotation", &rotationMatrix);
 		}
 		void Menu(const char * name)
 		{
@@ -356,6 +369,8 @@ public:
 			{
 				ImGui::SliderFloat("radius", &radius, 1.0f, 150.0f);
 				ImGui::SliderFloat("velocity add scalar", &velocity, 0.00f, 15.0f);
+				if (ImGui::gizmo3D("velocity rotation", rotation))
+					rotationMatrix = glm::mat3(rotation);
 				ImGui::SliderFloat("pressure add scalar", &pressure, 0.00f, 100.0f);
 				ImGui::SliderFloat("density add scalar", &density, 0.0f, 15.0f);
 				ImGui::TreePop();
@@ -365,6 +380,8 @@ public:
 		template<class Archive>
 		void serialize(Archive & ar, const unsigned int version)
 		{
+			if (version > 0)
+				ar & rotation;
 			ar & radius & velocity & pressure & density;
 		}
 	};
@@ -478,7 +495,7 @@ public:
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
 
-	AudioTexture audioTexture{ 7, 4096, 128, 1024, 18, 10.0f, 0.05f };
+	AudioTexture audioTexture{ 7, 1024, 128, 1024, 8, 5.0f, 0.005f };
 	
 	unsigned int quadVAO{};
 
@@ -870,5 +887,6 @@ public:
 };
 
 BOOST_CLASS_VERSION(GLFeedbackProgram::Settings, 2)
+BOOST_CLASS_VERSION(GLFeedbackProgram::FluidSplat, 1)
 
 

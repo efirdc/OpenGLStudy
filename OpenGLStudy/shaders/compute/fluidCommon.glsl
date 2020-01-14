@@ -24,7 +24,6 @@ layout(binding = 2, CURL_FORMAT) IMAGE_QUALIFIERS uniform CURL_IMAGE_TYPE curlIm
 layout(binding = 5, SHADOWMAP_FORMAT) IMAGE_QUALIFIERS uniform SHADOWMAP_IMAGE_TYPE shadowMapImage;
 layout(binding = 3, DENSITY_FORMAT) IMAGE_QUALIFIERS uniform DENSITY_IMAGE_TYPE densityImage;
 
-
 #define FLUID_SAMPLER_TYPE sampler3D
 #define PRESSURE_SAMPLER_TYPE sampler3D
 #define CURL_SAMPLER_TYPE sampler3D
@@ -51,6 +50,7 @@ uniform mat4 view;
 
 struct FluidSplat { 
 	float radius, velocity, pressure, density;
+	mat3 rotation;
 };
 
 uniform ivec3 fluidSize;

@@ -42,5 +42,32 @@ namespace boost {
 		{
 			ar& g.x& g.y;
 		}
+
+		template<class Archive>
+		void serialize(Archive& ar, glm::mat3& m, const unsigned int version)
+		{
+			for (int i = 0; i < 3; i++)
+				for (int j = 0; j < 3; j++)
+					ar& m[i][j];
+		}
+		template<class Archive>
+		void serialize(Archive& ar, glm::mat2& m, const unsigned int version)
+		{
+			for (int i = 0; i < 2; i++)
+				for (int j = 0; j < 2; j++)
+					ar& m[i][j];
+		}
+		template<class Archive>
+		void serialize(Archive& ar, glm::mat4& m, const unsigned int version)
+		{
+			for (int i = 0; i < 4; i++)
+				for (int j = 0; j < 4; j++)
+					ar& m[i][j];
+		}
+		template<class Archive>
+		void serialize(Archive& ar, glm::quat& q, const unsigned int version)
+		{
+			ar& q.x & q.y & q.z & q.w;
+		}
 	}
 }
