@@ -163,14 +163,12 @@ int fluidSimulation()
 	float * audioBuffer = new float[numAudioSamples]();
 
 	// initialize frequency amplitude curve
-	ImVec2 fAmpControlPoints[2] = { { 0.016f, 0.016f },{ 0.0f, 1.0f } };
-	ImBezierCurve frequencyAmplitudeCurve(fAmpControlPoints, bezierCurveSize, bezierCurveSize);
+	ImBezierCurve frequencyAmplitudeCurve({ 0.016f, 0.016f }, { 0.0f, 1.0f }, bezierCurveSize, bezierCurveSize);
 
 	// initialize peak smoothing curve
 	float peakRadius = 0.05f;
 	int peakCurveSize = (int)((float)numFreqBins * peakRadius);
-	ImVec2 peakControlPoints[2] = { { 1.00f, 0.00f },{ 0.0f, 1.00f } };
-	ImBezierCurve peakShapingCurve(peakControlPoints, peakCurveSize, bezierCurveSize);
+	ImBezierCurve peakShapingCurve({ 1.00f, 0.00f }, { 0.0f, 1.00f },peakCurveSize, bezierCurveSize);
 
 	AmplitudeFilter amplitudeFilter(frequencyAmplitudeCurve.curve1D, frequencyAmplitudeCurve.curve1DSize);
 	DomainShiftFilter domainShiftFilter(domainShiftFactor, numFreqBins);
@@ -370,7 +368,7 @@ int fluidSimulation()
 			changed = false;
 			if (ImGui::TreeNode("Frequency Amplitude Curve (not saved)"))
 			{
-				changed = ImGui::Bezier("", frequencyAmplitudeCurve.controlPoints);
+				changed = frequencyAmplitudeCurve.menu("");
 				ImGui::TreePop();
 			}
 			if (changed)
@@ -383,7 +381,7 @@ int fluidSimulation()
 			if (ImGui::TreeNode("Frequency Peak Curve (not saved)"))
 			{
 				changed = ImGui::SliderFloat("Blur Radius", &peakRadius, 0.0f, 0.1f);
-				changed |= ImGui::Bezier("", peakShapingCurve.controlPoints);
+				changed |= peakShapingCurve.menu("");
 				ImGui::TreePop();
 			}
 			if (changed)

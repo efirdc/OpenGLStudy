@@ -69,6 +69,10 @@ namespace utl
 	*	outBuffer is populated with values on the bezier curve
 	*/
 
+	glm::vec2 bezierValue(glm::vec2 controlPoint1, glm::vec2 controlPoint2, float t);
+
+	void bezierTable(glm::vec2& controlPoint1, glm::vec2& controlPoint2, glm::vec2* outBuffer, int outSize);
+
 	void curve2Dto1D(glm::vec2 * inBuffer, int inSize, float * outBuffer, int outSize);
 	/*
 	* Converts a curve defined by 2d points to a 1d array of floats

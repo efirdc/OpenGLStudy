@@ -46,7 +46,6 @@ public:
 	void setNumFrequencyBins(int numFrequencyBins);
 	float getDomainShiftFactor();
 	
-
 private:
 	float m_domainShiftFactor;
 };

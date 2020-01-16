@@ -66,25 +66,26 @@ class AudioTexture
 public:
 	AudioTexture(unsigned int textureUnit, int frameSize, int frameGap, int frequencyBins, int spectrumsInAverage, float domainShift, float peakRadius) :
 		textureUnit(textureUnit),
+	
 		frameSize(frameSize),
 		frameGap(frameGap),
-		frequencyBins(frequencyBins),
 		numAudioSamples(frameSize * 2),
+		frequencyBins(frequencyBins),
 		spectrumsInAverage(spectrumsInAverage),
 		domainShift(domainShift),
 		peakRadius(peakRadius),
-		analyzer{frameSize},
+		
 		peakCurveSize((int)((float)frequencyBins* peakRadius)),
 		frequencyTexture{ GL_R32F, frequencyBins, GL_RED, GL_FLOAT, 1, 4, true },
-		fAmpControlPoints{ { 0.016f, 0.016f },{ 0.0f, 1.0f } },
-		frequencyAmplitudeCurve(fAmpControlPoints, bezierCurveSize, bezierCurveSize),
-		peakControlPoints{ { 1.00f, 0.00f },{ 0.0f, 1.00f } },
-		peakShapingCurve{ peakControlPoints, peakCurveSize, bezierCurveSize },
+		audioBuffer( numAudioSamples ),
+		frequencyAmplitudeCurve({ 0.016f, 0.016f }, { 0.0f, 1.0f }, bezierCurveSize, bezierCurveSize),
+		peakShapingCurve{ { 1.00f, 0.00f }, { 0.0f, 1.00f }, peakCurveSize, bezierCurveSize },
+
+		analyzer{ frameSize },
 		amplitudeFilter{ frequencyAmplitudeCurve.curve1D, frequencyAmplitudeCurve.curve1DSize },
 		domainShiftFilter{ domainShift, frequencyBins },
 		peakFilter{ peakShapingCurve.curve1D, peakShapingCurve.curve1DSize },
-		averageFilter{ spectrumsInAverage },
-		audioBuffer{ new float[numAudioSamples]() }
+		averageFilter{ spectrumsInAverage }
 	{
 		bind();
 		loopback_init();
@@ -92,12 +93,6 @@ public:
 		for (int i = 0; i < frequencyTexture.width; i++)
 			frequencyPixelBuffer[i] = 0.0f;
 	}
-
-	~AudioTexture()
-	{
-		delete[] audioBuffer;
-	}
-
 	void bind()
 	{
 		glActiveTexture(GL_TEXTURE0 + textureUnit);
@@ -116,12 +111,9 @@ public:
 	float peakRadius;
 	int peakCurveSize;
 	StreamTexture1D frequencyTexture;
-	float * audioBuffer;
+	std::vector<float> audioBuffer;
 
-	ImVec2 fAmpControlPoints[2];
 	ImBezierCurve frequencyAmplitudeCurve;
-	
-	ImVec2 peakControlPoints[2];
 	ImBezierCurve peakShapingCurve;
 
 	SpectrumAnalyzer analyzer;
@@ -129,11 +121,11 @@ public:
 	DomainShiftFilter domainShiftFilter;
 	PeakFilter peakFilter;
 	AverageFilter averageFilter;
-
+	 
 	void update()
 	{
 		static int newSamples = 0;
-		newSamples += loopback_getSound(audioBuffer, numAudioSamples);
+		newSamples += loopback_getSound(audioBuffer.data(), numAudioSamples);
 		static const FrequencySpectrum* frequencySpectrum = averageFilter.getFrequencySpectrum();
 		while (newSamples >= frameGap)
 		{
@@ -159,27 +151,39 @@ public:
 
 	friend class boost::serialization::access;
 	template<class Archive>
-	void serialize(Archive& ar, const unsigned int version)
+	void save(Archive & ar, const unsigned int version) const
 	{
-		int frameSize;
-		int frameGap;
-		int numAudioSamples;
-		int frequencyBins;
-		int spectrumsInAverage;
-		float domainShift;
+		ar& frameSize& frameGap& numAudioSamples& frequencyBins& spectrumsInAverage& domainShift
+			& peakRadius& peakCurveSize& frequencyAmplitudeCurve& peakShapingCurve;
 	}
+	template<class Archive>
+	void load(Archive& ar, const unsigned int version)
+	{
+		ar& frameSize& frameGap& numAudioSamples& frequencyBins& spectrumsInAverage& domainShift
+			& peakRadius& peakCurveSize& frequencyAmplitudeCurve& peakShapingCurve;
+		frequencyTexture.resize(frequencyBins);
+		analyzer.setFrameSize(frameSize);
+		delete[] audioBuffer;
+		audioBuffer = new float[numAudioSamples]();
+		domainShiftFilter.setDomainShiftFactor(domainShift);
+		frequencyAmplitudeCurve.recalculate();
+		amplitudeFilter.setAmplitudeCurve(frequencyAmplitudeCurve.curve1D, frequencyAmplitudeCurve.curve1DSize);
+		peakCurveSize = (int)((float)frequencyBins * peakRadius);
+		peakShapingCurve.curve1DSize = peakCurveSize;
+		peakShapingCurve.recalculate();
+		peakFilter.setPeakCurve(peakShapingCurve.curve1D, peakShapingCurve.curve1DSize);
+	}
+	BOOST_SERIALIZATION_SPLIT_MEMBER()
 
 	void menu()
 	{
 		if(ImGui::TreeNode("Audio Visualizer"))
 		{
-			int ival = analyzer.getFrameSize();
-			if (ImGui::expArrowButtons("audio frame size: %d", &ival, 2, 65536))
+			if (ImGui::expArrowButtons("audio frame size: %d", &frameSize, 2, 65536))
 			{
-				analyzer.setFrameSize(ival);
-				numAudioSamples = ival * 2;
-				delete[] audioBuffer;
-				audioBuffer = new float[numAudioSamples]();
+				analyzer.setFrameSize(frameSize);
+				numAudioSamples = frameSize * 2;
+				audioBuffer.reserve(numAudioSamples);
 			}
 			ImGui::SameLine(); ImGui::ShowHelpMarker("Number of audio samples used in the fourier transform.\nHigher values have more frequency information, but less time information.");
 			ImGui::TreePop();
@@ -192,17 +196,15 @@ public:
 			}
 			ImGui::SameLine(); ImGui::ShowHelpMarker("Controls how many fourier transforms happen per second.\nThis is essentially the framerate of the frequency spectrum.");
 
-			ival = averageFilter.getNumSpectrumsInAverage();
-			if (ImGui::SliderInt("audio frames used", &ival, 1, 40))
-				averageFilter.setNumSpectrumsInAverage(utl::clamp(ival, 1, 200));
+			if (ImGui::SliderInt("audio frames used", &spectrumsInAverage, 1, 40))
+				averageFilter.setNumSpectrumsInAverage(utl::clamp(spectrumsInAverage, 1, 200));
 			ImGui::SameLine(); ImGui::ShowHelpMarker("The final displayed frequency spectrum is an average of this many spectrums.\nRaise to increase smoothness.");
 
 			int totalSamples = analyzer.getFrameSize() + frameGap * averageFilter.getNumSpectrumsInAverage();
 			ImGui::Text("time of utilized audio: %.3f sec", (float)totalSamples / (float)loopback_samplesPerSec());
 
-			float fval = domainShiftFilter.getDomainShiftFactor();
-			ImGui::SliderFloat("log domain shift factor", &fval, 1.0f, 10.0f);
-			domainShiftFilter.setDomainShiftFactor(fval);
+			ImGui::SliderFloat("log domain shift factor", &domainShift, 1.0f, 10.0f);
+			domainShiftFilter.setDomainShiftFactor(domainShift);
 			ImGui::SameLine(); ImGui::ShowHelpMarker("Shifts frequency domain onto a logarithmic scale.\
 				\n1.0: all frequency bins are spaced evenly.\
 				\n10.0: frequency bins are spaced at powers of 10\
@@ -211,7 +213,7 @@ public:
 			bool changed = false;
 			if (ImGui::TreeNode("Frequency Amplitude Curve"))
 			{
-				changed = ImGui::Bezier("", frequencyAmplitudeCurve.controlPoints);
+				changed = frequencyAmplitudeCurve.menu("");
 				ImGui::TreePop();
 			}
 			if (changed)
@@ -224,7 +226,7 @@ public:
 			if (ImGui::TreeNode("Frequency Peak Curve"))
 			{
 				changed = ImGui::SliderFloat("Blur Radius", &peakRadius, 0.0f, 0.1f);
-				changed |= ImGui::Bezier("", peakShapingCurve.controlPoints);
+				changed |= peakShapingCurve.menu("");
 				ImGui::TreePop();
 			}
 			if (changed)
@@ -436,12 +438,15 @@ public:
 		float octaveScatteringDecay = 0.5;
 		float octavePhaseDecay = 0.5;
 
-		bool singleComputeShader = false;
+		AudioTexture audioTexture{ 7, 1024, 128, 1024, 8, 5.0f, 0.005f };
 		
 		friend class boost::serialization::access;
 		template<class Archive>
 		void serialize(Archive& ar, const unsigned int version)
 		{
+			if (version > 2)
+				ar& directionalLightDirection& multiScatteringOctaves& octaveExtinctionDecay& octaveScatteringDecay
+				& octavePhaseDecay& audioTexture;
 			if (version > 1)
 				ar & scattering & absorption & directionalLightLuminance & phaseMode & mieMode & mieMultiLobe
 					& mieG1 & mieG2 & mieLobeMix;
@@ -494,8 +499,6 @@ public:
 		{ 5, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
-
-	AudioTexture audioTexture{ 7, 1024, 128, 1024, 8, 5.0f, 0.005f };
 	
 	unsigned int quadVAO{};
 
@@ -567,23 +570,6 @@ public:
 		shadowMapTexture.setSize(settings.gridSize);
 	}
 
-	void updateImageModes()
-	{
-		if (settings.singleComputeShader)
-		{
-			fluidTexture.setImageMode(GL_READ_WRITE);
-			curlTexture.setImageMode(GL_READ_WRITE);
-			densityTexture.setImageMode(GL_READ_WRITE);
-			shadowMapTexture.setImageMode(GL_WRITE_ONLY);
-			return;
-		}
-		fluidTexture.setImageMode(GL_WRITE_ONLY);
-		curlTexture.setImageMode(GL_WRITE_ONLY);
-		densityTexture.setImageMode(GL_WRITE_ONLY);
-		shadowMapTexture.setImageMode(GL_WRITE_ONLY);
-	}
-
-
 	void update() override
 	{
 		menu();
@@ -596,16 +582,19 @@ public:
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 		};
 
-		audioTexture.update();
+		settings.audioTexture.update();
 
 		fluidStep(advection, settings.gridSize);
 		fluidTexture.swap();
 		densityTexture.swap();
 		pressureTexture.swap();
-		
-		fluidStep(curl, settings.gridSize);
-		fluidStep(vorticity, settings.gridSize);
-		fluidTexture.swap();
+
+		if (settings.vorticityEnabled)
+		{
+			fluidStep(curl, settings.gridSize);
+			fluidStep(vorticity, settings.gridSize);
+			fluidTexture.swap();
+		}
 		
 		fluidStep(divergence, settings.gridSize);
 		pressureTexture.swap();
@@ -756,31 +745,10 @@ public:
 			{
 				//fluidGradientTexture.upload(settings.fluidGradient);
 				resizeFluidTextures();
-				updateImageModes();
 			}
 				
 			if (ImGui::TreeNode("Fluid Behavior"))
 			{
-				//if (ImGui::Checkbox("single compute shader", &settings.singleComputeShader))
-					//updateImageModes();
-				
-				if (ImGui::TreeNode("Texture bits"))
-				{
-					static int velocityBitMode = 2, pressureBitMode = 2, curlBitMode = 2, densityBitMode = 2, shadowBitMode = 2;
-					const char* bitModes[] = { "8 bit", "16 bit", "32 bit" };
-					if (ImGui::Combo("velocity format", &velocityBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
-						configureFluidTexture(fluidTexture, "FLUID", 4, velocityBitMode, true);
-					if (ImGui::Combo("pressure format", &pressureBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
-						configureFluidTexture(pressureTexture, "PRESSURE", 2, pressureBitMode,true);
-					if (ImGui::Combo("curl format", &curlBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
-						configureFluidTexture(curlTexture, "CURL", 4, curlBitMode, true);
-					if (ImGui::Combo("density format", &densityBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
-						configureFluidTexture(densityTexture, "DENSITY", 1, densityBitMode, false);
-					if (ImGui::Combo("shadow format", &shadowBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
-						configureFluidTexture(shadowMapTexture, "SHADOWMAP", 4, shadowBitMode, false);
-					ImGui::TreePop();
-				}
-				
 				static glm::ivec3 gridSizeTemp = settings.gridSize;
 				ImGui::SliderInt3("fluid size", (int*)&gridSizeTemp, 8, 256);
 				const glm::ivec3 localWorkGroupSize(8, 8, 8);
@@ -869,7 +837,28 @@ public:
 				ImGui::TreePop();
 			}
 
-			audioTexture.menu();
+			settings.audioTexture.menu();
+
+			if (ImGui::TreeNode("Debug Settings (unsaved)"))
+			{
+				if (ImGui::TreeNode("Texture bits"))
+				{
+					static int velocityBitMode = 2, pressureBitMode = 2, curlBitMode = 2, densityBitMode = 2, shadowBitMode = 2;
+					const char* bitModes[] = { "8 bit", "16 bit", "32 bit" };
+					if (ImGui::Combo("velocity format", &velocityBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+						configureFluidTexture(fluidTexture, "FLUID", 4, velocityBitMode, true);
+					if (ImGui::Combo("pressure format", &pressureBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+						configureFluidTexture(pressureTexture, "PRESSURE", 2, pressureBitMode, true);
+					if (ImGui::Combo("curl format", &curlBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+						configureFluidTexture(curlTexture, "CURL", 4, curlBitMode, true);
+					if (ImGui::Combo("density format", &densityBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+						configureFluidTexture(densityTexture, "DENSITY", 1, densityBitMode, false);
+					if (ImGui::Combo("shadow format", &shadowBitMode, bitModes, IM_ARRAYSIZE(bitModes)))
+						configureFluidTexture(shadowMapTexture, "SHADOWMAP", 4, shadowBitMode, false);
+					ImGui::TreePop();
+				}
+				ImGui::TreePop();
+			}
 			
 			static int lastError = 0;
 			const int currentError = glGetError();
@@ -886,7 +875,7 @@ public:
 	}
 };
 
-BOOST_CLASS_VERSION(GLFeedbackProgram::Settings, 2)
+BOOST_CLASS_VERSION(GLFeedbackProgram::Settings, 3)
 BOOST_CLASS_VERSION(GLFeedbackProgram::FluidSplat, 1)
 
 

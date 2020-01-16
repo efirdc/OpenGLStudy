@@ -15,6 +15,19 @@ namespace utl
 			outBuffer[i] = bezierValue(controlPoints, (float)i / width);
 	}
 
+	glm::vec2 bezierValue(glm::vec2 controlPoint1, glm::vec2 controlPoint2, float t)
+	{
+		float omt = 1.0f - t;
+		return controlPoint1 * (3.0f * omt * omt * t) + controlPoint2 * (3 * omt * t * t) + glm::vec2(1.0f, 1.0f) * (t * t * t);
+	}
+
+	void bezierTable(glm::vec2& controlPoint1, glm::vec2& controlPoint2, glm::vec2* outBuffer, int outSize)
+	{
+		float width = (float)(outSize - 1);
+		for (int i = 0; i < outSize; i++)
+			outBuffer[i] = bezierValue(controlPoint1, controlPoint2, (float)i / width);
+	}
+
 	void curve2Dto1D(glm::vec2 * inBuffer, int inSize, float * outBuffer, int outSize)
 	{
 		int j = 0;
