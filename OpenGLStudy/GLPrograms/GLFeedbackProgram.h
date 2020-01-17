@@ -658,6 +658,7 @@ public:
 		Shader::bindGlobalUniform("densitySampler", &densityTexture.defn.textureUnit);
 		Shader::bindGlobalUniform("shadowMapImage", &shadowMapTexture.defn.textureUnit);
 		Shader::bindGlobalUniform("shadowMapSampler", &shadowMapTexture.defn.textureUnit);
+		Shader::bindGlobalUniform("audioFrequencySampler", &settings.audioTexture.textureUnit);
 
 		//Shader::bindGlobalUniform("cloudColorCurve", &fluidGradientTexture.textureUnit);
 
