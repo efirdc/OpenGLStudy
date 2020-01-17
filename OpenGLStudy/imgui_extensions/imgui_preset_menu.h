@@ -1,6 +1,7 @@
 #ifndef IMGUI_PRESET_MENU_H
 #define IMGUI_PRESET_MENU_H
 
+#include <filesystem>
 #include <map>
 
 #include "imgui/imgui.h"
@@ -14,6 +15,7 @@ class ImguiPresetMenu {
 public:
 	T & instance;
 	std::string fileName;
+	std::map<std::string, std::string> presets;
 
 	ImguiPresetMenu(T & instance, std::string fileName) :
 		instance(instance),
@@ -23,10 +25,36 @@ public:
 		if (inFile.good())
 		{
 			boost::archive::text_iarchive ia(inFile);
-			ia >> Presets;
+			ia >> presets;
 		}
-		inFile.close();
-		instance = *Presets["default"];
+		loadPreset("default");
+	}
+
+	void saveToDisk()
+	{
+		std::ofstream outFile(fileName);
+		boost::archive::text_oarchive oa(outFile);
+		oa << presets;
+	}
+	
+	void loadPreset(const std::string& presetName)
+	{
+		std::string preset = presets[presetName];
+		if (preset == "")
+			return;
+		std::stringstream sstream;
+		sstream.str(preset);
+		boost::archive::text_iarchive ia(sstream);
+		ia >> instance;
+	}
+
+	void savePreset(const std::string& presetName)
+	{
+		std::stringstream sstream;
+		boost::archive::text_oarchive oa(sstream);
+		oa << instance;
+		presets[presetName] = sstream.str();
+		saveToDisk();
 	}
 
 	bool Menu()
@@ -37,7 +65,7 @@ public:
 			static std::string selection = "default";
 			if (ImGui::BeginCombo("##loadpreset", selection.c_str()))
 			{
-				for (auto& element : Presets)
+				for (auto& element : presets)
 				{
 					std::string key = element.first;
 					bool isSelected = selection == key;
@@ -51,7 +79,7 @@ public:
 			ImGui::SameLine();
 			if (ImGui::Button("Load"))
 			{
-				instance = *Presets[selection];
+				loadPreset(selection);
 				loadedPreset = true;
 			}
 			ImGui::SameLine();
@@ -59,10 +87,8 @@ public:
 			{
 				if (selection != "default")
 				{
-					Presets.erase(selection);
-					std::ofstream outFile(fileName);
-					boost::archive::text_oarchive oa(outFile);
-					oa << Presets;
+					presets.erase(selection);
+					saveToDisk();
 					selection = "default";
 				}
 			}
@@ -70,19 +96,12 @@ public:
 			ImGui::InputText("##savepreset", presetName, IM_ARRAYSIZE(presetName));
 			ImGui::SameLine();
 			if (ImGui::Button("Save Preset"))
-			{
-				Presets[presetName] = new T(instance);
-				std::ofstream outFile(fileName);
-				boost::archive::text_oarchive oa(outFile);
-				oa << Presets;
-			}
+				savePreset(presetName);
 			ImGui::TreePop();
 		}
 		return loadedPreset;
 	}
-private:
-	static std::map<std::string, T *> Presets;
+
 };
-template<typename T> std::map<std::string, T *> ImguiPresetMenu<T>::Presets;
 
 #endif

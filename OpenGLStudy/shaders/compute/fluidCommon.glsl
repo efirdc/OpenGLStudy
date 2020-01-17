@@ -35,7 +35,7 @@ layout(binding = 1) uniform PRESSURE_SAMPLER_TYPE pressureSampler;
 layout(binding = 2) uniform CURL_SAMPLER_TYPE curlSampler;
 layout(binding = 3) uniform DENSITY_SAMPLER_TYPE densitySampler;
 layout(binding = 5) uniform SHADOWMAP_SAMPLER_TYPE shadowMapSampler;
-layout(binding = 7) uniform sampler1D audioFrequencySampler;
+layout(binding = 6) uniform sampler1D audioFrequencySampler;
 
 #define FLUID_STORE_OP(data) data
 #define PRESSURE_STORE_OP(data) data

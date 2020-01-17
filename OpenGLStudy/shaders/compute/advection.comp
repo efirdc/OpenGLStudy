@@ -41,12 +41,12 @@ void main()
 	vec3 deltaNorm = normalize(delta);
 	float splat = gauss(delta, externalSplat.radius * freq);
 
-	vec3 rotational = cross(deltaNorm, vec3(0, 1, 0));
-	center.xyz += (externalSplat.rotation * deltaNorm) * splat * externalSplat.velocity;
+	//center.xyz += (externalSplat.rotation * deltaNorm) * splat * externalSplat.velocity;
+	center.xyz += (deltaNorm) * splat * externalSplat.velocity;
 	density += splat * externalSplat.density;
 	density *= densityDissipation;
-	vec4 pressure = texelFetch(pressureSampler, icoords, 0);
 
+	vec4 pressure = texelFetch(pressureSampler, icoords, 0);
 	pressure.r += splat * externalSplat.pressure;
 
 	deleteError(center); deleteError(pressure); deleteError(density);

@@ -22,6 +22,10 @@ ImBezierCurve::~ImBezierCurve()
 
 void ImBezierCurve::recalculate()
 {
+	delete[] curve1D;
+	delete[] curve2D;
+	curve1D = new float[curve1DSize]();
+	curve2D = new glm::vec2[curve2DSize]();
 	utl::bezierTable(controlPoint1, controlPoint2, curve2D, curve2DSize);
 	utl::curve2Dto1D(curve2D, curve2DSize, curve1D, curve1DSize);
 }
@@ -48,7 +52,7 @@ bool ImBezierCurve::menu(const char* label)
 	// sliders
 	float points[4] = { controlPoint1.x, controlPoint1.y, controlPoint2.x, controlPoint2.y };
 	int changed = SliderFloat4(label, points, 0, 1, "%.3f", 1.0f);
-	controlPoint1.x = points[0]; controlPoint1.y = points[1]; controlPoint2.x = points[0]; controlPoint2.y = points[1];
+	controlPoint1.x = points[0]; controlPoint1.y = points[1]; controlPoint2.x = points[2]; controlPoint2.y = points[3];
 
 	// prepare canvas
 	float size = ImMin(GetContentRegionAvailWidth(), 256.0f);
@@ -90,7 +94,7 @@ bool ImBezierCurve::menu(const char* label)
 			SetTooltip("(%4.3f, %4.3f)", controlPoints[i].x, controlPoints[i].y);
 		PopID();
 	}
-	controlPoint1 = controlPoints[1]; controlPoint2 = controlPoints[2];
+	controlPoint1 = controlPoints[0]; controlPoint2 = controlPoints[1];
 
 	// if the widget is hovered or changed then draw it over the whole screen instead of just the window
 	const bool drawFullScreen = hovered || changed;

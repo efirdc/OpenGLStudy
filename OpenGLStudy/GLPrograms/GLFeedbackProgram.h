@@ -74,10 +74,10 @@ public:
 		spectrumsInAverage(spectrumsInAverage),
 		domainShift(domainShift),
 		peakRadius(peakRadius),
-		
+
+		frequencyTexture{ GL_R32F, frequencyBins, GL_RED, GL_FLOAT, 1, 4, false },
+		audioBuffer(numAudioSamples),
 		peakCurveSize((int)((float)frequencyBins* peakRadius)),
-		frequencyTexture{ GL_R32F, frequencyBins, GL_RED, GL_FLOAT, 1, 4, true },
-		audioBuffer( numAudioSamples ),
 		frequencyAmplitudeCurve({ 0.016f, 0.016f }, { 0.0f, 1.0f }, bezierCurveSize, bezierCurveSize),
 		peakShapingCurve{ { 1.00f, 0.00f }, { 0.0f, 1.00f }, peakCurveSize, bezierCurveSize },
 
@@ -88,17 +88,29 @@ public:
 		averageFilter{ spectrumsInAverage }
 	{
 		bind();
+		/*
+		glGenTextures(1, &ID);
+		glActiveTexture(GL_TEXTURE0 + textureUnit);
+		glBindTexture(GL_TEXTURE_1D, ID);
+		glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, frequencyBins, 0, GL_RED, GL_FLOAT, NULL);
+		*/
 		loopback_init();
+
+		
 		float* frequencyPixelBuffer = (float*)frequencyTexture.getPixelBuffer();
 		for (int i = 0; i < frequencyTexture.width; i++)
 			frequencyPixelBuffer[i] = 0.0f;
 	}
+
+	
 	void bind()
 	{
 		glActiveTexture(GL_TEXTURE0 + textureUnit);
 		glBindTexture(GL_TEXTURE_1D, frequencyTexture.textureID);
 	}
+	
 	unsigned int textureUnit;
+	unsigned int ID;
 	
 	const int bezierCurveSize = 4096;
 	int frameSize;
@@ -108,11 +120,11 @@ public:
 	int spectrumsInAverage;
 	float domainShift;
 
-	float peakRadius;
-	int peakCurveSize;
 	StreamTexture1D frequencyTexture;
 	std::vector<float> audioBuffer;
 
+	float peakRadius;
+	int peakCurveSize;
 	ImBezierCurve frequencyAmplitudeCurve;
 	ImBezierCurve peakShapingCurve;
 
@@ -133,6 +145,7 @@ public:
 			float* inputBuffer = analyzer.getFrameInputBuffer();
 			int frameSize = analyzer.getFrameSize();
 			int frameStart = frameSize - newSamples;
+			frameStart = utl::max(frameStart, 0);
 			for (int i = 0; i < frameSize; i++)
 				inputBuffer[i] = audioBuffer[frameStart + i];
 			analyzer.processFrame();
@@ -143,6 +156,8 @@ public:
 			frequencySpectrum = averageFilter.applyFilter(frequencySpectrum);
 		}
 		float* frequencyData = frequencySpectrum->data;
+		//glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, frequencySpectrum->size, 0, GL_RED, GL_FLOAT, frequencyData);
+
 		float* frequencyPixelBuffer = (float*)frequencyTexture.getPixelBuffer();
 		for (int i = 0; i < frequencySpectrum->size; i++)
 			frequencyPixelBuffer[i] = frequencyData[i];
@@ -161,10 +176,10 @@ public:
 	{
 		ar& frameSize& frameGap& numAudioSamples& frequencyBins& spectrumsInAverage& domainShift
 			& peakRadius& peakCurveSize& frequencyAmplitudeCurve& peakShapingCurve;
+		//glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, frequencyBins, 0, GL_RED, GL_FLOAT, NULL);
 		frequencyTexture.resize(frequencyBins);
 		analyzer.setFrameSize(frameSize);
-		delete[] audioBuffer;
-		audioBuffer = new float[numAudioSamples]();
+		audioBuffer.resize(numAudioSamples);
 		domainShiftFilter.setDomainShiftFactor(domainShift);
 		frequencyAmplitudeCurve.recalculate();
 		amplitudeFilter.setAmplitudeCurve(frequencyAmplitudeCurve.curve1D, frequencyAmplitudeCurve.curve1DSize);
@@ -183,7 +198,7 @@ public:
 			{
 				analyzer.setFrameSize(frameSize);
 				numAudioSamples = frameSize * 2;
-				audioBuffer.reserve(numAudioSamples);
+				audioBuffer.resize(numAudioSamples);
 			}
 			ImGui::SameLine(); ImGui::ShowHelpMarker("Number of audio samples used in the fourier transform.\nHigher values have more frequency information, but less time information.");
 			ImGui::TreePop();
@@ -438,7 +453,7 @@ public:
 		float octaveScatteringDecay = 0.5;
 		float octavePhaseDecay = 0.5;
 
-		AudioTexture audioTexture{ 7, 1024, 128, 1024, 8, 5.0f, 0.005f };
+		AudioTexture audioTexture{ 6, 1024, 128, 1024, 8, 5.0f, 0.005f };
 		
 		friend class boost::serialization::access;
 		template<class Archive>
@@ -775,7 +790,9 @@ public:
 				ImGui::ColorEdit3("background color", (float*)&settings.backgroundColor);
 				
 				ImGui::SliderFloat("ray step size", &settings.rayStepSize, 0.1f, 4.0f);
+				settings.rayStepSize = utl::max(settings.rayStepSize, 0.05f);
 				ImGui::SliderFloat("shadow step size", &settings.shadowStepSize, 0.1f, 4.0f);
+				settings.shadowStepSize = utl::max(settings.shadowStepSize, 0.05f);
 				ImGui::SliderFloat("max shadowing length", &settings.maxShadowingLength, 1.0f, 512.0f);
 				//ImGui::SliderFloat("max density accumulation", &settings.maxDensity, 2.0f, 20.0f);
 				//ImGui::SliderFloat("directional light extinction", &settings.directionalLightExtinction, 1.0, 100.0f);
