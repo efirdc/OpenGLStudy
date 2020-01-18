@@ -36,7 +36,10 @@ void main()
 	density *= densityDissipation;
 	*/
 
-	float freq = texture(audioFrequencySampler, coords.y / float(fluidSize.y), 0).r;
+	float v = coords.y / float(fluidSize.y);
+	float freq = texture(audioFrequencySampler, v).r;
+
+
 	vec3 delta = (coords - vec3(fluidSize) * 0.5) * vec3(1.0, 0.0, 1.0);
 	vec3 deltaNorm = normalize(delta);
 	float splat = gauss(delta, externalSplat.radius * freq);
