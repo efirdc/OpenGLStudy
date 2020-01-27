@@ -206,6 +206,7 @@
     <ClInclude Include="core\SpectrumAnalyzer.h" />
     <ClInclude Include="core\SpectrumFilter.h" />
     <ClInclude Include="core\StreamTexture.h" />
+    <ClInclude Include="core\Texture.h" />
     <ClInclude Include="core\utilities.h" />
     <ClInclude Include="core\View.h" />
     <ClInclude Include="core\WindowsTouch.h" />
@@ -230,6 +231,8 @@
     <ClInclude Include="dependencies\Shadinclude\Shadinclude.hpp" />
     <ClInclude Include="dependencies\stb\stb_image.h" />
     <ClInclude Include="GLPrograms\GLFeedbackProgram.h" />
+    <ClInclude Include="GLPrograms\GLPlotProgram.h" />
+    <ClInclude Include="GLPrograms\GLReactionDiffusionProgram.h" />
     <ClInclude Include="imgui_extensions\imGuIZMOquat.h" />
     <ClInclude Include="imgui_extensions\imgui_bezier_curve.h" />
     <ClInclude Include="imgui_extensions\imgui_boost_serialization.h" />
@@ -296,10 +299,14 @@
     <None Include="shaders\raymarch\feedback.frag" />
     <None Include="shaders\raymarch\light.glsl" />
     <None Include="shaders\raymarch\material.glsl" />
+    <None Include="shaders\raymarch\plot_raymarch.frag" />
     <None Include="shaders\raymarch\raymarch.vert" />
     <None Include="shaders\raymarch\sdf.glsl" />
     <None Include="shaders\raymarch\spheres.frag" />
     <None Include="shaders\raymarch\volumetric.frag" />
+    <None Include="shaders\reaction_diffusion\reactionDiffusion.comp" />
+    <None Include="shaders\reaction_diffusion\reactionDiffusion.frag" />
+    <None Include="shaders\reaction_diffusion\reactionDiffusion.vert" />
     <None Include="shaders\shaderTest.fs" />
     <None Include="shaders\shaderTest.vs" />
     <None Include="shaders\textureQuad.fs" />

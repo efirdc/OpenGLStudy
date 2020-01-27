@@ -23,7 +23,7 @@ struct PointLight
 float blinnPhongSpecularity(float shininess, vec3 lightDir, vec3 norm, vec3 rayDir)
 {
     float energyConservation = ( 8.0 + shininess ) / ( 8.0 * kPi );
-    vec3 halfwayDir = -normalize(lightDir + rayDir);
+    vec3 halfwayDir = normalize(lightDir + rayDir);
     return energyConservation * pow(max(dot(norm, halfwayDir), 0.0), shininess);
 	
 	/* no blinn, just phong

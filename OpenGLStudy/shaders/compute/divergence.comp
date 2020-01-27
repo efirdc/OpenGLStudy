@@ -12,7 +12,7 @@ void main()
 	vec4 center, left, right, top, bottom, front, back;
 
 	center = texelFetch(pressureSampler, icoords, 0);
-	texelFetchAdjacent(fluidSampler, icoords, left, right, top, bottom, front, back);
+	texelFetchAdjacentVelocity(icoords, left, right, top, bottom, front, back);
 
 	float divergence = (right.x - left.x + top.y - bottom.y + front.z - back.z) * 0.5;
 	center.g = divergence;

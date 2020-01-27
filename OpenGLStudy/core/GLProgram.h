@@ -12,6 +12,7 @@
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
+#include <map>
 
 class GLProgram
 {
@@ -38,7 +39,7 @@ protected:
 	int versionMinor;
 	bool captureMouse;
 	std::string windowName;
-	glm::vec2 screenSize;
+	glm::ivec2 screenSize;
 	bool glDebug;
 
 	glm::vec2 mousePos;
@@ -48,9 +49,13 @@ protected:
 	float time = 0.0f;
 	float deltaTime = 0.0f;
 	int frameNumber = 0;
-	bool leftMouseDown = false;
-	bool rightMouseDown = false;
-	
+
+	struct InputData {bool pressed = false, held = false;};
+
+	std::map<int, InputData> mouseInputs;
+	std::map<int, InputData> keyInputs;
+
+	void updateInputData();
 	void newFrame();
 	void sizeFramebufferToWindow();
 	

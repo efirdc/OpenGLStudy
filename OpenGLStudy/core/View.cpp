@@ -4,6 +4,7 @@ void View::updateView2(GLFWwindow* window, const glm::vec2& deltaMousePos, float
 {
 	// disable control when mouse is active
 	glm::vec3 movementAxis(0.0f);
+	float speedBoost = 1.0f;
 	if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
 	{
 		// get movement axis
@@ -21,6 +22,9 @@ void View::updateView2(GLFWwindow* window, const glm::vec2& deltaMousePos, float
 			movementAxis[1] -= 1.0f;
 		movementAxis = glm::length(movementAxis) > 0.0f ? glm::normalize(movementAxis) : movementAxis;
 
+		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+			speedBoost = 3.0f;
+		
 		// constrain y axis rotation (yaw) to [0, 360] and x axis rotation (pitch) to [-90, 90]
 		eulerAngles.y = glm::mod(eulerAngles.y - deltaMousePos.x * sensitivity, 360.0f);
 		eulerAngles.x = glm::clamp(eulerAngles.x - deltaMousePos.y * sensitivity, -90.0f, 90.0f);
@@ -45,7 +49,7 @@ void View::updateView2(GLFWwindow* window, const glm::vec2& deltaMousePos, float
 	}
 
 	// perform translation and calculate inverse matrix
-	position += velocity * deltaTime;
+	position += velocity * deltaTime * speedBoost;
 	matrix[3] = glm::vec4(position, 1.0f);
 	invMatrix = glm::inverse(matrix);
 }

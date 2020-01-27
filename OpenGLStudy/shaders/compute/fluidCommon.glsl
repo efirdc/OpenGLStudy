@@ -35,13 +35,15 @@ layout(binding = 1) uniform PRESSURE_SAMPLER_TYPE pressureSampler;
 layout(binding = 2) uniform CURL_SAMPLER_TYPE curlSampler;
 layout(binding = 3) uniform DENSITY_SAMPLER_TYPE densitySampler;
 layout(binding = 5) uniform SHADOWMAP_SAMPLER_TYPE shadowMapSampler;
-layout(binding = 6) uniform sampler1D audioFrequencySampler;
+layout(binding = 7) uniform sampler1D audioFrequencySampler;
 
 #define FLUID_STORE_OP(data) data
 #define PRESSURE_STORE_OP(data) data
 #define CURL_STORE_OP(data) data
 #define DENSITY_STORE_OP(data) data
 #define SHADOWMAP_STORE_OP(data) (data)
+
+#define VELOCITY_BOUNDARY_MODE 1
 
 uniform float time;
 uniform float deltaTime;
@@ -60,6 +62,15 @@ uniform float densityDissipation;
 uniform float vorticityScalar;
 uniform FluidSplat mouseSplat;
 uniform FluidSplat externalSplat;
+
+uniform vec2 screenMousePos;
+uniform vec2 prevScreenMousePos;
+
+uniform vec3 mouseSplatPos;
+uniform vec3 prevMouseSplatPos;
+uniform bool mouseSplatActive;
+uniform bool leftMouseDown;
+uniform bool rightMouseDown;
 
 void deleteError(inout vec4 value)
 {
@@ -125,15 +136,17 @@ void texelFetchAdjacent(sampler3D s, ivec3 icoords,
 	back = texelFetchOffset(s, icoords, 0, ivec3(0, 0, -1));
 }
 
-vec4 texelFetchPressure(sampler3D s, ivec3 icoords)
+vec4 texelFetchVelocity(ivec3 icoords)
 {
-	if (any(lessThan(icoords, vec3(0))) || any(greaterThan(icoords, fluidSize)))
-		return vec4(0);
-	return texelFetch(s, icoords, 0);
+	float flip = 1.0;
+#if VELOCITY_BOUNDARY_MODE == 1
+	if ( any(lessThan(icoords, ivec3(0.0))) || any(greaterThan(icoords, fluidSize)) )
+		flip = -1.0;
+#endif 
+	return texelFetch(fluidSampler, icoords, 0) * flip;
 }
 
-
-void texelFetchPressureAdjacent(sampler3D s, ivec3 icoords, 
+void texelFetchAdjacentVelocity(ivec3 icoords, 
 	out vec4 left, 
 	out vec4 right, 
 	out vec4 top, 
@@ -141,11 +154,11 @@ void texelFetchPressureAdjacent(sampler3D s, ivec3 icoords,
 	out vec4 front, 
 	out vec4 back)
 {
-	left = texelFetchPressure(s, icoords + ivec3(-1, 0, 0));
-	right = texelFetchPressure(s, icoords + ivec3(1, 0, 0));
-	top = texelFetchPressure(s, icoords + ivec3(0, 1, 0));
-	bottom = texelFetchPressure(s, icoords + ivec3(0, -1, 0));
-	front = texelFetchPressure(s, icoords + ivec3(0, 0, 1));
-	back = texelFetchPressure(s, icoords + ivec3(0, 0, -1));
+	left = texelFetchVelocity(icoords + ivec3(-1, 0, 0));
+	right = texelFetchVelocity(icoords + ivec3(1, 0, 0));
+	top = texelFetchVelocity(icoords +  ivec3(0, 1, 0));
+	bottom = texelFetchVelocity(icoords +  ivec3(0, -1, 0));
+	front = texelFetchVelocity(icoords +  ivec3(0, 0, 1));
+	back = texelFetchVelocity(icoords +  ivec3(0, 0, -1));
 }
 

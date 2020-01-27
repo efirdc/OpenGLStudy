@@ -9,11 +9,13 @@ int raymarchSpheres();
 int raymarchNoise();
 
 #include <list>
-#include "GLFeedbackProgram.h"
+//#include "GLFeedbackProgram.h"
+#include "GLPlotProgram.h"
+#include "GLReactionDiffusionProgram.h"
 
 int main()
 {
-	GLFeedbackProgram program;
+	GLReactionDiffusionProgram program;
 	program.run();
 }
 

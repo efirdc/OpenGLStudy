@@ -12,8 +12,8 @@ void main()
 	vec4 center, left, right, top, bottom, front, back;
 
 	// Vorticity
-	center = texelFetch(fluidSampler, icoords, 0);
-	texelFetchAdjacent(fluidSampler, icoords, left, right, top, bottom, front, back);
+	center = texelFetchVelocity(icoords);
+	texelFetchAdjacentVelocity(icoords, left, right, top, bottom, front, back);
 	vec3 curl = vec3(
 		top.z - front.y - bottom.z + back.z, 
 		front.x - right.z - back.x + left.z,

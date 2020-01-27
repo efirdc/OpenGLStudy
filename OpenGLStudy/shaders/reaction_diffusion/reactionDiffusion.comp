@@ -1,0 +1,98 @@
+#version 440
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+layout(binding = 0, rgba32f) writeonly restrict uniform image2D rdImage;
+layout(binding = 0) uniform sampler2D rdSampler;
+
+uniform float time;
+uniform float deltaTime;
+uniform vec2 screenMousePos;
+uniform vec2 prevScreenMousePos;
+uniform bool leftMouseDown;
+uniform bool rightMouseDown;
+
+uniform vec4 diffusionRates = vec4(1.0, 0.5, 0.0, 0.0);
+uniform float feed = 0.055;
+uniform float kill = 0.062;
+uniform float timestep = 1.0;
+
+uniform ivec2 simulationSize;
+uniform ivec2 screenSize;
+
+
+float gauss(vec2 p, float r)
+{
+  return exp(-dot(p, p) / r);
+}
+
+void texelFetchAdjacent(sampler2D s, ivec2 icoords, 
+	out vec4 L, 
+	out vec4 R, 
+	out vec4 U, 
+	out vec4 D, 
+	out vec4 TL, 
+	out vec4 TR,
+	out vec4 DR,
+	out vec4 DL)
+{
+	L = texelFetchOffset(s, icoords, 0, ivec2(-1, 0));
+	R = texelFetchOffset(s, icoords, 0, ivec2(1, 0));
+	U = texelFetchOffset(s, icoords, 0, ivec2(0, 1));
+	D = texelFetchOffset(s, icoords, 0, ivec2(0, -1));
+	TL = texelFetchOffset(s, icoords, 0, ivec2(-1, 1));
+	TR = texelFetchOffset(s, icoords, 0, ivec2(1, 1));
+	DR = texelFetchOffset(s, icoords, 0, ivec2(1, -1));
+	DL = texelFetchOffset(s, icoords, 0, ivec2(-1, -1));
+}
+
+void texelFetchAdjacentWrap(sampler2D s, ivec2 icoords, 
+	out vec4 L, 
+	out vec4 R, 
+	out vec4 U, 
+	out vec4 D, 
+	out vec4 TL, 
+	out vec4 TR,
+	out vec4 DR,
+	out vec4 DL)
+{
+	L = texelFetch(s, ivec2(mod(icoords + ivec2(-1, 0), simulationSize)), 0);
+	R = texelFetch(s, ivec2(mod(icoords + ivec2(1, 0), simulationSize)), 0);
+	U = texelFetch(s, ivec2(mod(icoords + ivec2(0, 1), simulationSize)), 0);
+	D = texelFetch(s, ivec2(mod(icoords + ivec2(0, -1), simulationSize)), 0);
+	TL = texelFetch(s, ivec2(mod(icoords + ivec2(-1, 1), simulationSize)), 0);
+	TR = texelFetch(s, ivec2(mod(icoords + ivec2(1,  1), simulationSize)), 0);
+	DR = texelFetch(s, ivec2(mod(icoords + ivec2(1, -1), simulationSize)), 0);
+	DL = texelFetch(s, ivec2(mod(icoords + ivec2(-1,-1), simulationSize)), 0);
+}
+
+void main()
+{
+	vec2 coords = vec2(gl_GlobalInvocationID.xy);
+	ivec2 icoords = ivec2(gl_GlobalInvocationID.xy);
+
+	//if (any(greaterThan(icoords, simulationSize)))
+	//	return;
+
+	vec4 C, L, R, U, D, TL, TR, DR, DL;
+	C = texelFetch(rdSampler, icoords, 0);
+	texelFetchAdjacentWrap(rdSampler, icoords,  L, R, U, D, TL, TR, DR, DL);
+
+	vec2 realMousePos = vec2(screenMousePos.x, screenSize.y - screenMousePos.y) / vec2(screenSize) * simulationSize;
+	vec2 delta = realMousePos - coords;
+	float splat = gauss(delta, 5.0f);
+	if (leftMouseDown)
+		C.x -= splat * 100.0;
+	if (rightMouseDown)
+		C.y += splat;
+
+	C = clamp(C, vec4(0.0), vec4(1.0));
+
+	vec4 laplacian = -C + (L + R + U + D) * 0.2 + (TL + TR + DR + DL) * 0.05;
+	float reaction = C.x * C.y * C.y;
+
+	C.x += (diffusionRates.x * laplacian.x - reaction + feed * (1.0 - C.x)) * timestep;
+	C.y += (diffusionRates.y * laplacian.y + reaction -(kill + feed) * C.y) * timestep;
+
+	imageStore(rdImage, icoords, C);
+}

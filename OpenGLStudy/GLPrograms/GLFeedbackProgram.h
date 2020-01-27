@@ -75,7 +75,7 @@ public:
 		domainShift(domainShift),
 		peakRadius(peakRadius),
 
-		frequencyTexture{ GL_R32F, frequencyBins, GL_RED, GL_FLOAT, 1, 4, false },
+		frequencyTexture{ GL_R32F, frequencyBins, GL_RED, GL_FLOAT, 1, 4, true },
 		audioBuffer(numAudioSamples),
 		peakCurveSize((int)((float)frequencyBins* peakRadius)),
 		frequencyAmplitudeCurve({ 0.016f, 0.016f }, { 0.0f, 1.0f }, bezierCurveSize, bezierCurveSize),
@@ -87,26 +87,35 @@ public:
 		peakFilter{ peakShapingCurve.curve1D, peakShapingCurve.curve1DSize },
 		averageFilter{ spectrumsInAverage }
 	{
-		bind();
 		/*
 		glGenTextures(1, &ID);
 		glActiveTexture(GL_TEXTURE0 + textureUnit);
 		glBindTexture(GL_TEXTURE_1D, ID);
-		glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, frequencyBins, 0, GL_RED, GL_FLOAT, NULL);
-		*/
-		loopback_init();
-
+		glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		std::vector<float> data(frequencyBins, 0.5f);*/
 		
+		//glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, frequencyBins, 0, GL_RED, GL_FLOAT, NULL);
+		//glGenerateMipmap(GL_TEXTURE_1D);
+		
+		loopback_init();
+		bind();
+		frequencyTexture.getPixelBuffer();
+		frequencyTexture.unmapPixelBuffer();
+		
+		/*
 		float* frequencyPixelBuffer = (float*)frequencyTexture.getPixelBuffer();
 		for (int i = 0; i < frequencyTexture.width; i++)
-			frequencyPixelBuffer[i] = 0.0f;
+			frequencyPixelBuffer[i] = 0.0f;*/
+		
 	}
 
 	
 	void bind()
 	{
 		glActiveTexture(GL_TEXTURE0 + textureUnit);
-		glBindTexture(GL_TEXTURE_1D, frequencyTexture.textureID);
+		glBindTexture(GL_TEXTURE_1D, ID);
 	}
 	
 	unsigned int textureUnit;
@@ -156,8 +165,11 @@ public:
 			frequencySpectrum = averageFilter.applyFilter(frequencySpectrum);
 		}
 		float* frequencyData = frequencySpectrum->data;
-		//glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, frequencySpectrum->size, 0, GL_RED, GL_FLOAT, frequencyData);
-
+		/*
+		glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, frequencySpectrum->size, 0, GL_RED, GL_FLOAT, frequencyData);
+		glGenerateMipmap(GL_TEXTURE_1D);*/
+		
+		
 		float* frequencyPixelBuffer = (float*)frequencyTexture.getPixelBuffer();
 		for (int i = 0; i < frequencySpectrum->size; i++)
 			frequencyPixelBuffer[i] = frequencyData[i];
@@ -177,7 +189,7 @@ public:
 		ar& frameSize& frameGap& numAudioSamples& frequencyBins& spectrumsInAverage& domainShift
 			& peakRadius& peakCurveSize& frequencyAmplitudeCurve& peakShapingCurve;
 		//glTexImage1D(GL_TEXTURE_1D, 0, GL_R32F, frequencyBins, 0, GL_RED, GL_FLOAT, NULL);
-		frequencyTexture.resize(frequencyBins);
+		//frequencyTexture.resize(frequencyBins);
 		analyzer.setFrameSize(frameSize);
 		audioBuffer.resize(numAudioSamples);
 		domainShiftFilter.setDomainShiftFactor(domainShift);
@@ -309,6 +321,17 @@ public:
 		bind();
 		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, defn.type, NULL);
 	}
+
+	void setWrap(GLenum wrap, glm::vec4 borderColor = glm::vec4(0.0f))
+	{
+		defn.wrap = wrap;
+		defn.borderColor = borderColor;
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, defn.wrap);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, defn.wrap);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, defn.wrap);
+		if (defn.wrap == GL_CLAMP_TO_BORDER)
+			glTexParameterfv(GL_TEXTURE_3D, GL_TEXTURE_BORDER_COLOR, (float*)&defn.borderColor);
+	}
 };
 
 class SlabTexture3D
@@ -363,14 +386,23 @@ public:
 		source.setImageMode(imageMode);
 		dest.setImageMode(imageMode);
 	}
+
+	void setWrap(GLenum wrap, glm::vec4 borderColor = glm::vec4(0.0f))
+	{
+		defn.wrap = wrap;
+		defn.borderColor = borderColor;
+		source.setWrap(wrap, borderColor);
+		dest.setWrap(wrap, borderColor);
+	}
 };
 
 class GLFeedbackProgram : public GLProgram {
 public:
 	struct FluidSplat {
 		float radius, velocity, pressure, density;
-		glm::quat rotation;
-		glm::mat3 rotationMatrix;
+		glm::quat rotation{ 1.0f, 0.0f, 0.0f, 0.0f };
+		glm::vec3 euler = eulerAngles(rotation);
+		glm::mat3 rotationMatrix{rotation};
 		
 		void bindGlobalUniforms(std::string uniformName) 
 		{
@@ -386,8 +418,19 @@ public:
 			{
 				ImGui::SliderFloat("radius", &radius, 1.0f, 150.0f);
 				ImGui::SliderFloat("velocity add scalar", &velocity, 0.00f, 15.0f);
-				if (ImGui::gizmo3D("velocity rotation", rotation))
+
+				if (ImGui::SliderFloat3("Euler Angles", (float*)&euler, -360.0f, 360.0))
+				{
+					rotation = glm::quat(glm::radians(euler));
 					rotationMatrix = glm::mat3(rotation);
+				}
+				
+				if (ImGui::gizmo3D("velocity rotation", rotation, 100, imguiGizmo::modeDirPlane))
+				{
+					euler = eulerAngles(rotation);
+					rotationMatrix = glm::mat3(rotation);
+				}
+					
 				ImGui::SliderFloat("pressure add scalar", &pressure, 0.00f, 100.0f);
 				ImGui::SliderFloat("density add scalar", &density, 0.0f, 15.0f);
 				ImGui::TreePop();
@@ -400,6 +443,7 @@ public:
 			if (version > 0)
 				ar & rotation;
 			ar & radius & velocity & pressure & density;
+			rotationMatrix = glm::mat3(rotation);
 		}
 	};
 
@@ -453,12 +497,17 @@ public:
 		float octaveScatteringDecay = 0.5;
 		float octavePhaseDecay = 0.5;
 
-		AudioTexture audioTexture{ 6, 1024, 128, 1024, 8, 5.0f, 0.005f };
+		AudioTexture audioTexture{ 7, 1024, 128, 1024, 8, 5.0f, 0.005f };
+
+		int velocityBoundaryMode = 1;
+		int pressureBoundaryMode = 1;
 		
 		friend class boost::serialization::access;
 		template<class Archive>
 		void serialize(Archive& ar, const unsigned int version)
 		{
+			if (version > 3)
+				ar& velocityBoundaryMode& pressureBoundaryMode;
 			if (version > 2)
 				ar& directionalLightDirection& multiScatteringOctaves& octaveExtinctionDecay& octaveScatteringDecay
 				& octavePhaseDecay& audioTexture;
@@ -496,11 +545,11 @@ public:
 
 	SlabTexture3D fluidTexture{
 		{ 0, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
-			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
+			GL_LINEAR, GL_MIRRORED_REPEAT, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
 	SlabTexture3D pressureTexture{
 		{ 1, settings.gridSize, GL_RG32F, GL_RG, GL_FLOAT,
-			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
+			GL_LINEAR, GL_CLAMP_TO_EDGE, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
 	Texture3D curlTexture{
 		{ 2, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
@@ -519,6 +568,9 @@ public:
 
 	#define MAX_SCATTERING_OCTAVES 8
 	ScatteringData scatteringData[MAX_SCATTERING_OCTAVES];
+
+	glm::vec3 mouseSplatPos, prevMouseSplatPos;
+	bool mouseSplatActive;
 	
 	GLFeedbackProgram() :
 		GLProgram(4, 4, true, 1600, 900, "Fluid sim", true),
@@ -560,8 +612,28 @@ public:
 		initializeScatteringData();
 		
 		bindGlobalUniforms();
+		updateVelocityBoundary();
+		updatePressureBoundary();
+		
 	}
 
+	void updateVelocityBoundary()
+	{
+		if (settings.velocityBoundaryMode == 0)
+			fluidTexture.setWrap(GL_CLAMP_TO_BORDER, glm::vec4(0.0f));
+		else if (settings.velocityBoundaryMode == 1)
+			fluidTexture.setWrap(GL_MIRRORED_REPEAT);
+		Shader::setGlobalDefinition("VELOCITY_BOUNDARY_MODE", std::to_string(settings.velocityBoundaryMode));
+	}
+
+	void updatePressureBoundary()
+	{
+		if (settings.pressureBoundaryMode == 0)
+			pressureTexture.setWrap(GL_CLAMP_TO_BORDER, glm::vec4(0.0f));
+		else if (settings.velocityBoundaryMode == 1)
+			pressureTexture.setWrap(GL_CLAMP_TO_EDGE);
+	}
+	
 	void initializeScatteringData()
 	{
 		scatteringData[0].extinction = settings.absorption + settings.scattering;
@@ -585,10 +657,55 @@ public:
 		shadowMapTexture.setSize(settings.gridSize);
 	}
 
+	vec2 intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax)
+	{
+		vec3 tMin = (boxMin - rayOrigin) / rayDir;
+		vec3 tMax = (boxMax - rayOrigin) / rayDir;
+		vec3 t1 = min(tMin, tMax);
+		vec3 t2 = max(tMin, tMax);
+		float tNear = max(max(t1.x, t1.y), t1.z);
+		float tFar = min(min(t2.x, t2.y), t2.z);
+		return vec2(tNear, tFar);
+	}
+
+	bool intersectPlane(const vec3& planeNorm, const vec3& planePos, const vec3& rayPos, const vec3& rayDir, float& t)
+	{
+		// assuming vectors are all normalized
+		float denom = dot(planeNorm, rayDir);
+		if (denom > 1e-6) 
+		{
+			vec3 deltaPlane = planePos - rayPos;
+			t = dot(deltaPlane, planeNorm) / denom;
+			return t >= 0.0f;
+		}
+		return false;
+	}
+
+	void updateMouseSplat(float aspect)
+	{
+		prevMouseSplatPos = mouseSplatPos;
+		
+		vec3 Eye = vec3(view.matrix[3]);
+		vec2 viewMouse = mousePos / glm::vec2(screenSize);
+		viewMouse.y = 1.0f - viewMouse.y;
+		viewMouse = viewMouse * 2.0f - vec2(1.0f);
+		viewMouse.x *= aspect;
+		vec3 worldMousePos = view.matrix * vec4(viewMouse, -2.0f, 1.0f);
+		vec3 mouseRayDir = normalize(worldMousePos - Eye);
+		
+		vec3 boxCenter = vec3(0.0f);
+		vec3 planeNorm = normalize(vec3(boxCenter - Eye));
+		
+		float intersectDistance = 0.0f;
+		bool intersection = intersectPlane(planeNorm, boxCenter, Eye, mouseRayDir, intersectDistance);
+		mouseSplatActive = intersection;
+		mouseSplatPos = Eye + mouseRayDir * intersectDistance;
+	}
+
 	void update() override
 	{
 		menu();
-
+		
 		auto fluidStep = [](auto& computeShader, glm::ivec3& gridSize)
 		{
 			computeShader.update();
@@ -631,8 +748,9 @@ public:
 
 		// get view and projection matrices
 		view.updateView2(window, deltaMousePos, deltaTime);
-		const float aspect = screenSize.y != 0.0f ? screenSize.x / screenSize.y : 1.0f;
+		const float aspect = screenSize.y != 0.0f ? (float)screenSize.x / (float)screenSize.y : 1.0f;
 		glm::mat4 projection = glm::perspective(glm::radians(75.0f), aspect, 0.1f, 100.0f);
+		updateMouseSplat(aspect);
 
 		raymarch.update();
 		raymarch.use();
@@ -647,6 +765,14 @@ public:
 		Shader::bindGlobalUniform("time", &time);
 		Shader::bindGlobalUniform("deltaTime", &deltaTime);
 		Shader::bindGlobalUniform("view", &(view.matrix));
+
+		Shader::bindGlobalUniform("screenMousePos", &mousePos);
+		Shader::bindGlobalUniform("prevScreenMousePos", &prevMousePos);
+		Shader::bindGlobalUniform("mouseSplatPos", &mouseSplatPos);
+		Shader::bindGlobalUniform("prevMouseSplatPos", &prevMouseSplatPos);
+		Shader::bindGlobalUniform("mouseSplatActive", &mouseSplatActive);
+		Shader::bindGlobalUniform("leftMouseDown", &mouseInputs[GLFW_MOUSE_BUTTON_1].held);
+		Shader::bindGlobalUniform("rightMouseDown", &mouseInputs[GLFW_MOUSE_BUTTON_2].held);
 		
 		Shader::bindGlobalUniform("fluidImage", &fluidTexture.defn.textureUnit);
 		Shader::bindGlobalUniform("fluidSampler", &fluidTexture.defn.textureUnit);
@@ -748,7 +874,6 @@ public:
 
 	void menu()
 	{
-
 		ImGuiWindowFlags windowFlags = 0;
 		if (glfwGetInputMode(window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED)
 			windowFlags |= ImGuiWindowFlags_NoInputs;
@@ -780,6 +905,14 @@ public:
 				ImGui::SliderFloat("density dissipation", &settings.densityDissipation, 0.9f, 1.0f);
 				ImGui::Checkbox("vorticity enabled", &settings.vorticityEnabled);
 				ImGui::SliderFloat("vorticity", &settings.vorticityScalar, 0.0f, 1.0f);
+
+				const char* velocityBoundaryModes[] = { "zero everywhere", "negative mirror" };
+				if (ImGui::Combo("velocity boundary mode", &settings.velocityBoundaryMode, velocityBoundaryModes, IM_ARRAYSIZE(velocityBoundaryModes)))
+					updateVelocityBoundary();
+
+				const char* pressureBoundaryModes[] = { "zero everywhere", "clamp to edge" };
+				if (ImGui::Combo("pressure boundary mode", &settings.pressureBoundaryMode, pressureBoundaryModes, IM_ARRAYSIZE(pressureBoundaryModes)))
+					updatePressureBoundary();
 				ImGui::TreePop();
 			}
 			settings.externalFluidSplat.Menu("External Forces");
@@ -885,6 +1018,11 @@ public:
 			ImGui::Text("Current OpenGL Error Code: %d", currentError);
 			ImGui::Text("Last OpenGL Error Code: %d", lastError);
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+			ImGui::Text("Left mouse down: %d Right mouse down: %d", mouseInputs[GLFW_MOUSE_BUTTON_1].held, mouseInputs[GLFW_MOUSE_BUTTON_2].held);
+			ImGui::Text("Splat plane intersection %d", mouseSplatActive);
+			ImGui::Text("Mouse splat pos %.3f, %.3f, %.3f", mouseSplatPos.x, mouseSplatPos.y, mouseSplatPos.z);
+			ImGui::Text("Mouse pos x: %.3f, y: %.3f", mousePos.x, mousePos.y);
 		}
 		ImGui::End();
 
@@ -893,7 +1031,7 @@ public:
 	}
 };
 
-BOOST_CLASS_VERSION(GLFeedbackProgram::Settings, 3)
+BOOST_CLASS_VERSION(GLFeedbackProgram::Settings, 4)
 BOOST_CLASS_VERSION(GLFeedbackProgram::FluidSplat, 1)
 
 

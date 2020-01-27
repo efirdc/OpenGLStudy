@@ -37,6 +37,9 @@
     <Filter Include="GLPrograms">
       <UniqueIdentifier>{58145ff5-3791-40e8-8330-5db7796878a8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\reaction_diffusion">
+      <UniqueIdentifier>{f4161d3a-60fb-4f13-99d0-c59b6f930a33}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dependencies\glad\glad.c">
@@ -318,6 +321,15 @@
     <ClInclude Include="imgui_extensions\vgMath.h">
       <Filter>imgui_extensions</Filter>
     </ClInclude>
+    <ClInclude Include="GLPrograms\GLPlotProgram.h">
+      <Filter>GLPrograms</Filter>
+    </ClInclude>
+    <ClInclude Include="GLPrograms\GLReactionDiffusionProgram.h">
+      <Filter>GLPrograms</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Texture.h">
+      <Filter>core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\basicFrag.fs">
@@ -509,6 +521,18 @@
     </None>
     <None Include="shaders\compute\shadowMap.comp">
       <Filter>shaders\raymarch</Filter>
+    </None>
+    <None Include="shaders\raymarch\plot_raymarch.frag">
+      <Filter>shaders\raymarch</Filter>
+    </None>
+    <None Include="shaders\reaction_diffusion\reactionDiffusion.comp">
+      <Filter>shaders\reaction_diffusion</Filter>
+    </None>
+    <None Include="shaders\reaction_diffusion\reactionDiffusion.frag">
+      <Filter>shaders\reaction_diffusion</Filter>
+    </None>
+    <None Include="shaders\reaction_diffusion\reactionDiffusion.vert">
+      <Filter>shaders\reaction_diffusion</Filter>
     </None>
   </ItemGroup>
 </Project>

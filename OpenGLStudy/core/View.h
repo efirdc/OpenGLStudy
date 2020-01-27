@@ -15,7 +15,7 @@ public:
 	glm::mat4 invMatrix;
 	glm::vec3 velocity;
 	float sensitivity = 0.1f;
-	float maxVelocity = 12.0f;
+	float maxVelocity = 18.0f;
 	float acceleration = maxVelocity / 0.05f;
 	float decceleration = maxVelocity / 0.05f;
 
