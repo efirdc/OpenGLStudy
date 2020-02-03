@@ -27,6 +27,8 @@ uniform vec2 screenMousePos;
 
 uniform float rayStepSize;
 
+uniform float levelSurface = 0.2;
+
 uniform DirectionalLight dirLight;
 
 void textureAdjacent(sampler3D s, out vec4 samples[3][3][3], in vec3 p, in vec3 texelSize, in vec3 boxMin, in vec3 boxMax)
@@ -112,14 +114,30 @@ void main()
 		float firstPlaneDepth = floor(boxIntersections.x / stepSize) * stepSize;
 		
 		float depth = firstPlaneDepth.x;
+		float prevDepth = depth;
 		
 		for (int i = 0; i < numSteps; i++)
 		{
 			float clampedDepth = clamp(depth, boxIntersections.x, boxIntersections.y);
 			vec3 rayPos = Eye + clampedDepth * rayDir;
 			vec4 density = sampleVolume(rdSampler, rayPos, boxMin, boxMax);
-			if (density.y > 0.2)
+			if (density.y > levelSurface)
 			{
+
+				float start = prevDepth;
+				float end = depth;
+				for (int j = 0; j < 8; j++)
+				{
+					float mid = (start + end) * 0.5;
+					rayPos = Eye + mid * rayDir;
+					density = sampleVolume(rdSampler, rayPos, boxMin, boxMax);
+					if (density.y > levelSurface)
+						end = mid;
+					else
+						start = mid;
+					depth = mid;
+				}
+			
 				BlinnPhongMaterial material = BlinnPhongMaterial(color1, 1);
 				vec4 samples[3][3][3];
 				textureAdjacent(rdSampler, samples, rayPos, 0.5 / simulationSize, boxMin, boxMax);
@@ -128,6 +146,8 @@ void main()
 				light = light * material.color * 1.0 + 0.01;
 				break;
 			}
+
+			prevDepth = depth;
 			depth += stepSize;
 		}
     }
