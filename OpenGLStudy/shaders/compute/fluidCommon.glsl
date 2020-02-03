@@ -162,3 +162,24 @@ void texelFetchAdjacentVelocity(ivec3 icoords,
 	back = texelFetchVelocity(icoords +  ivec3(0, 0, -1));
 }
 
+vec4 texelFetchClamped(sampler3D s, ivec3 icoords)
+{
+	return texelFetch(s, clamp(icoords, ivec3(0), fluidSize), 0);
+}
+
+void texelFetchAdjacentClamped(sampler3D s, ivec3 icoords, 
+	out vec4 left, 
+	out vec4 right, 
+	out vec4 top, 
+	out vec4 bottom, 
+	out vec4 front, 
+	out vec4 back)
+{
+	left = texelFetchClamped(s, icoords + ivec3(-1, 0, 0));
+	right = texelFetchClamped(s, icoords + ivec3(1, 0, 0));
+	top = texelFetchClamped(s, icoords +  ivec3(0, 1, 0));
+	bottom = texelFetchClamped(s, icoords +  ivec3(0, -1, 0));
+	front = texelFetchClamped(s, icoords +  ivec3(0, 0, 1));
+	back = texelFetchClamped(s, icoords +  ivec3(0, 0, -1));
+}
+

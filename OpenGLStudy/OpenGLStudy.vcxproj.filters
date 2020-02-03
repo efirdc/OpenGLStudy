@@ -40,6 +40,9 @@
     <Filter Include="shaders\reaction_diffusion">
       <UniqueIdentifier>{f4161d3a-60fb-4f13-99d0-c59b6f930a33}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\filters">
+      <UniqueIdentifier>{5cbbfed0-afa7-4739-bfe2-36cf44fc2dae}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dependencies\glad\glad.c">
@@ -330,6 +333,9 @@
     <ClInclude Include="core\Texture.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="GLPrograms\GLReactionDiffusion3DProgram.h">
+      <Filter>GLPrograms</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\basicFrag.fs">
@@ -532,6 +538,15 @@
       <Filter>shaders\reaction_diffusion</Filter>
     </None>
     <None Include="shaders\reaction_diffusion\reactionDiffusion.vert">
+      <Filter>shaders\reaction_diffusion</Filter>
+    </None>
+    <None Include="shaders\reaction_diffusion\reactionDiffusion3D.frag">
+      <Filter>shaders\reaction_diffusion</Filter>
+    </None>
+    <None Include="shaders\reaction_diffusion\reactionDiffusion3D.vert">
+      <Filter>shaders\reaction_diffusion</Filter>
+    </None>
+    <None Include="shaders\reaction_diffusion\reactionDiffusion3D.comp">
       <Filter>shaders\reaction_diffusion</Filter>
     </None>
   </ItemGroup>

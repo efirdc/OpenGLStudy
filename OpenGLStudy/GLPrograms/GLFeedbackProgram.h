@@ -8,6 +8,7 @@
 #include "SpectrumFilter.h"
 #include "SpectrumAnalyzer.h"
 #include "imgui_extras.h"
+#include "Texture.h"
 
 using namespace std::string_literals;
 
@@ -47,19 +48,6 @@ using json = nlohmann::json;
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/serialization/map.hpp>
-
-struct TextureDefinition {
-	unsigned int textureUnit;
-	glm::ivec3 size;
-	GLenum internalFormat{ GL_RGBA32F };
-	GLenum format{ GL_RGBA };
-	GLenum type{ GL_FLOAT };
-	GLenum filter{ GL_LINEAR };
-	GLenum wrap{ GL_CLAMP_TO_EDGE };
-	bool image{ false };
-	GLenum imageMode{ GL_READ_WRITE };
-	glm::vec4 borderColor{ 0.0f };
-};
 
 class AudioTexture
 {
@@ -267,135 +255,6 @@ public:
 	}
 };
 
-class Texture3D
-{
-public:
-	unsigned int ID;
-	TextureDefinition defn{};
-	
-	Texture3D(TextureDefinition defn) : defn(defn)
-	{
-		glGenTextures(1, &ID);
-		configure();
-	}
-
-	void bind()
-	{
-		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
-		glBindTexture(GL_TEXTURE_3D, ID);
-		if (defn.image)
-			glBindImageTexture(defn.textureUnit, ID, 0, GL_TRUE, 0, defn.imageMode, defn.internalFormat);
-	}
-
-	void configure()
-	{
-		bind();
-		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, defn.type, NULL);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, defn.filter);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, defn.filter);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, defn.wrap);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, defn.wrap);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, defn.wrap);
-		if (defn.wrap == GL_CLAMP_TO_BORDER)
-			glTexParameterfv(GL_TEXTURE_3D, GL_TEXTURE_BORDER_COLOR, (float*)&defn.borderColor);
-	}
-
-	void setSize(glm::vec3 newSize)
-	{
-		defn.size = newSize;
-		bind();
-		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, defn.type, NULL);
-	}
-
-	void setImageMode(GLenum imageMode)
-	{
-		defn.imageMode = imageMode;
-		bind();
-	}
-
-	void setFormat(GLenum internalFormat, GLenum format, GLenum type)
-	{
-		defn.internalFormat = internalFormat;
-		defn.format = format;
-		defn.type = type;
-		bind();
-		glTexImage3D(GL_TEXTURE_3D, 0, defn.internalFormat, defn.size.x, defn.size.y, defn.size.z, 0, defn.format, defn.type, NULL);
-	}
-
-	void setWrap(GLenum wrap, glm::vec4 borderColor = glm::vec4(0.0f))
-	{
-		defn.wrap = wrap;
-		defn.borderColor = borderColor;
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, defn.wrap);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, defn.wrap);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, defn.wrap);
-		if (defn.wrap == GL_CLAMP_TO_BORDER)
-			glTexParameterfv(GL_TEXTURE_3D, GL_TEXTURE_BORDER_COLOR, (float*)&defn.borderColor);
-	}
-};
-
-class SlabTexture3D
-{
-private:
-	Texture3D source, dest;
-public:
-	TextureDefinition defn{};
-
-	SlabTexture3D(TextureDefinition defn) : defn(defn), source(defn), dest(defn)
-	{
-	}
-
-	void bind()
-	{
-		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
-		glBindTexture(GL_TEXTURE_3D, source.ID);
-		glBindImageTexture(defn.textureUnit, dest.ID, 0, GL_TRUE, 0, defn.imageMode, defn.internalFormat);
-	}
-
-	void swap()
-	{
-		std::swap(source, dest);
-		bind();
-	}
-
-	void configure()
-	{
-		source.configure();
-		dest.configure();
-	}
-
-	void setSize(glm::vec3 newSize)
-	{
-		defn.size = newSize;
-		source.setSize(newSize);
-		dest.setSize(newSize);
-	}
-
-	void setFormat(GLenum internalFormat, GLenum format, GLenum type)
-	{
-		defn.internalFormat = internalFormat;
-		defn.format = format;
-		defn.type = type;
-		source.setFormat(internalFormat, format, type);
-		dest.setFormat(internalFormat, format, type);
-	}
-
-	void setImageMode(GLenum imageMode)
-	{
-		defn.imageMode = imageMode;
-		source.setImageMode(imageMode);
-		dest.setImageMode(imageMode);
-	}
-
-	void setWrap(GLenum wrap, glm::vec4 borderColor = glm::vec4(0.0f))
-	{
-		defn.wrap = wrap;
-		defn.borderColor = borderColor;
-		source.setWrap(wrap, borderColor);
-		dest.setWrap(wrap, borderColor);
-	}
-};
-
 class GLFeedbackProgram : public GLProgram {
 public:
 	struct FluidSplat {
@@ -543,24 +402,24 @@ public:
 		glm::vec4 borderColor{ 0.0f };
 	};*/
 
-	SlabTexture3D fluidTexture{
-		{ 0, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
+	SlabTexture fluidTexture{
+		{ 0, GL_TEXTURE_3D, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
 			GL_LINEAR, GL_MIRRORED_REPEAT, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
-	SlabTexture3D pressureTexture{
-		{ 1, settings.gridSize, GL_RG32F, GL_RG, GL_FLOAT,
+	SlabTexture pressureTexture{
+		{ 1, GL_TEXTURE_3D, settings.gridSize, GL_RG32F, GL_RG, GL_FLOAT,
 			GL_LINEAR, GL_CLAMP_TO_EDGE, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
-	Texture3D curlTexture{
-		{ 2, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
+	Texture curlTexture{
+		{ 2, GL_TEXTURE_3D, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
-	SlabTexture3D densityTexture{
-		{ 3, settings.gridSize, GL_R32F, GL_RED, GL_FLOAT,
+	SlabTexture densityTexture{
+		{ 3, GL_TEXTURE_3D, settings.gridSize, GL_R32F, GL_RED, GL_FLOAT,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
-	Texture3D shadowMapTexture{
-		{ 5, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
+	Texture shadowMapTexture{
+		{ 5, GL_TEXTURE_3D, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
 	

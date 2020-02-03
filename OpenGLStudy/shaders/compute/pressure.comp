@@ -11,7 +11,7 @@ void main()
 
 	vec4 center, left, right, top, bottom, front, back;
 	center = texelFetch(pressureSampler, icoords, 0);
-	texelFetchAdjacent(pressureSampler, icoords, left, right, top, bottom, front, back);
+	texelFetchAdjacentClamped(pressureSampler, icoords, left, right, top, bottom, front, back);
 	center.r = (left.r + right.r + top.r + bottom.r + front.r + back.r - center.g) / 6.0;
 	
 	imageStore(pressureImage, icoords, PRESSURE_STORE_OP(center));

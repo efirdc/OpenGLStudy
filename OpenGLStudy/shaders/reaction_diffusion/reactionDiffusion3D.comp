@@ -1,0 +1,156 @@
+#version 440
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+layout(binding = 0, rgba32f) writeonly restrict uniform image3D rdImage;
+layout(binding = 0) uniform sampler3D rdSampler;
+
+uniform float time;
+uniform float deltaTime;
+
+uniform vec2 screenMousePos;
+uniform vec2 prevScreenMousePos;
+
+uniform bool leftMouseDown;
+uniform bool rightMouseDown;
+uniform vec3 mouseSplatPos;
+uniform vec3 prevMouseSplatPos;
+uniform bool mouseSplatActive;
+
+
+uniform vec4 diffusionRates = vec4(1.0, 0.5, 0.0, 0.0);
+uniform float feed = 0.055;
+uniform float kill = 0.062;
+uniform float timestep = 1.0;
+
+uniform ivec3 simulationSize;
+uniform ivec2 screenSize;
+
+float gauss(vec3 p, float r)
+{
+  return exp(-dot(p, p) / r);
+}
+
+float lineSplat(vec3 p, vec3 l1, vec3 l2, float r, out vec3 delta)
+{
+	vec3 line = l2 - l1;
+
+	delta = p - l2;
+	if (dot(delta, line) > 0.0)
+		return gauss(delta, r);
+
+	delta = p - l1;
+	if (dot(delta, line) < 0.0)
+		return gauss(delta, r);
+
+	vec3 lineNorm = normalize(line);
+	delta -= dot(lineNorm, delta) * lineNorm;
+	return gauss(delta, r);
+}
+
+void texelFetchAdjacent(sampler3D s, ivec3 icoords, inout vec4 texels[3][3][3])
+{
+	for (int i = -1; i < 2; i++)
+	for (int j = -1; j < 2; j++)
+	for (int k = -1; k < 2; k++)
+		texels[i+1][j+1][k+1] = texelFetchOffset(s, icoords, 0, ivec3(i, j, k));
+}
+
+void texelFetchAdjacentWrap(sampler3D s, ivec3 icoords, inout vec4 texels[3][3][3])
+{
+	for (int i = -1; i < 2; i++)
+	for (int j = -1; j < 2; j++)
+	for (int k = -1; k < 2; k++)
+		texels[i+1][j+1][k+1] = texelFetch(s, ivec3(mod(icoords + ivec3(i, j, k), simulationSize)), 0);
+}
+
+vec4 computeLaplacian(in vec4 texels[3][3][3])
+{
+	const float kernel236[3][3][3] =
+	{
+		{{2.0, 3.0, 2.0},
+		{3.0, 6.0, 3.0},
+		{2.0, 3.0, 2.0}},
+
+		{{3.0, 6.0, 3.0},
+		{6.0, -88.0, 6.0},
+		{3.0, 6.0, 3.0}},
+
+		{{2.0, 3.0, 2.0},
+		{3.0, 6.0, 3.0},
+		{2.0, 3.0, 2.0}}
+	};
+
+	const float kernel111[3][3][3] =
+	{
+		{{1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0}},
+
+		{{1.0, 1.0, 1.0},
+		{1.0, -26.0, 1.0},
+		{1.0, 1.0, 1.0}},
+
+		{{1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0},
+		{1.0, 1.0, 1.0}}
+	};
+	vec4 result = vec4(0.0);
+	for (int i = 0; i < 3; i++)
+	for (int j = 0; j < 3; j++)
+	for (int k = 0; k < 3; k++)
+		result += texels[i][j][k] * kernel236[i][j][k];
+	return result / 88.0;
+}
+
+
+
+
+void main()
+{
+	vec3 coords = vec3(gl_GlobalInvocationID.xyz);
+	ivec3 icoords = ivec3(gl_GlobalInvocationID.xyz);
+
+	//if (any(greaterThan(icoords, simulationSize)))
+	//	return;
+
+	vec4 texels[3][3][3];
+	texelFetchAdjacentWrap(rdSampler, icoords, texels);
+	vec4 C = texels[1][1][1];
+
+	float mouseSplatRadius = 5.0;
+	float mouseSplatAdd = 1.0;
+	
+	if (mouseSplatActive)
+	{
+		vec3 delta;
+		vec3 l1 = prevMouseSplatPos + simulationSize * 0.5;
+		vec3 l2 = mouseSplatPos + simulationSize * 0.5;
+		float splat;
+		if (l1 == l2)
+		{
+			delta = coords - l1;
+			splat = gauss(delta, mouseSplatRadius);
+		}
+		else
+			splat = lineSplat(coords, l1, l2, mouseSplatRadius, delta);
+
+		vec3 deltaNorm = delta == vec3(0.0) ? vec3(0.0) : normalize(delta);
+		float lmd = leftMouseDown ? 1.0 : 0.0;
+		float rmd = rightMouseDown ? 1.0 : 0.0;
+
+		C.x -= splat * 10.0 * lmd;
+		C.y += splat * 10.0 * rmd;
+	}
+
+	C = clamp(C, vec4(0.0), vec4(1.0));
+	
+	texels[1][1][1] = C;
+	vec4 laplacian = computeLaplacian(texels);
+	float reaction = C.x * C.y * C.y;
+
+	C.x += (diffusionRates.x * laplacian.x - reaction + feed * (1.0 - C.x)) * timestep;
+	C.y += (diffusionRates.y * laplacian.y + reaction -(kill + feed) * C.y) * timestep;
+
+	imageStore(rdImage, icoords, C);
+}

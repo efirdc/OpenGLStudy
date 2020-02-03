@@ -24,7 +24,7 @@ public:
 	unsigned int ID;
 	TextureDefinition defn{};
 
-	Texture(TextureDefinition& defn) : defn(defn)
+	Texture(TextureDefinition defn) : defn(defn)
 	{
 		glGenTextures(1, &ID);
 		configure();

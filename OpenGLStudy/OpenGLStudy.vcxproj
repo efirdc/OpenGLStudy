@@ -232,6 +232,7 @@
     <ClInclude Include="dependencies\stb\stb_image.h" />
     <ClInclude Include="GLPrograms\GLFeedbackProgram.h" />
     <ClInclude Include="GLPrograms\GLPlotProgram.h" />
+    <ClInclude Include="GLPrograms\GLReactionDiffusion3DProgram.h" />
     <ClInclude Include="GLPrograms\GLReactionDiffusionProgram.h" />
     <ClInclude Include="imgui_extensions\imGuIZMOquat.h" />
     <ClInclude Include="imgui_extensions\imgui_bezier_curve.h" />
@@ -307,6 +308,9 @@
     <None Include="shaders\reaction_diffusion\reactionDiffusion.comp" />
     <None Include="shaders\reaction_diffusion\reactionDiffusion.frag" />
     <None Include="shaders\reaction_diffusion\reactionDiffusion.vert" />
+    <None Include="shaders\reaction_diffusion\reactionDiffusion3D.comp" />
+    <None Include="shaders\reaction_diffusion\reactionDiffusion3D.frag" />
+    <None Include="shaders\reaction_diffusion\reactionDiffusion3D.vert" />
     <None Include="shaders\shaderTest.fs" />
     <None Include="shaders\shaderTest.vs" />
     <None Include="shaders\textureQuad.fs" />
