@@ -17,4 +17,12 @@ BlinnPhongMaterial materialMix(BlinnPhongMaterial a, BlinnPhongMaterial b, float
 	);
 }
 
+struct PhysicalMaterial
+{
+	vec3 albedo;
+	float metallic;
+	float roughness;
+	float ao;
+};
+
 #endif

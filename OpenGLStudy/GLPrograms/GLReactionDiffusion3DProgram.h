@@ -28,7 +28,7 @@ public:
 	float timestep = 1.0;
 	int iterations = 1;
 
-	glm::ivec3 simulationSize{256, 80, 32};
+	glm::ivec3 simulationSize{88, 88, 88};
 
 	glm::vec3 color1{ 1.0f, 1.0f, 1.0f };
 	glm::vec3 color2{ 1.0f, 1.0f, 1.0f };
@@ -39,12 +39,18 @@ public:
 	ColorGradientTexture lightGradientTexture;
 
 	float rayStepSize = 1.0f;
+	float levelSurface = 0.2f;
 
 	glm::vec3 mouseSplatPos, prevMouseSplatPos;
 	bool mouseSplatActive;
 
-	glm::vec3 directionalLightLuminance{ 1.0f, 1.0f, 1.0f };
+	glm::vec3 directionalLightLuminance{ 4.0f, 4.0f, 4.0f };
 	glm::vec3 directionalLightDirection{ -1.0, -1.0, -1.0 };
+
+	glm::vec3 albedo{1.0, 0.0, 0.0};
+	float metallic = 0.688;
+	float roughness = 0.465;
+	float ao = 1.0;
 
 	GLReactionDiffusion3DProgram() :
 		GLProgram(4, 4, true, 1600, 900, "Reaction Diffusion 3D", true),
@@ -195,6 +201,13 @@ public:
 
 		Shader::bindGlobalUniform("dirLight.color", &directionalLightLuminance);
 		Shader::bindGlobalUniform("dirLight.direction", &directionalLightDirection);
+
+		Shader::bindGlobalUniform("levelSurface", &levelSurface);
+
+		Shader::bindGlobalUniform("physicalMaterial.albedo", &albedo);
+		Shader::bindGlobalUniform("physicalMaterial.metallic", &metallic);
+		Shader::bindGlobalUniform("physicalMaterial.roughness", &roughness);
+		Shader::bindGlobalUniform("physicalMaterial.ao", &ao);
 	}
 
 	void menu()
@@ -215,6 +228,48 @@ public:
 				slabTexture.setSize(simulationSize);
 			}
 			ImGui::SliderFloat4("diffusion rates", (float*)&diffusionRates, 0.0f, 1.0f);
+			const char* items[] = { "Negative bubbles (sigma)", "Bubbles (rho)",
+				"Precritical bubbles (rho/kappa)", "Worms and loops (kappa)", "Stable solitons (nu)", "The U-Skate World (pi)",
+				"Worms (mu)", "Worms join into maze (kappa)", "Negatons (iota)", "Turing patterns (delta)",
+				"Chaos to Turing negatons (beta)", "Fingerprints (theta/kappa)", "Chaos with negatons (beta/delta)",
+				"Spots and worms (eta)", "Self-replicating spots (lambda)", "Super-resonant mazes (theta)", "Mazes (kappa)",
+				"Mazes with some chaos (gamma)", "Chaos (beta)", "Pulsating solitons (zeta)", "Warring microbes (epsilon)",
+				"Spots and loops (alpha)", "Moving spots (alpha)", "Waves (xi)"
+			};
+			static int itemCurrent = -1;
+
+			if (ImGui::Combo("presets", &itemCurrent, items, IM_ARRAYSIZE(items)))
+			{
+				const glm::vec2 fkValues[] = {
+					{  0.098,     0.0555   }, // Negative bubbles (sigma)
+					{  0.098,     0.057    }, // Positive bubbles (rho)
+					{  0.082,     0.059    }, // Precritical bubbles (rho/kappa)
+					{  0.082,     0.060    }, // Worms and loops (kappa)
+					{  0.074,     0.064    }, // Stable solitons (nu)
+					{  0.062,     0.0609   }, // The U-Skate World (pi)
+					{  0.058,     0.065    }, // Worms (mu)
+					{  0.046,     0.063    }, // Worms join into maze (kappa)
+					{  0.046,     0.0594   }, // Negatons (iota)
+					{  0.042,     0.059    }, // Turing patterns (delta)
+					{  0.039,     0.058    }, // Chaos to Turing negatons (beta)
+					{  0.037,     0.06     }, // Fingerprints (theta/kappa)
+					{  0.0353,    0.0566   }, // Chaos with negatons (beta/delta)
+					{  0.034,     0.0618   }, // Spots and worms (eta)
+					{  0.03,      0.063    }, // Self-replicating spots (lambda)
+					{  0.03,      0.0565   }, // Super-resonant mazes (theta)
+					{  0.029,     0.057    }, // Mazes (kappa)
+					{  0.026,     0.055    }, // Mazes with some chaos (gamma)
+					{  0.026,     0.051    }, // Chaos (beta)
+					{  0.025,     0.06     }, // Pulsating solitons (zeta)
+					{  0.022,     0.059    }, // Warring microbes (epsilon)
+					{  0.018,     0.051    }, // Spots and loops (alpha)
+					{  0.014,     0.054    }, // Moving spots (alpha)
+					{  0.014,     0.045    }
+				};
+				glm::vec2 preset = fkValues[itemCurrent];
+				feed = preset.x;
+				kill = preset.y;
+			}
 			ImGui::SliderFloat("feed", &feed, 0.0f, 0.3f);
 			ImGui::SliderFloat("kill", &kill, 0.0f, 0.3f);
 			ImGui::SliderFloat("timestep", &timestep, 0.0f, 1.0f);
@@ -247,12 +302,18 @@ public:
 
 			const int flags = ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR;
 			ImGui::ColorEdit3("directional light luminance", (float*)&directionalLightLuminance, flags);
+			ImGui::SliderFloat("level surface", &levelSurface, 0.0f, 0.3f);
 			ImGui::gizmo3D("light dir", directionalLightDirection);
 			directionalLightDirection = glm::normalize(directionalLightDirection);
+
+			ImGui::ColorEdit3("albedo", (float*)&albedo, flags);
+			ImGui::SliderFloat("metallic", &metallic, 0.0f, 1.0f);
+			ImGui::SliderFloat("roughness", &roughness, 0.0f, 1.0f);
+			ImGui::SliderFloat("ao", &ao, 0.0f, 1.0f);
 		}
 		ImGui::End();
 
-		//bool showDemoWindow = false;
-		//ImGui::ShowDemoWindow(&showDemoWindow);
+		bool showDemoWindow = false;
+		ImGui::ShowDemoWindow(&showDemoWindow);
 	}
 };

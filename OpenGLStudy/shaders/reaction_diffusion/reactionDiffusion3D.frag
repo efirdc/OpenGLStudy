@@ -27,9 +27,11 @@ uniform vec2 screenMousePos;
 
 uniform float rayStepSize;
 
-uniform float levelSurface = 0.2;
+uniform float levelSurface;
 
 uniform DirectionalLight dirLight;
+
+uniform PhysicalMaterial physicalMaterial;
 
 void textureAdjacent(sampler3D s, out vec4 samples[3][3][3], in vec3 p, in vec3 texelSize, in vec3 boxMin, in vec3 boxMax)
 {
@@ -61,11 +63,11 @@ vec3 computeSobel(in vec4 texels[3][3][3], int channel)
 	for (int j = 0; j < 3; j++)
 	for (int k = 0; k < 3; k++)
 	{
-		result.x += texels[i][j][k][channel] * kernel[i][j][k];
-		result.y += texels[i][j][k][channel] * kernel[j][k][i];
-		result.z += texels[i][j][k][channel] * kernel[k][i][j];
+		result.x -= texels[i][j][k][channel] * kernel[i][j][k];
+		result.y -= texels[i][j][k][channel] * kernel[j][k][i];
+		result.z -= texels[i][j][k][channel] * kernel[k][i][j];
 	}
-	return result;
+	return normalize(result);
 }
 
 vec2 intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax) 
@@ -101,7 +103,7 @@ void main()
 	vec3 boxMin = vec3(-simulationSize) * 0.5;
 	vec2 boxIntersections = intersectBox(Eye, rayDir, boxMin + 0.5, boxMax - 0.5);
 
-	vec3 light = vec3(0.0);
+	vec3 light = color1;
     if (boxIntersections.y > boxIntersections.x)
 	{
 		// Snap step size to view alligned planes
@@ -110,7 +112,7 @@ void main()
 		boxIntersections = max(boxIntersections, 0);
 		
 		int numPlanes = int((boxIntersections.y - boxIntersections.x) / stepSize);
-		int numSteps = numPlanes + 2;
+		int numSteps = numPlanes + 3;
 		float firstPlaneDepth = floor(boxIntersections.x / stepSize) * stepSize;
 		
 		float depth = firstPlaneDepth.x;
@@ -123,33 +125,35 @@ void main()
 			vec4 density = sampleVolume(rdSampler, rayPos, boxMin, boxMax);
 			if (density.y > levelSurface)
 			{
-
-				float start = prevDepth;
-				float end = depth;
-				for (int j = 0; j < 8; j++)
+				
+				float start = clampedDepth;
+				float end = max(prevDepth, boxIntersections.x);
+				for (int j = 0; j < 16; j++)
 				{
 					float mid = (start + end) * 0.5;
 					rayPos = Eye + mid * rayDir;
 					density = sampleVolume(rdSampler, rayPos, boxMin, boxMax);
-					if (density.y > levelSurface)
+					if (density.y < levelSurface)
 						end = mid;
 					else
 						start = mid;
 					depth = mid;
 				}
 			
-				BlinnPhongMaterial material = BlinnPhongMaterial(color1, 1);
+				BlinnPhongMaterial material = BlinnPhongMaterial(color1, 15.6);
 				vec4 samples[3][3][3];
-				textureAdjacent(rdSampler, samples, rayPos, 0.5 / simulationSize, boxMin, boxMax);
+				textureAdjacent(rdSampler, samples, rayPos, 1.0 / simulationSize, boxMin, boxMax);
 				vec3 norm = computeSobel(samples, 1);
-				light = blinnPhongDirectionalLighting(dirLight, norm, rayDir, material);
-				light = light * material.color * 1.0 + 0.01;
+				light = physicalDirectionalLighting(dirLight, norm, rayDir, physicalMaterial);
+				vec3 ambient = vec3(0.03) * physicalMaterial.albedo * physicalMaterial.ao;
+				light = light + ambient;
+				light = light / (light + vec3(1.0));
 				break;
 			}
 
-			prevDepth = depth;
+			prevDepth = clampedDepth;
 			depth += stepSize;
 		}
     }
-	FragColor = vec4(pow(light, vec3(1/2.2)), 1.0);
+	FragColor = vec4(pow(light, vec3(1.0/2.2)), 1.0);
 }

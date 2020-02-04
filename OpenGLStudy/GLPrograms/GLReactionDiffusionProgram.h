@@ -143,6 +143,48 @@ public:
 		ImGui::Begin("Settings", nullptr, windowFlags);
 		{
 			ImGui::SliderFloat4("diffusion rates", (float*)&diffusionRates, 0.0f, 1.0f);
+			const char* items[] = { "Negative bubbles (sigma)", "Bubbles (rho)",
+				"Precritical bubbles (rho/kappa)", "Worms and loops (kappa)", "Stable solitons (nu)", "The U-Skate World (pi)",
+				"Worms (mu)", "Worms join into maze (kappa)", "Negatons (iota)", "Turing patterns (delta)",
+				"Chaos to Turing negatons (beta)", "Fingerprints (theta/kappa)", "Chaos with negatons (beta/delta)",
+				"Spots and worms (eta)", "Self-replicating spots (lambda)", "Super-resonant mazes (theta)", "Mazes (kappa)",
+				"Mazes with some chaos (gamma)", "Chaos (beta)", "Pulsating solitons (zeta)", "Warring microbes (epsilon)",
+				"Spots and loops (alpha)", "Moving spots (alpha)", "Waves (xi)"
+			};
+			static int itemCurrent = -1;
+			
+			if (ImGui::Combo("presets", &itemCurrent, items, IM_ARRAYSIZE(items)) )
+			{
+				const glm::vec2 fkValues[] = {
+					{  0.098,     0.0555   }, // Negative bubbles (sigma)
+					{  0.098,     0.057    }, // Positive bubbles (rho)
+					{  0.082,     0.059    }, // Precritical bubbles (rho/kappa)
+					{  0.082,     0.060    }, // Worms and loops (kappa)
+					{  0.074,     0.064    }, // Stable solitons (nu)
+					{  0.062,     0.0609   }, // The U-Skate World (pi)
+					{  0.058,     0.065    }, // Worms (mu)
+					{  0.046,     0.063    }, // Worms join into maze (kappa)
+					{  0.046,     0.0594   }, // Negatons (iota)
+					{  0.042,     0.059    }, // Turing patterns (delta)
+					{  0.039,     0.058    }, // Chaos to Turing negatons (beta)
+					{  0.037,     0.06     }, // Fingerprints (theta/kappa)
+					{  0.0353,    0.0566   }, // Chaos with negatons (beta/delta)
+					{  0.034,     0.0618   }, // Spots and worms (eta)
+					{  0.03,      0.063    }, // Self-replicating spots (lambda)
+					{  0.03,      0.0565   }, // Super-resonant mazes (theta)
+					{  0.029,     0.057    }, // Mazes (kappa)
+					{  0.026,     0.055    }, // Mazes with some chaos (gamma)
+					{  0.026,     0.051    }, // Chaos (beta)
+					{  0.025,     0.06     }, // Pulsating solitons (zeta)
+					{  0.022,     0.059    }, // Warring microbes (epsilon)
+					{  0.018,     0.051    }, // Spots and loops (alpha)
+					{  0.014,     0.054    }, // Moving spots (alpha)
+					{  0.014,     0.045    }
+				};
+				glm::vec2 preset = fkValues[itemCurrent];
+				feed = preset.x;
+				kill = preset.y;
+			}
 			ImGui::SliderFloat("feed", &feed, 0.0f, 0.3f);
 			ImGui::SliderFloat("kill", &kill, 0.0f, 0.3f);
 			ImGui::SliderFloat("timestep", &timestep, 0.0f, 1.0f);
