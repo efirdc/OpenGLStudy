@@ -305,6 +305,8 @@
     <None Include="shaders\raymarch\sdf.glsl" />
     <None Include="shaders\raymarch\spheres.frag" />
     <None Include="shaders\raymarch\volumetric.frag" />
+    <None Include="shaders\reaction_diffusion\advection3D.comp" />
+    <None Include="shaders\reaction_diffusion\projectMouse.comp" />
     <None Include="shaders\reaction_diffusion\reactionDiffusion.comp" />
     <None Include="shaders\reaction_diffusion\reactionDiffusion.frag" />
     <None Include="shaders\reaction_diffusion\reactionDiffusion.vert" />

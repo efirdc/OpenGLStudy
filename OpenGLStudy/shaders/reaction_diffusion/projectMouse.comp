@@ -1,0 +1,108 @@
+#version 440
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+
+layout(binding = 0, rgba32f) writeonly restrict uniform image3D rdImage;
+layout(binding = 0) uniform sampler3D rdSampler;
+
+layout(std430, binding = 0) buffer mouseSplatSSBO
+{
+   vec4 mousePos;
+   vec4 prevMousePos;
+};
+
+uniform float levelSurface;
+
+uniform vec2 screenMousePos;
+uniform vec2 prevScreenMousePos;
+
+uniform ivec3 simulationSize;
+uniform ivec2 screenSize;
+
+uniform mat4 view;
+
+vec2 intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax) 
+{
+  vec3 tMin = (boxMin - rayOrigin) / rayDir;
+  vec3 tMax = (boxMax - rayOrigin) / rayDir;
+  vec3 t1 = min(tMin, tMax);
+  vec3 t2 = max(tMin, tMax);
+  float tNear = max(max(t1.x, t1.y), t1.z);
+  float tFar = min(min(t2.x, t2.y), t2.z);
+  return vec2(tNear, tFar);
+}
+
+vec4 sampleVolume(sampler3D s, vec3 p, vec3 boxMin, vec3 boxMax)
+{
+	return texture(s, (p - boxMin) / (boxMax - boxMin));
+}
+
+void main()
+{
+    prevMousePos.xyz = mousePos.xyz;
+
+    vec3 Eye = view[3].xyz;
+	vec2 fScreenSize = vec2(screenSize);
+	vec2 viewMouse = screenMousePos / fScreenSize;
+	viewMouse.y = 1.0 - viewMouse.y;
+	viewMouse = viewMouse * 2 - 1;
+	viewMouse.x *= fScreenSize.x / fScreenSize.y;
+    vec3 worldMousePos = vec3(view * vec4(viewMouse, -2.0, 1.0));
+	vec3 mouseRayDir = normalize(worldMousePos - Eye);
+
+    vec3 boxMax = vec3( simulationSize) * 0.5;
+	vec3 boxMin = vec3(-simulationSize) * 0.5;
+	vec2 boxIntersections = intersectBox(Eye, mouseRayDir, boxMin + 0.5, boxMax - 0.5);
+
+	float mid = (boxIntersections.x + boxIntersections.y) * 0.5;
+	mousePos.xyz = Eye + mid * mouseRayDir;
+	
+	//return;
+	
+	//boxIntersections.y *= 0.5;
+
+    if (boxIntersections.y > boxIntersections.x)
+	{
+		float stepSize = 1.0 / dot(-view[2].xyz, mouseRayDir);
+
+		boxIntersections = max(boxIntersections, 0);
+		
+		int numPlanes = int((boxIntersections.y - boxIntersections.x) / stepSize);
+		int numSteps = numPlanes + 3;
+		float firstPlaneDepth = floor(boxIntersections.x / stepSize) * stepSize;
+		
+		float depth = firstPlaneDepth.x;
+		float prevDepth = depth;
+		
+		for (int i = 0; i < numSteps; i++)
+		{
+			float clampedDepth = clamp(depth, boxIntersections.x, boxIntersections.y);
+			vec3 rayPos = Eye + clampedDepth * mouseRayDir;
+			vec4 density = sampleVolume(rdSampler, rayPos, boxMin, boxMax);
+			if (density.y > levelSurface)
+			{
+				
+				float start = clampedDepth;
+				float end = max(prevDepth, boxIntersections.x);
+				for (int j = 0; j < 16; j++)
+				{
+					float mid = (start + end) * 0.5;
+					rayPos = Eye + mid * mouseRayDir;
+					density = sampleVolume(rdSampler, rayPos, boxMin, boxMax);
+					if (density.y < levelSurface)
+						end = mid;
+					else
+						start = mid;
+					depth = mid;
+				}
+				mousePos.xyz = Eye + depth * mouseRayDir;
+				return;
+			}
+
+			prevDepth = clampedDepth;
+			depth += stepSize;
+		}
+    }
+
+}

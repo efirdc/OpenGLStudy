@@ -549,5 +549,11 @@
     <None Include="shaders\reaction_diffusion\reactionDiffusion3D.comp">
       <Filter>shaders\reaction_diffusion</Filter>
     </None>
+    <None Include="shaders\reaction_diffusion\advection3D.comp">
+      <Filter>shaders\reaction_diffusion</Filter>
+    </None>
+    <None Include="shaders\reaction_diffusion\projectMouse.comp">
+      <Filter>shaders\reaction_diffusion</Filter>
+    </None>
   </ItemGroup>
 </Project>

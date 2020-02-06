@@ -17,6 +17,8 @@ class GLReactionDiffusion3DProgram : public GLProgram
 public:
 	View view;
 	ComputeShader reactionDiffusion;
+	ComputeShader advection;
+	ComputeShader projectMouse;
 	Shader renderShader;
 	unsigned int quadVAO{};
 
@@ -44,7 +46,7 @@ public:
 	glm::vec3 mouseSplatPos, prevMouseSplatPos;
 	bool mouseSplatActive;
 
-	glm::vec3 directionalLightLuminance{ 4.0f, 4.0f, 4.0f };
+	glm::vec3 directionalLightLuminance{ 8.0f, 8.0f, 8.0f };
 	glm::vec3 directionalLightDirection{ -1.0, -1.0, -1.0 };
 
 	glm::vec3 albedo{1.0, 0.0, 0.0};
@@ -52,14 +54,26 @@ public:
 	float roughness = 0.465;
 	float ao = 1.0;
 
+	int boundaryMode = 0;
+
+	bool showNoise = false;
+	float noiseTimeScale = 50.0f;
+	float noiseScale = 0.01f;
+	float feedNoiseStrength = 0.0f;
+	float killNoiseStrength = 0.0f;
+
+	bool useAdvection = false;
+
 	GLReactionDiffusion3DProgram() :
 		GLProgram(4, 4, true, 1600, 900, "Reaction Diffusion 3D", true),
 		slabTexture{
 			{ 0, GL_TEXTURE_3D, simulationSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
-			GL_LINEAR, GL_REPEAT, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
+			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	},
 		lightGradientTexture{ 1, lightGradient },
 		reactionDiffusion("shaders/reaction_diffusion/reactionDiffusion3D.comp"),
+		advection("shaders/reaction_diffusion/advection3D.comp"),
+		projectMouse("shaders/reaction_diffusion/projectMouse.comp"),
 		renderShader("shaders/reaction_diffusion/reactionDiffusion3D.vert", "shaders/reaction_diffusion/reactionDiffusion3D.frag")
 	{
 		float quadVertices[] = {
@@ -76,6 +90,17 @@ public:
 		glGenBuffers(1, &quadVBO);
 		glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), quadVertices, GL_STATIC_DRAW);
+
+		struct MouseSplatSSBO
+		{
+			glm::vec4 mousePos;
+			glm::vec4 prevMousePos;
+		} mouseSplatSSBO;
+		unsigned int ssbo;
+		glGenBuffers(1, &ssbo);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(mouseSplatSSBO), &mouseSplatSSBO, GL_DYNAMIC_COPY);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
 
 		directionalLightDirection = glm::normalize(directionalLightDirection);
 
@@ -140,8 +165,23 @@ public:
 	void update() override
 	{
 		menu();
-
+		
 		slabTexture.bind();
+		
+		projectMouse.update();
+		projectMouse.use();
+		glDispatchCompute(1, 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		
+		if (useAdvection)
+		{
+			advection.update();
+			advection.use();
+			glDispatchCompute(simulationSize.x / 8, simulationSize.y / 8, simulationSize.z / 8);
+			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+			slabTexture.swap();
+		}
+		
 		for (int i = 0; i < iterations; i++)
 		{
 			reactionDiffusion.update();
@@ -208,6 +248,25 @@ public:
 		Shader::bindGlobalUniform("physicalMaterial.metallic", &metallic);
 		Shader::bindGlobalUniform("physicalMaterial.roughness", &roughness);
 		Shader::bindGlobalUniform("physicalMaterial.ao", &ao);
+
+		Shader::bindGlobalUniform("showNoise", &showNoise);
+		Shader::bindGlobalUniform("noiseTimeScale", &noiseTimeScale);
+		Shader::bindGlobalUniform("noiseScale", &noiseScale);
+		Shader::bindGlobalUniform("feedNoiseStrength", &feedNoiseStrength);
+		Shader::bindGlobalUniform("killNoiseStrength", &killNoiseStrength);
+
+		Shader::bindGlobalUniform("useAdvection", &useAdvection);
+	}
+
+	void setBoundaryMode(int newBoundaryMode)
+	{
+		boundaryMode = newBoundaryMode;
+		if (boundaryMode == 0)
+			reactionDiffusion.setDefinition("TEXEL_FETCH_METHOD", "texelFetchAdjacentWrap");
+		if (boundaryMode == 1)
+			reactionDiffusion.setDefinition("TEXEL_FETCH_METHOD", "texelFetchAdjacent");
+		if (boundaryMode == 2)
+			reactionDiffusion.setDefinition("TEXEL_FETCH_METHOD", "texelFetchAdjacentClamp");
 	}
 
 	void menu()
@@ -228,7 +287,11 @@ public:
 				slabTexture.setSize(simulationSize);
 			}
 			ImGui::SliderFloat4("diffusion rates", (float*)&diffusionRates, 0.0f, 1.0f);
-			const char* items[] = { "Negative bubbles (sigma)", "Bubbles (rho)",
+			const char* boundaryModes[] = { "wrap around", "zero",  "clamp to edge" };
+			int boundaryModeCurrent = boundaryMode;
+			if (ImGui::Combo("boundary mode", &boundaryModeCurrent, boundaryModes, IM_ARRAYSIZE(boundaryModes)))
+				setBoundaryMode(boundaryModeCurrent);
+			const char* fkPresets[] = { "Negative bubbles (sigma)", "Bubbles (rho)",
 				"Precritical bubbles (rho/kappa)", "Worms and loops (kappa)", "Stable solitons (nu)", "The U-Skate World (pi)",
 				"Worms (mu)", "Worms join into maze (kappa)", "Negatons (iota)", "Turing patterns (delta)",
 				"Chaos to Turing negatons (beta)", "Fingerprints (theta/kappa)", "Chaos with negatons (beta/delta)",
@@ -236,9 +299,8 @@ public:
 				"Mazes with some chaos (gamma)", "Chaos (beta)", "Pulsating solitons (zeta)", "Warring microbes (epsilon)",
 				"Spots and loops (alpha)", "Moving spots (alpha)", "Waves (xi)"
 			};
-			static int itemCurrent = -1;
-
-			if (ImGui::Combo("presets", &itemCurrent, items, IM_ARRAYSIZE(items)))
+			static int fkPresetCurrent = -1;
+			if (ImGui::Combo("presets", &fkPresetCurrent, fkPresets, IM_ARRAYSIZE(fkPresets)))
 			{
 				const glm::vec2 fkValues[] = {
 					{  0.098,     0.0555   }, // Negative bubbles (sigma)
@@ -266,10 +328,11 @@ public:
 					{  0.014,     0.054    }, // Moving spots (alpha)
 					{  0.014,     0.045    }
 				};
-				glm::vec2 preset = fkValues[itemCurrent];
-				feed = preset.x;
-				kill = preset.y;
+				glm::vec2 fkPreset = fkValues[fkPresetCurrent];
+				feed = fkPreset.x;
+				kill = fkPreset.y;
 			}
+			
 			ImGui::SliderFloat("feed", &feed, 0.0f, 0.3f);
 			ImGui::SliderFloat("kill", &kill, 0.0f, 0.3f);
 			ImGui::SliderFloat("timestep", &timestep, 0.0f, 1.0f);
@@ -310,6 +373,14 @@ public:
 			ImGui::SliderFloat("metallic", &metallic, 0.0f, 1.0f);
 			ImGui::SliderFloat("roughness", &roughness, 0.0f, 1.0f);
 			ImGui::SliderFloat("ao", &ao, 0.0f, 1.0f);
+			
+			ImGui::Checkbox("showNoise", &showNoise);
+			ImGui::SliderFloat("noiseTimeScale", &noiseTimeScale, 0.0f, 50.0f);
+			ImGui::SliderFloat("noiseScale", &noiseScale, 0.0f, 0.15f);
+			ImGui::SliderFloat("feedNoiseStrength", &feedNoiseStrength, 0.0f, 0.1f);
+			ImGui::SliderFloat("killNoiseStrength", &killNoiseStrength, 0.0f, 0.1f);
+
+			ImGui::Checkbox("use advection", &useAdvection);
 		}
 		ImGui::End();
 

@@ -2,8 +2,16 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
+#include "../noise/noise4D.glsl"
+
 layout(binding = 0, rgba32f) writeonly restrict uniform image3D rdImage;
 layout(binding = 0) uniform sampler3D rdSampler;
+
+layout(std430, binding = 0) buffer mouseSplatSSBO
+{
+   vec4 mousePos;
+   vec4 prevMousePos;
+};
 
 uniform float time;
 uniform float deltaTime;
@@ -17,14 +25,21 @@ uniform vec3 mouseSplatPos;
 uniform vec3 prevMouseSplatPos;
 uniform bool mouseSplatActive;
 
-
-uniform vec4 diffusionRates = vec4(1.0, 0.5, 0.0, 0.0);
-uniform float feed = 0.055;
-uniform float kill = 0.062;
-uniform float timestep = 1.0;
+uniform vec4 diffusionRates;
+uniform float feed;
+uniform float kill;
+uniform float timestep;
 
 uniform ivec3 simulationSize;
 uniform ivec2 screenSize;
+
+#define TEXEL_FETCH_METHOD texelFetchAdjacentWrap
+
+uniform bool showNoise;
+uniform float noiseTimeScale;
+uniform float noiseScale;
+uniform float feedNoiseStrength;
+uniform float killNoiseStrength;
 
 float gauss(vec3 p, float r)
 {
@@ -62,6 +77,14 @@ void texelFetchAdjacentWrap(sampler3D s, ivec3 icoords, inout vec4 texels[3][3][
 	for (int j = -1; j < 2; j++)
 	for (int k = -1; k < 2; k++)
 		texels[i+1][j+1][k+1] = texelFetch(s, ivec3(mod(icoords + ivec3(i, j, k), simulationSize)), 0);
+}
+
+void texelFetchAdjacentClamp(sampler3D s, ivec3 icoords, inout vec4 texels[3][3][3])
+{
+	for (int i = -1; i < 2; i++)
+	for (int j = -1; j < 2; j++)
+	for (int k = -1; k < 2; k++)
+		texels[i+1][j+1][k+1] = texelFetch(s, clamp(icoords + ivec3(i, j, k), ivec3(0), simulationSize), 0);
 }
 
 vec4 computeLaplacian(in vec4 texels[3][3][3])
@@ -104,8 +127,6 @@ vec4 computeLaplacian(in vec4 texels[3][3][3])
 }
 
 
-
-
 void main()
 {
 	vec3 coords = vec3(gl_GlobalInvocationID.xyz);
@@ -115,7 +136,7 @@ void main()
 	//	return;
 
 	vec4 texels[3][3][3];
-	texelFetchAdjacent(rdSampler, icoords, texels);
+	TEXEL_FETCH_METHOD(rdSampler, icoords, texels);
 	vec4 C = texels[1][1][1];
 
 	float mouseSplatRadius = 5.0;
@@ -124,8 +145,8 @@ void main()
 	if (mouseSplatActive)
 	{
 		vec3 delta;
-		vec3 l1 = prevMouseSplatPos + simulationSize * 0.5;
-		vec3 l2 = mouseSplatPos + simulationSize * 0.5;
+		vec3 l1 = mousePos.xyz + simulationSize * 0.5;
+		vec3 l2 = prevMousePos.xyz + simulationSize * 0.5;
 		float splat;
 		if (l1 == l2)
 		{
@@ -143,14 +164,26 @@ void main()
 		C.y += splat * 10.0 * rmd;
 	}
 
+	vec4 noisePos = vec4(coords, time * noiseTimeScale);
+	float noise = snoise(noisePos * noiseScale);
+
+	if (showNoise)
+	{
+		imageStore(rdImage, icoords, vec4(noise));
+		return;
+	}
+
+	float f = feed + noise * feedNoiseStrength;
+	float k = kill + noise * killNoiseStrength;
+
 	C = clamp(C, vec4(0.0), vec4(1.0));
 	
 	texels[1][1][1] = C;
 	vec4 laplacian = computeLaplacian(texels);
 	float reaction = C.x * C.y * C.y;
 
-	C.x += (diffusionRates.x * laplacian.x - reaction + feed * (1.0 - C.x)) * timestep;
-	C.y += (diffusionRates.y * laplacian.y + reaction -(kill + feed) * C.y) * timestep;
+	C.x += (diffusionRates.x * laplacian.x - reaction + f * (1.0 - C.x)) * timestep;
+	C.y += (diffusionRates.y * laplacian.y + reaction -(k + f) * C.y) * timestep;
 
 	imageStore(rdImage, icoords, C);
 }

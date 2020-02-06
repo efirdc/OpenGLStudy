@@ -139,8 +139,6 @@ void main()
 						start = mid;
 					depth = mid;
 				}
-			
-				BlinnPhongMaterial material = BlinnPhongMaterial(color1, 15.6);
 				vec4 samples[3][3][3];
 				textureAdjacent(rdSampler, samples, rayPos, 1.0 / simulationSize, boxMin, boxMax);
 				vec3 norm = computeSobel(samples, 1);
