@@ -2,14 +2,16 @@
 
 layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
 
-
 layout(binding = 0, rgba32f) writeonly restrict uniform image3D rdImage;
 layout(binding = 0) uniform sampler3D rdSampler;
 
 layout(std430, binding = 0) buffer mouseSplatSSBO
 {
-   vec4 mousePos;
-   vec4 prevMousePos;
+   vec4 mouseHalfwayPos;
+   vec4 prevMouseHalfwayPos;
+   vec4 mouseLevelSurfacePos;
+   vec4 prevMouseLevelSurfacePos;
+   bool mouseSplatActive;
 };
 
 uniform float levelSurface;
@@ -40,7 +42,8 @@ vec4 sampleVolume(sampler3D s, vec3 p, vec3 boxMin, vec3 boxMax)
 
 void main()
 {
-    prevMousePos.xyz = mousePos.xyz;
+    prevMouseHalfwayPos.xyz = mouseHalfwayPos.xyz;
+	prevMouseLevelSurfacePos.xyz = mouseLevelSurfacePos.xyz;
 
     vec3 Eye = view[3].xyz;
 	vec2 fScreenSize = vec2(screenSize);
@@ -56,14 +59,12 @@ void main()
 	vec2 boxIntersections = intersectBox(Eye, mouseRayDir, boxMin + 0.5, boxMax - 0.5);
 
 	float mid = (boxIntersections.x + boxIntersections.y) * 0.5;
-	mousePos.xyz = Eye + mid * mouseRayDir;
+	mouseHalfwayPos.xyz = Eye + mid * mouseRayDir;
 	
-	//return;
-	
-	//boxIntersections.y *= 0.5;
-
+	mouseSplatActive = false;
     if (boxIntersections.y > boxIntersections.x)
 	{
+		mouseSplatActive = true;
 		float stepSize = 1.0 / dot(-view[2].xyz, mouseRayDir);
 
 		boxIntersections = max(boxIntersections, 0);
@@ -96,7 +97,7 @@ void main()
 						start = mid;
 					depth = mid;
 				}
-				mousePos.xyz = Eye + depth * mouseRayDir;
+				mouseLevelSurfacePos.xyz = Eye + depth * mouseRayDir;
 				return;
 			}
 
@@ -104,5 +105,4 @@ void main()
 			depth += stepSize;
 		}
     }
-
 }

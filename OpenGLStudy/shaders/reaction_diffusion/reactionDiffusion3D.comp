@@ -9,8 +9,11 @@ layout(binding = 0) uniform sampler3D rdSampler;
 
 layout(std430, binding = 0) buffer mouseSplatSSBO
 {
-   vec4 mousePos;
-   vec4 prevMousePos;
+   vec4 mouseHalfwayPos;
+   vec4 prevMouseHalfwayPos;
+   vec4 mouseLevelSurfacePos;
+   vec4 prevMouseLevelSurfacePos;
+   bool mouseSplatActive;
 };
 
 uniform float time;
@@ -23,7 +26,6 @@ uniform bool leftMouseDown;
 uniform bool rightMouseDown;
 uniform vec3 mouseSplatPos;
 uniform vec3 prevMouseSplatPos;
-uniform bool mouseSplatActive;
 
 uniform vec4 diffusionRates;
 uniform float feed;
@@ -48,8 +50,13 @@ float gauss(vec3 p, float r)
 
 float lineSplat(vec3 p, vec3 l1, vec3 l2, float r, out vec3 delta)
 {
+	if (l1 == l2)
+	{
+		delta = p - l1;
+		return gauss(delta, r);
+	}
+	
 	vec3 line = l2 - l1;
-
 	delta = p - l2;
 	if (dot(delta, line) > 0.0)
 		return gauss(delta, r);
@@ -118,6 +125,7 @@ vec4 computeLaplacian(in vec4 texels[3][3][3])
 		{1.0, 1.0, 1.0},
 		{1.0, 1.0, 1.0}}
 	};
+
 	vec4 result = vec4(0.0);
 	for (int i = 0; i < 3; i++)
 	for (int j = 0; j < 3; j++)
@@ -129,6 +137,7 @@ vec4 computeLaplacian(in vec4 texels[3][3][3])
 
 void main()
 {
+
 	vec3 coords = vec3(gl_GlobalInvocationID.xyz);
 	ivec3 icoords = ivec3(gl_GlobalInvocationID.xyz);
 
@@ -139,29 +148,24 @@ void main()
 	TEXEL_FETCH_METHOD(rdSampler, icoords, texels);
 	vec4 C = texels[1][1][1];
 
-	float mouseSplatRadius = 5.0;
+	float mouseSplatRadius = 1.0;
 	float mouseSplatAdd = 1.0;
 	
 	if (mouseSplatActive)
 	{
 		vec3 delta;
-		vec3 l1 = mousePos.xyz + simulationSize * 0.5;
-		vec3 l2 = prevMousePos.xyz + simulationSize * 0.5;
-		float splat;
-		if (l1 == l2)
-		{
-			delta = coords - l1;
-			splat = gauss(delta, mouseSplatRadius);
-		}
-		else
-			splat = lineSplat(coords, l1, l2, mouseSplatRadius, delta);
-
-		vec3 deltaNorm = delta == vec3(0.0) ? vec3(0.0) : normalize(delta);
-		float lmd = leftMouseDown ? 1.0 : 0.0;
+		//vec3 deltaNorm = delta == vec3(0.0) ? vec3(0.0) : normalize(delta);
 		float rmd = rightMouseDown ? 1.0 : 0.0;
-
-		C.x -= splat * 10.0 * lmd;
-		C.y += splat * 10.0 * rmd;
+		if (leftMouseDown)
+		{	
+			float levelSurfaceSplat = lineSplat(coords, mouseLevelSurfacePos.xyz + simulationSize * 0.5, prevMouseLevelSurfacePos.xyz + simulationSize * 0.5, mouseSplatRadius, delta);
+			C.x -= levelSurfaceSplat * 10.0;
+		}
+		if (rightMouseDown)
+		{	
+			float halfwaySplat = lineSplat(coords, mouseHalfwayPos.xyz + simulationSize * 0.5, prevMouseHalfwayPos.xyz + simulationSize * 0.5, mouseSplatRadius, delta);
+			C.y += halfwaySplat * 10.0;
+		}
 	}
 
 	vec4 noisePos = vec4(coords, time * noiseTimeScale);

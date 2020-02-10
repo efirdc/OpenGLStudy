@@ -3,7 +3,6 @@
 #include "Shader.h"
 
 #include "utilities.h"
-#include "ComputeShader.h"
 #include "Texture.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
@@ -16,9 +15,9 @@ class GLReactionDiffusion3DProgram : public GLProgram
 {
 public:
 	View view;
-	ComputeShader reactionDiffusion;
-	ComputeShader advection;
-	ComputeShader projectMouse;
+	Shader reactionDiffusion;
+	Shader advection;
+	Shader projectMouse;
 	Shader renderShader;
 	unsigned int quadVAO{};
 
@@ -69,12 +68,12 @@ public:
 		slabTexture{
 			{ 0, GL_TEXTURE_3D, simulationSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
-	},
+		},
 		lightGradientTexture{ 1, lightGradient },
-		reactionDiffusion("shaders/reaction_diffusion/reactionDiffusion3D.comp"),
-		advection("shaders/reaction_diffusion/advection3D.comp"),
-		projectMouse("shaders/reaction_diffusion/projectMouse.comp"),
-		renderShader("shaders/reaction_diffusion/reactionDiffusion3D.vert", "shaders/reaction_diffusion/reactionDiffusion3D.frag")
+		reactionDiffusion(GL_COMPUTE_SHADER, "shaders/reaction_diffusion/reactionDiffusion3D.comp"),
+		advection(GL_COMPUTE_SHADER, "shaders/reaction_diffusion/advection3D.comp"),
+		projectMouse(GL_COMPUTE_SHADER, "shaders/reaction_diffusion/projectMouse.comp"),
+		renderShader( "shaders/reaction_diffusion/reactionDiffusion3D.vert", "shaders/reaction_diffusion/reactionDiffusion3D.frag")
 	{
 		float quadVertices[] = {
 			// positions   // texCoords
@@ -93,13 +92,16 @@ public:
 
 		struct MouseSplatSSBO
 		{
-			glm::vec4 mousePos;
-			glm::vec4 prevMousePos;
+			glm::vec4 mouseHalfwayPos;
+			glm::vec4 prevMouseHalfwayPos;
+			glm::vec4 mouseLevelSurfacePos;
+			glm::vec4 prevMouseLevelSurfacePos;
+			bool mouseSplatActive;
 		} mouseSplatSSBO;
 		unsigned int ssbo;
 		glGenBuffers(1, &ssbo);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(mouseSplatSSBO), &mouseSplatSSBO, GL_DYNAMIC_COPY);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(mouseSplatSSBO), NULL, GL_DYNAMIC_COPY);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
 
 		directionalLightDirection = glm::normalize(directionalLightDirection);
@@ -384,7 +386,7 @@ public:
 		}
 		ImGui::End();
 
-		bool showDemoWindow = false;
-		ImGui::ShowDemoWindow(&showDemoWindow);
+		//bool showDemoWindow = false;
+		//ImGui::ShowDemoWindow(&showDemoWindow);
 	}
 };

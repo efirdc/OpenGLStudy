@@ -1,0 +1,15 @@
+#version 440
+
+layout (local_size_x = 512) in;
+
+#include "../noise/hash.glsl"
+#include "particles_common.glsl"
+
+void main()
+{
+	uint particleID = gl_GlobalInvocationID.x;
+
+	vec3 pos = (hash31(particleID)) * vec3(simulationSize);
+
+	destParticles[particleID].position = pos;
+}

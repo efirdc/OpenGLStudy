@@ -13,10 +13,11 @@ int raymarchNoise();
 #include "GLPlotProgram.h"
 #include "GLReactionDiffusionProgram.h"
 #include "GLReactionDiffusion3DProgram.h"
+#include "GLComputeParticlesProgram.h"
 
 int main()
 {
-	GLReactionDiffusion3DProgram program;
+	GLComputeParticlesProgram program;
 	program.run();
 }
 

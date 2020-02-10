@@ -15,7 +15,6 @@
 #include "imgui_color_gradient.h"
 
 #include "Shader.h"
-#include "ComputeShader.h"
 #include "SceneManager.h"
 #include "StreamTexture.h"
 #include "View.h"
@@ -66,7 +65,7 @@ int raymarchNoise()
 	// View
 	View * view = new View;
 	Shader raymarch("shaders/raymarch/raymarch.vert", "shaders/raymarch/volumetric.frag");
-	ComputeShader compute("shaders/compute/noiseVolume.comp");
+	Shader compute(GL_COMPUTE_SHADER, "shaders/compute/noiseVolume.comp");
 
 	// Setup quad VBO
 	float quadVertices[] = {

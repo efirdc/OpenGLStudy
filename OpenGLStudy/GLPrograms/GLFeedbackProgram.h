@@ -32,7 +32,6 @@ using namespace std::string_literals;
 #include "glmSerialization.h"
 
 #include "Shader.h"
-#include "ComputeShader.h"
 #include "SceneManager.h"
 #include "StreamTexture.h"
 #include "View.h"
@@ -383,9 +382,9 @@ public:
 	
 	View view;
 	Shader raymarch;
-	ComputeShader compute;
-	ComputeShader shadowMap;
-	ComputeShader advection, curl, vorticity, divergence, pressure, subtractPressureGradient;
+	Shader compute;
+	Shader shadowMap;
+	Shader advection, curl, vorticity, divergence, pressure, subtractPressureGradient;
 	ImguiPresetMenu<Settings> presetMenu;
 	//ColorGradientTexture fluidGradientTexture;
 
@@ -434,14 +433,14 @@ public:
 	GLFeedbackProgram() :
 		GLProgram(4, 4, true, 1600, 900, "Fluid sim", true),
 		raymarch("shaders/raymarch/raymarch.vert", "shaders/raymarch/feedback.frag"),
-		compute("shaders/compute/feedback.comp"),
-		shadowMap("shaders/compute/shadowMap.comp"),
-		advection("shaders/compute/advection.comp"),
-		curl("shaders/compute/curl.comp"),
-		vorticity("shaders/compute/vorticity.comp"),
-		divergence("shaders/compute/divergence.comp"),
-		pressure("shaders/compute/pressure.comp"),
-		subtractPressureGradient("shaders/compute/subtractPressureGradient.comp"),
+		compute(GL_COMPUTE_SHADER, "shaders/compute/feedback.comp"),
+		shadowMap(GL_COMPUTE_SHADER, "shaders/compute/shadowMap.comp"),
+		advection(GL_COMPUTE_SHADER, "shaders/compute/advection.comp"),
+		curl(GL_COMPUTE_SHADER, "shaders/compute/curl.comp"),
+		vorticity(GL_COMPUTE_SHADER, "shaders/compute/vorticity.comp"),
+		divergence(GL_COMPUTE_SHADER, "shaders/compute/divergence.comp"),
+		pressure(GL_COMPUTE_SHADER, "shaders/compute/pressure.comp"),
+		subtractPressureGradient(GL_COMPUTE_SHADER, "shaders/compute/subtractPressureGradient.comp"),
 		presetMenu(settings, "fluidSettings.txt")
 		//fluidGradientTexture(4, settings.fluidGradient)
 	{

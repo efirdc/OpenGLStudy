@@ -4,7 +4,6 @@
 #include "Shader.h"
 
 #include "utilities.h"
-#include "ComputeShader.h"
 #include "Texture.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_glfw_gl3.h"
@@ -13,7 +12,7 @@
 class GLReactionDiffusionProgram : public GLProgram
 {
 public:
-	ComputeShader reactionDiffusion;
+	Shader reactionDiffusion;
 	Shader renderShader;
 	unsigned int quadVAO{};
 
@@ -44,7 +43,7 @@ public:
 			GL_LINEAR, GL_REPEAT, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 		},
 		lightGradientTexture{1, lightGradient},
-		reactionDiffusion("shaders/reaction_diffusion/reactionDiffusion.comp"),
+		reactionDiffusion(GL_COMPUTE_SHADER, "shaders/reaction_diffusion/reactionDiffusion.comp"),
 		renderShader("shaders/reaction_diffusion/reactionDiffusion.vert", "shaders/reaction_diffusion/reactionDiffusion.frag")
 	{
 		float quadVertices[] = {

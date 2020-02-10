@@ -19,91 +19,154 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.*/
+//? #version 440
 
 #ifndef _HASH
 #define _HASH
 
-//----------------------------------------------------------------------------------------
-//  1 out, 1 in...
+#define UI0 1597334673U
+#define UI1 3812015801U
+#define UI2 uvec2(UI0, UI1)
+#define UI3 uvec3(UI0, UI1, 2798796415U)
+#define UIF (1.0 / float(0xffffffffU))
+
+
+// The labeling refers to the number of values - hash(out)(in)...
+//---------------------------------------------------------------------------------------------------------------
+float hash11(uint q)
+{
+	uvec2 n = q * UI2;
+	q = (n.x ^ n.y) * UI0;
+	return float(q) * UIF;
+}
+
 float hash11(float p)
 {
-    p = fract(p * .1031);
-    p *= p + 33.33;
-    p *= p + p;
-    return fract(p);
+	uvec2 n = uint(int(p)) * UI2;
+	uint q = (n.x ^ n.y) * UI0;
+	return float(q) * UIF;
 }
 
-//----------------------------------------------------------------------------------------
-//  1 out, 2 in...
+//---------------------------------------------------------------------------------------------------------------
+float hash12(uvec2 q)
+{
+	q *= UI2;
+	uint n = (q.x ^ q.y) * UI0;
+	return float(n) * UIF;
+}
+
 float hash12(vec2 p)
 {
-	vec3 p3  = fract(vec3(p.xyx) * .1031);
-    p3 += dot(p3, p3.yzx + 33.33);
-    return fract((p3.x + p3.y) * p3.z);
+	uvec2 q = uvec2(ivec2(p)) * UI2;
+	uint n = (q.x ^ q.y) * UI0;
+	return float(n) * UIF;
 }
 
-//----------------------------------------------------------------------------------------
-//  1 out, 3 in...
-float hash13(vec3 p3)
+//---------------------------------------------------------------------------------------------------------------
+float hash13(uvec3 q)
 {
-	p3  = fract(p3 * .1031);
-    p3 += dot(p3, p3.yzx + 33.33);
-    return fract((p3.x + p3.y) * p3.z);
+	q *= UI3;
+	uint n = (q.x ^ q.y ^ q.z) * UI0;
+	return float(n) * UIF;
 }
 
-//----------------------------------------------------------------------------------------
-//  2 out, 1 in...
+float hash13(vec3 p)
+{
+	uvec3 q = uvec3(ivec3(p)) * UI3;
+	q *= UI3;
+	uint n = (q.x ^ q.y ^ q.z) * UI0;
+	return float(n) * UIF;
+}
+
+//---------------------------------------------------------------------------------------------------------------
+vec2 hash21(uint q)
+{
+	uvec2 n = q * UI2;
+	n = (n.x ^ n.y) * UI2;
+	return vec2(n) * UIF;
+}
+
 vec2 hash21(float p)
 {
-	vec3 p3 = fract(vec3(p) * vec3(.1031, .1030, .0973));
-	p3 += dot(p3, p3.yzx + 33.33);
-    return fract((p3.xx+p3.yz)*p3.zy);
+	uvec2 n = uint(int(p)) * UI2;
+	n = (n.x ^ n.y) * UI2;
+	return vec2(n) * UIF;
 }
 
-//----------------------------------------------------------------------------------------
-///  2 out, 2 in...
+//---------------------------------------------------------------------------------------------------------------
+vec2 hash22(uvec2 q)
+{
+	q *= UI2;
+	q = (q.x ^ q.y) * UI2;
+	return vec2(q) * UIF;
+}
+
 vec2 hash22(vec2 p)
 {
-	vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
-    p3 += dot(p3, p3.yzx+33.33);
-    return fract((p3.xx+p3.yz)*p3.zy);
+	uvec2 q = uvec2(ivec2(p))*UI2;
+	q = (q.x ^ q.y) * UI2;
+	return vec2(q) * UIF;
 }
 
-//----------------------------------------------------------------------------------------
-///  2 out, 3 in...
-vec2 hash23(vec3 p3)
+//---------------------------------------------------------------------------------------------------------------
+vec2 hash23(uvec3 q)
 {
-	p3 = fract(p3 * vec3(.1031, .1030, .0973));
-    p3 += dot(p3, p3.yzx+33.33);
-    return fract((p3.xx+p3.yz)*p3.zy);
+	q *= UI3;
+	uvec2 n = (q.x ^ q.y ^ q.z) * UI2;
+	return vec2(n) * UIF;
 }
 
-//----------------------------------------------------------------------------------------
-//  3 out, 1 in...
+vec2 hash23(vec3 p)
+{
+	uvec3 q = uvec3(ivec3(p)) * UI3;
+	uvec2 n = (q.x ^ q.y ^ q.z) * UI2;
+
+	return vec2(n) * UIF;
+}
+
+//---------------------------------------------------------------------------------------------------------------
+vec3 hash31(uint q)
+{
+	uvec3 n = q * UI3;
+	n = (n.x ^ n.y ^ n.z) * UI3;
+	return vec3(n) * UIF;
+}
 vec3 hash31(float p)
 {
-   vec3 p3 = fract(vec3(p) * vec3(.1031, .1030, .0973));
-   p3 += dot(p3, p3.yzx+33.33);
-   return fract((p3.xxy+p3.yzz)*p3.zyx); 
+
+	uvec3 n = uint(int(p)) * UI3;
+	n = (n.x ^ n.y ^ n.z) * UI3;
+	return vec3(n) * UIF;
 }
 
-
-//----------------------------------------------------------------------------------------
-///  3 out, 2 in...
-vec3 hash32(vec2 p)
+//---------------------------------------------------------------------------------------------------------------
+vec3 hash32(uvec2 q)
 {
-	vec3 p3 = fract(vec3(p.xyx) * vec3(.1031, .1030, .0973));
-    p3 += dot(p3, p3.yxz+33.33);
-    return fract((p3.xxy+p3.yzz)*p3.zyx);
+	uvec3 n = q.xyx * UI3;
+	n = (n.x ^ n.y ^n.z) * UI3;
+	return vec3(n) * UIF;
 }
 
-//----------------------------------------------------------------------------------------
-///  3 out, 3 in...
-vec3 hash33(vec3 p3)
+vec3 hash32(vec2 q)
 {
-	p3 = fract(p3 * vec3(.1031, .1030, .0973));
-    p3 += dot(p3, p3.yxz+33.33);
-    return fract((p3.xxy + p3.yxx)*p3.zyx);
+	uvec3 n = uvec3(ivec3(q.xyx)) * UI3;
+	n = (n.x ^ n.y ^ n.z) * UI3;
+	return vec3(n) * UIF;
+}
+
+//---------------------------------------------------------------------------------------------------------------
+vec3 hash33(uvec3 q)
+{
+	q *= UI3;
+	q = (q.x ^ q.y ^ q.z)*UI3;
+	return vec3(q) * UIF;
+}
+
+vec3 hash33(vec3 p)
+{
+	uvec3 q = uvec3(ivec3(p)) * UI3;
+	q = (q.x ^ q.y ^ q.z)*UI3;
+	return vec3(q) * UIF;
 }
 
 //----------------------------------------------------------------------------------------

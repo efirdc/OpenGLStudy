@@ -43,13 +43,13 @@
     <Filter Include="shaders\filters">
       <UniqueIdentifier>{5cbbfed0-afa7-4739-bfe2-36cf44fc2dae}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shaders\particles">
+      <UniqueIdentifier>{d597822b-d343-4eed-a0dd-d92931daee75}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dependencies\glad\glad.c">
       <Filter>dependencies</Filter>
-    </ClCompile>
-    <ClCompile Include="core\Shader.cpp">
-      <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="programs\transformations.cpp">
       <Filter>programs</Filter>
@@ -148,12 +148,6 @@
     <ClCompile Include="core\WindowsTouch.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="core\ComputeShader.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
-    <ClCompile Include="core\BaseShader.cpp">
-      <Filter>core</Filter>
-    </ClCompile>
     <ClCompile Include="programs\raymarchSpheres.cpp">
       <Filter>programs</Filter>
     </ClCompile>
@@ -172,6 +166,9 @@
     <ClCompile Include="imgui_extensions\imGuIZMOquat.cpp">
       <Filter>imgui_extensions</Filter>
     </ClCompile>
+    <ClCompile Include="core\Shader.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="dependencies\glad\glad.h">
@@ -185,9 +182,6 @@
     </ClInclude>
     <ClInclude Include="dependencies\KHR\khrplatform.h">
       <Filter>dependencies</Filter>
-    </ClInclude>
-    <ClInclude Include="core\Shader.h">
-      <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="dependencies\stb\stb_image.h">
       <Filter>dependencies</Filter>
@@ -282,12 +276,6 @@
     <ClInclude Include="dependencies\Shadinclude\Shadinclude.hpp">
       <Filter>dependencies</Filter>
     </ClInclude>
-    <ClInclude Include="core\ComputeShader.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="core\BaseShader.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="core\View.h">
       <Filter>core</Filter>
     </ClInclude>
@@ -335,6 +323,12 @@
     </ClInclude>
     <ClInclude Include="GLPrograms\GLReactionDiffusion3DProgram.h">
       <Filter>GLPrograms</Filter>
+    </ClInclude>
+    <ClInclude Include="GLPrograms\GLComputeParticlesProgram.h">
+      <Filter>GLPrograms</Filter>
+    </ClInclude>
+    <ClInclude Include="core\Shader.h">
+      <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -554,6 +548,27 @@
     </None>
     <None Include="shaders\reaction_diffusion\projectMouse.comp">
       <Filter>shaders\reaction_diffusion</Filter>
+    </None>
+    <None Include="shaders\particles\particles.comp">
+      <Filter>shaders\particles</Filter>
+    </None>
+    <None Include="shaders\particles\particles.frag">
+      <Filter>shaders\particles</Filter>
+    </None>
+    <None Include="shaders\particles\particles.vert">
+      <Filter>shaders\particles</Filter>
+    </None>
+    <None Include="shaders\particles\particles.geom">
+      <Filter>shaders\particles</Filter>
+    </None>
+    <None Include="shaders\particles\particles_common.glsl">
+      <Filter>shaders\particles</Filter>
+    </None>
+    <None Include="shaders\particles\particles_init.comp">
+      <Filter>shaders\particles</Filter>
+    </None>
+    <None Include="shaders\particles\particles_sort.comp">
+      <Filter>shaders\particles</Filter>
     </None>
   </ItemGroup>
 </Project>

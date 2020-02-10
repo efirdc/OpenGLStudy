@@ -145,17 +145,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="core\BaseShader.cpp" />
+    <ClCompile Include="core\Shader.cpp" />
     <ClCompile Include="core\Camera.cpp" />
     <ClCompile Include="core\ColorGradientTexture.cpp" />
-    <ClCompile Include="core\ComputeShader.cpp" />
     <ClCompile Include="core\glDebug.cpp" />
     <ClCompile Include="core\PingPongBuffer.cpp" />
     <ClCompile Include="core\FrequencySpectrum.cpp" />
     <ClCompile Include="core\loopback.cpp" />
     <ClCompile Include="core\SceneManager.cpp" />
     <ClCompile Include="core\SimpleCamera.cpp" />
-    <ClCompile Include="core\Shader.cpp" />
     <ClCompile Include="core\SpectrumAnalyzer.cpp" />
     <ClCompile Include="core\SpectrumFilter.cpp" />
     <ClCompile Include="core\StreamTexture.cpp" />
@@ -190,10 +188,9 @@
     <ClCompile Include="GLProgram.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="core\BaseShader.h" />
+    <ClInclude Include="core\Shader.h" />
     <ClInclude Include="core\Camera.h" />
     <ClInclude Include="core\ColorGradientTexture.h" />
-    <ClInclude Include="core\ComputeShader.h" />
     <ClInclude Include="core\glDebug.h" />
     <ClInclude Include="core\glmSerialization.h" />
     <ClInclude Include="core\GLProgram.h" />
@@ -202,7 +199,6 @@
     <ClInclude Include="core\loopback.h" />
     <ClInclude Include="core\SceneManager.h" />
     <ClInclude Include="core\SimpleCamera.h" />
-    <ClInclude Include="core\Shader.h" />
     <ClInclude Include="core\SpectrumAnalyzer.h" />
     <ClInclude Include="core\SpectrumFilter.h" />
     <ClInclude Include="core\StreamTexture.h" />
@@ -230,6 +226,7 @@
     <ClInclude Include="dependencies\nlohmann\json.hpp" />
     <ClInclude Include="dependencies\Shadinclude\Shadinclude.hpp" />
     <ClInclude Include="dependencies\stb\stb_image.h" />
+    <ClInclude Include="GLPrograms\GLComputeParticlesProgram.h" />
     <ClInclude Include="GLPrograms\GLFeedbackProgram.h" />
     <ClInclude Include="GLPrograms\GLPlotProgram.h" />
     <ClInclude Include="GLPrograms\GLReactionDiffusion3DProgram.h" />
@@ -297,6 +294,13 @@
     <None Include="shaders\noise\noise4D.glsl" />
     <None Include="shaders\noise\noiseutil.glsl" />
     <None Include="shaders\noise\psrdnoise2D.glsl" />
+    <None Include="shaders\particles\particles.comp" />
+    <None Include="shaders\particles\particles.frag" />
+    <None Include="shaders\particles\particles.geom" />
+    <None Include="shaders\particles\particles.vert" />
+    <None Include="shaders\particles\particles_common.glsl" />
+    <None Include="shaders\particles\particles_init.comp" />
+    <None Include="shaders\particles\particles_sort.comp" />
     <None Include="shaders\raymarch\feedback.frag" />
     <None Include="shaders\raymarch\light.glsl" />
     <None Include="shaders\raymarch\material.glsl" />

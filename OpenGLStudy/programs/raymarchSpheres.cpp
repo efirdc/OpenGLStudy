@@ -12,7 +12,6 @@
 #include "imgui/imgui_impl_glfw_gl3.h"
 
 #include "Shader.h"
-#include "ComputeShader.h"
 #include "SceneManager.h"
 #include "View.h"
 
@@ -69,7 +68,7 @@ int raymarchSpheres()
 	Shader::bindGlobalUniform("time", (void *)&sceneManager->time);
 
 	Shader raymarch("shaders/raymarch/raymarch.vert", "shaders/raymarch/spheres.frag");
-	ComputeShader compute("shaders/compute/spheres.comp");
+	Shader compute(GL_COMPUTE_SHADER, "shaders/compute/spheres.comp");
 
 	// Setup quad VBO
 	float quadVertices[] = {
@@ -97,7 +96,6 @@ int raymarchSpheres()
 	glEnableVertexAttribArray(1);
 
 	// Compute shader experiment
-	ComputeShader::printSizes();
 	unsigned int computeShaderTexture[2];
 	glGenTextures(2, computeShaderTexture);
 	for (int i = 0; i < 2; i++)
