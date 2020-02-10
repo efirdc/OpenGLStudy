@@ -1,0 +1,70 @@
+#version 440
+
+layout (local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#include "particles_common.glsl"
+
+void findNextOpenSlot(inout uint nextOpenSlot, in uint center[8])
+{
+	for (int i = 0; i < PARTICLES_PER_CELL; i++)
+	{
+		if (center[i] == NULL_ID)
+		{
+			nextOpenSlot = i;
+			return;
+		}
+	}
+}
+
+void main()
+{
+	vec3 coords = vec3(gl_GlobalInvocationID.xyz);
+	ivec3 icoords = ivec3(gl_GlobalInvocationID.xyz);
+	uint adjacentParticleIDs[3][3][3][PARTICLES_PER_CELL];
+	sampleParticleMapAdjacent(icoords, adjacentParticleIDs);
+
+	uint center[PARTICLES_PER_CELL] = adjacentParticleIDs[1][1][1];
+
+	for (int i = 0; i < PARTICLES_PER_CELL; i++)
+	{
+		uint particleID = center[i];
+		if (particleID == NULL_ID)
+			continue;
+		uint particleIndex = particleID - 1;
+		vec3 position = destParticles[particleIndex].position;
+		ivec3 particleCell = ivec3(position);
+		if (particleCell != icoords)
+			center[i] = NULL_ID;
+	}
+
+	uint nextOpenSlot = 0;
+	findNextOpenSlot(nextOpenSlot, center);
+
+	for (int i = -1; i < 2; i++)
+	for (int j = -1; j < 2; j++)
+	for (int k = -1; k < 2; k++)
+	{
+		ivec3 particleCellOffset = ivec3(i, j, k);
+		if (particleCellOffset == ivec3(0))
+			continue;
+
+		ivec3 adjacentParticleCell = icoords + particleCellOffset;
+		uint particleIDs[PARTICLES_PER_CELL] = adjacentParticleIDs[i+1][j+1][k+1];
+		for (int p = 0; p < PARTICLES_PER_CELL; p++)
+		{
+			uint particleID = particleIDs[p];
+			if (particleID == NULL_ID)
+				continue;
+			uint particleIndex = particleID - 1;
+			vec3 position = destParticles[particleIndex].position;
+			ivec3 actualParticleCell = ivec3(position);
+			ivec3 clampedActualOffset = clamp(adjacentParticleCell - actualParticleCell, ivec3(-1), ivec3(1));
+			if (clampedActualOffset == particleCellOffset)
+			{
+				center[nextOpenSlot] = particleID;
+				findNextOpenSlot(nextOpenSlot, center);
+			}
+		}
+	}
+	writeParticleMap(icoords, center);
+}

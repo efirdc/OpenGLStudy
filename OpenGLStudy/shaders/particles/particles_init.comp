@@ -15,7 +15,7 @@ void main()
 	for (int i = 0; i < PARTICLES_PER_CELL; i++)
 		particleIDs[i] = NULL_ID;
 
-	uint particleID = (simulationSize.x * simulationSize.y * icoords.x) + (simulationSize.y * icoords.y) + (icoords.z);
+	uint particleID = (simulationSize.x * simulationSize.y * icoords.x) + (simulationSize.y * icoords.y) + (icoords.z) + 1;
 	if (particleID < numParticles)
 		particleIDs[0] = particleID;
 

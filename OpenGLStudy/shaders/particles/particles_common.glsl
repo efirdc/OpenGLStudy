@@ -2,14 +2,14 @@
 
 #define PARTICLES_PER_CELL 8
 
-#define NULL_ID 999999999
+#define NULL_ID 0
 #define UNSORTED -1
 #define OUT_OF_BOUNDS -2
 
-layout(binding = 0, rgba32ui) writeonly restrict uniform uimage3D particleMapImage1;
-layout(binding = 0) uniform usampler3D particleMapSampler1;
-layout(binding = 1, rgba32ui) writeonly restrict uniform uimage3D particleMapImage2;
-layout(binding = 1) uniform usampler3D particleMapSampler2;
+uniform writeonly uimage3D particleMapImage1;
+uniform usampler3D particleMapSampler1;
+uniform writeonly uimage3D particleMapImage2;
+uniform usampler3D particleMapSampler2;
 
 uniform int numParticles;
 uniform ivec3 simulationSize;
@@ -31,7 +31,7 @@ layout(std430, binding = 1) buffer destParticleSSBO
 };
 
 void sampleParticleMap(ivec3 particleCell, out uint particleIDs[PARTICLES_PER_CELL])
-{
+{	
 	uvec4 fetch1 = texelFetch(particleMapSampler1, particleCell, 0);
 	uvec4 fetch2 = texelFetch(particleMapSampler2, particleCell, 0);
 	for (int i = 0; i < 4; i++)
@@ -39,6 +39,14 @@ void sampleParticleMap(ivec3 particleCell, out uint particleIDs[PARTICLES_PER_CE
 		particleIDs[i] = fetch1[i];
 		particleIDs[i + 4] = fetch2[i];
 	}
+}
+
+void sampleParticleMapAdjacent(ivec3 particleCell, out uint particleIDs[3][3][3][PARTICLES_PER_CELL])
+{
+	for (int i = -1; i < 2; i++)
+	for (int j = -1; j < 2; j++)
+	for (int k = -1; k < 2; k++)
+		sampleParticleMap(particleCell + ivec3(i, j, k), particleIDs[i + 1][j + 1][k + 1]);
 }
 
 void writeParticleMap(ivec3 particleCell, uint particleIDs[PARTICLES_PER_CELL])

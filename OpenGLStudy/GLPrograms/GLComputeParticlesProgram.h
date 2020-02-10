@@ -18,7 +18,7 @@ public:
 	View view;
 	Shader particleUpdate;
 	Shader initParticleMap;
-	//Shader particleSort;
+	Shader particleSort;
 	Shader renderShader;
 
 	SlabTexture particleMap1;
@@ -49,11 +49,12 @@ public:
 				GL_NEAREST, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 		},
 		particleMap2{
-					{ 1, GL_TEXTURE_3D, simulationSize, GL_RGBA32UI, GL_RGBA_INTEGER, GL_UNSIGNED_INT,
-					GL_NEAREST, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
+				{ 1, GL_TEXTURE_3D, simulationSize, GL_RGBA32UI, GL_RGBA_INTEGER, GL_UNSIGNED_INT,
+				GL_NEAREST, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 		},
 		particleUpdate(GL_COMPUTE_SHADER, "shaders/particles/particles.comp"),
 		initParticleMap(GL_COMPUTE_SHADER, "shaders/particles/particles_init.comp"),
+		particleSort(GL_COMPUTE_SHADER, "shaders/particles/particles_sort.comp"),
 		renderShader("shaders/particles/particles.vert", "shaders/particles/particles.geom", "shaders/particles/particles.frag")
 	{
 		/*
@@ -106,6 +107,24 @@ public:
 
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, sourceParticleSSBO);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, destParticleSSBO);
+
+		if (initParticleMapThisFrame)
+		{
+			initParticleMapThisFrame = false;
+			initParticleMap.update();
+			initParticleMap.use();
+			glDispatchCompute(simulationSize.x / 8, simulationSize.y / 8, simulationSize.z / 8);
+			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+			particleMap1.swap();
+			particleMap2.swap();
+		}
+		
+		particleSort.update();
+		particleSort.use();
+		glDispatchCompute(simulationSize.x / 8, simulationSize.y / 8, simulationSize.z / 8);
+		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+		particleMap1.swap();
+		particleMap2.swap();
 
 		particleUpdate.update();
 		particleUpdate.use();
@@ -183,6 +202,9 @@ public:
 				//Shader::setGlobalDefinition("SIMULATION_SIZE_Z", std::to_string(simulationSize.z));
 				//glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleMapSSBO);
 				//glBufferData(GL_SHADER_STORAGE_BUFFER, simulationSize.x * simulationSize.y * simulationSize.z * particlesPerCell * sizeof(float), NULL, GL_DYNAMIC_COPY);
+				particleMap1.setSize(simulationSize);
+				particleMap2.setSize(simulationSize);
+				initParticleMapThisFrame = true;
 			}
 
 			ImGui::SliderFloat("timestep", &timestep, 0.0f, 1.0f);

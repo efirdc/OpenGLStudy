@@ -7,9 +7,7 @@ layout (local_size_x = 512) in;
 
 void main()
 {
-	uint particleID = gl_GlobalInvocationID.x;
-
-	vec3 pos = (hash31(particleID)) * vec3(simulationSize);
-
-	destParticles[particleID].position = pos;
+	uint particleIndex = gl_GlobalInvocationID.x;
+	vec3 pos = (hash31(particleIndex)) * vec3(simulationSize);
+	destParticles[particleIndex].position = pos;
 }

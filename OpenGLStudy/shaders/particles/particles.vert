@@ -14,7 +14,7 @@ uniform mat4 projection;
 
 void main()
 { 
-    outData.particleID = gl_VertexID;
+    outData.particleID = gl_VertexID + 1;
 	outData.particle = destParticles[gl_VertexID];
 	outData.sorted = isSorted(outData.particle.position, outData.particleID);
 	gl_Position = view * vec4(outData.particle.position, 1.0); 
