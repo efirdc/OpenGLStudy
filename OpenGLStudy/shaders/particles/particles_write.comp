@@ -9,17 +9,17 @@ void main()
 {
 	uint particleIndex = gl_GlobalInvocationID.x;
 	uint particleID = particleIndex + 1;
-	vec3 pos = destParticles[particleIndex].position;
+	vec3 pos = sourceParticles[particleIndex].position;
 	ivec3 particleCell = ivec3(pos) * ivec3(PARTICLES_PER_CELL, 1, 1);
 
 	for (int i = 0; i < PARTICLES_PER_CELL; i++)
 	{
-		uint previousID = imageAtomicCompSwap(particleMapImage, particleCell + ivec3(i, 0, 0), particleID, particleID);
-		if (previousID == particleID)
-			return;
+		//uint previousID = imageAtomicCompSwap(particleMapImage, particleCell + ivec3(i, 0, 0), particleID, particleID);
+		//if (previousID == particleID)
+		//	return;
 
-		previousID = imageAtomicCompSwap(particleMapImage, particleCell + ivec3(i, 0, 0), NULL_ID, particleID);
-		if (previousID == NULL_ID)
+		uint storedID = imageAtomicCompSwap(particleMapImage, particleCell + ivec3(i, 0, 0), NULL_ID, particleID);
+		if (storedID == NULL_ID)
 			return;
 	}
 }
