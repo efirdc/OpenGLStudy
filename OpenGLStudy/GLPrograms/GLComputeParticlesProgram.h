@@ -16,13 +16,13 @@ class GLComputeParticlesProgram : public GLProgram
 {
 public:
 	View view;
+	
 	Shader particleUpdate;
-	Shader initParticleMap;
-	Shader particleSort;
+	Shader resetParticleMap;
+	Shader atomicWriteParticleMap;
 	Shader renderShader;
 
-	SlabTexture particleMap1;
-	SlabTexture particleMap2;
+	Texture particleMap;
 
 	glm::mat4 projection;
 	
@@ -35,26 +35,24 @@ public:
 	float timestep = 1.0;
 
 	glm::ivec3 simulationSize{ 128, 128, 128 };
-	//unsigned int particlesPerCell = 8;
+	unsigned int particlesPerCell = 8;
 
 	glm::vec3 color1{ 1.0f, 1.0f, 1.0f };
 	glm::vec3 color2{ 1.0f, 1.0f, 1.0f };
 
-	bool initParticleMapThisFrame = true;
+	bool resetParticles = true;
+
 
 	GLComputeParticlesProgram() :
 		GLProgram(4, 4, true, 1600, 900, "Compute Particles", true),
-		particleMap1{
-				{ 0, GL_TEXTURE_3D, simulationSize, GL_RGBA32UI, GL_RGBA_INTEGER, GL_UNSIGNED_INT,
-				GL_NEAREST, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
-		},
-		particleMap2{
-				{ 1, GL_TEXTURE_3D, simulationSize, GL_RGBA32UI, GL_RGBA_INTEGER, GL_UNSIGNED_INT,
-				GL_NEAREST, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
+		particleMap{
+			{ 0, GL_TEXTURE_3D, simulationSize * glm::ivec3(particlesPerCell, 1, 1),
+			GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT,
+			GL_NEAREST, GL_CLAMP_TO_BORDER, true, GL_READ_WRITE, {0.0, 0.0, 0.0, 0.0}}
 		},
 		particleUpdate(GL_COMPUTE_SHADER, "shaders/particles/particles.comp"),
-		initParticleMap(GL_COMPUTE_SHADER, "shaders/particles/particles_init.comp"),
-		particleSort(GL_COMPUTE_SHADER, "shaders/particles/particles_sort.comp"),
+		resetParticleMap(GL_COMPUTE_SHADER, "shaders/particles/particles_reset.comp"),
+		atomicWriteParticleMap(GL_COMPUTE_SHADER, "shaders/particles/particles_write.comp"),
 		renderShader("shaders/particles/particles.vert", "shaders/particles/particles.geom", "shaders/particles/particles.frag")
 	{
 		/*
@@ -108,24 +106,20 @@ public:
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, sourceParticleSSBO);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, destParticleSSBO);
 
-		if (initParticleMapThisFrame)
-		{
-			initParticleMapThisFrame = false;
-			initParticleMap.update();
-			initParticleMap.use();
-			glDispatchCompute(simulationSize.x / 8, simulationSize.y / 8, simulationSize.z / 8);
-			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
-			particleMap1.swap();
-			particleMap2.swap();
-		}
-		
-		particleSort.update();
-		particleSort.use();
-		glDispatchCompute(simulationSize.x / 8, simulationSize.y / 8, simulationSize.z / 8);
+		resetParticleMap.update();
+		resetParticleMap.use();
+		glDispatchCompute(simulationSize.x / 8 * particlesPerCell, simulationSize.y / 8, simulationSize.z / 8);
 		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
-		particleMap1.swap();
-		particleMap2.swap();
 
+		for (int i = 0; i < particlesPerCell; i++)
+		{
+			atomicWriteParticleMap.update();
+			atomicWriteParticleMap.use();
+			glDispatchCompute(numParticles / 512, 1, 1);
+			glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		}
+		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
+		
 		particleUpdate.update();
 		particleUpdate.use();
 		glDispatchCompute(numParticles / 512, 1, 1);
@@ -151,6 +145,7 @@ public:
 		glDrawArrays(GL_POINTS, 0, numParticles);
 
 		std::swap(sourceParticleSSBO, destParticleSSBO);
+		resetParticles = false;
 	}
 
 	void bindGlobalUniforms()
@@ -176,10 +171,8 @@ public:
 
 		Shader::bindGlobalUniform("particleSize", &particleSize);
 
-		Shader::bindGlobalUniform("particleMapImage1", &particleMap1.defn.textureUnit);
-		Shader::bindGlobalUniform("particleMapImage2", &particleMap2.defn.textureUnit);
-		Shader::bindGlobalUniform("particleMapSampler1", &particleMap1.defn.textureUnit);
-		Shader::bindGlobalUniform("particleMapSampler2", &particleMap2.defn.textureUnit);
+		Shader::bindGlobalUniform("particleMapImage", &particleMap.defn.textureUnit);
+		Shader::bindGlobalUniform("resetParticles", &resetParticles);
 	}
 
 	void menu()
@@ -202,9 +195,8 @@ public:
 				//Shader::setGlobalDefinition("SIMULATION_SIZE_Z", std::to_string(simulationSize.z));
 				//glBindBuffer(GL_SHADER_STORAGE_BUFFER, particleMapSSBO);
 				//glBufferData(GL_SHADER_STORAGE_BUFFER, simulationSize.x * simulationSize.y * simulationSize.z * particlesPerCell * sizeof(float), NULL, GL_DYNAMIC_COPY);
-				particleMap1.setSize(simulationSize);
-				particleMap2.setSize(simulationSize);
-				initParticleMapThisFrame = true;
+				resetParticles = true;
+				particleMap.setSize(simulationSize * glm::ivec3(particlesPerCell, 1, 1));
 			}
 
 			ImGui::SliderFloat("timestep", &timestep, 0.0f, 1.0f);

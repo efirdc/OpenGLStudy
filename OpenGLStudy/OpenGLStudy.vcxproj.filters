@@ -570,5 +570,11 @@
     <None Include="shaders\particles\particles_sort.comp">
       <Filter>shaders\particles</Filter>
     </None>
+    <None Include="shaders\particles\particles_reset.comp">
+      <Filter>shaders\particles</Filter>
+    </None>
+    <None Include="shaders\particles\particles_write.comp">
+      <Filter>shaders\particles</Filter>
+    </None>
   </ItemGroup>
 </Project>

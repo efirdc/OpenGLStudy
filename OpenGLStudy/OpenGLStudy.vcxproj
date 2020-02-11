@@ -300,7 +300,9 @@
     <None Include="shaders\particles\particles.vert" />
     <None Include="shaders\particles\particles_common.glsl" />
     <None Include="shaders\particles\particles_init.comp" />
+    <None Include="shaders\particles\particles_reset.comp" />
     <None Include="shaders\particles\particles_sort.comp" />
+    <None Include="shaders\particles\particles_write.comp" />
     <None Include="shaders\raymarch\feedback.frag" />
     <None Include="shaders\raymarch\light.glsl" />
     <None Include="shaders\raymarch\material.glsl" />

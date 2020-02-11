@@ -8,6 +8,73 @@ layout (local_size_x = 512) in;
 void main()
 {
 	uint particleIndex = gl_GlobalInvocationID.x;
-	vec3 pos = (hash31(particleIndex)) * vec3(simulationSize);
-	destParticles[particleIndex].position = pos;
+	uint particleID = particleIndex + 1;
+
+	Particle particle = sourceParticles[particleIndex];
+
+	if (resetParticles)
+	{
+		particle.position = hash31(particleIndex) * vec3(simulationSize);
+		particle.velocity = vec3(0);
+	}
+
+	if (isSorted(particle.position, particleID) < 0)
+	{
+		destParticles[particleIndex] = particle;
+		return;
+	}
+		
+
+	float dt = 1.0 / 60.0 * timestep;
+
+	ivec3 particleCell = ivec3(particle.position);
+
+	vec3 externalForce = vec3(0);
+	
+	for (int i = -1; i < 2; i++)
+	for (int j = -1; j < 2; j++)
+	for (int k = -1; k < 2; k++)
+	for (int p = 0; p < PARTICLES_PER_CELL; p++)
+	{
+		ivec3 storedParticleCell = (particleCell + ivec3(i, j, k)) * ivec3(8, 1, 1) + ivec3(p, 0, 0);
+		uint storedParticleID = texelFetch(particleMapSampler, storedParticleCell, 0).x;
+		if (storedParticleID == NULL_ID)
+			break;
+		if (storedParticleID == particleID)
+			continue;
+
+		vec3 storedParticlePos = sourceParticles[storedParticleID].position;
+		vec3 delta = particle.position - storedParticlePos;
+
+		float deltaLength = delta != vec3(0.0) ? length(delta) : 0.001;
+
+		float repulsion = min(1000, 10 / deltaLength);
+		externalForce += delta / deltaLength * repulsion;
+	}
+
+	particle.velocity += externalForce * dt;
+
+	// Square magnitude drag
+	particle.velocity -= particle.velocity * length(particle.velocity) * dt * 10.4;
+
+	// Gravity
+	particle.velocity += vec3(0, -500, 0) * dt;
+
+	// Apply velocity
+	particle.position += particle.velocity * dt;
+
+	// Boundary condition
+	vec3 boundary = vec3(simulationSize - 1);
+	for (int i = 0; i < 3; i++)
+	{
+		if (particle.position[i] < 0 || particle.position[i] > boundary[i])
+		{
+			particle.position[i] = clamp(particle.position[i], 0, boundary[i]);
+			particle.velocity[i] *= -1.0;
+		}
+	}
+
+	destParticles[particleIndex] = particle;
+
+	
 }

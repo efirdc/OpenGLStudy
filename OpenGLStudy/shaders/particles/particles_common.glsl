@@ -3,16 +3,14 @@
 #define PARTICLES_PER_CELL 8
 
 #define NULL_ID 0
-#define UNSORTED -1
-#define OUT_OF_BOUNDS -2
 
-uniform writeonly uimage3D particleMapImage1;
-uniform usampler3D particleMapSampler1;
-uniform writeonly uimage3D particleMapImage2;
-uniform usampler3D particleMapSampler2;
+layout(r32ui) uniform uimage3D particleMapImage;
+uniform usampler3D particleMapSampler;
 
 uniform int numParticles;
 uniform ivec3 simulationSize;
+uniform float timestep;
+uniform bool resetParticles;
 
 struct Particle
 {
@@ -30,6 +28,32 @@ layout(std430, binding = 1) buffer destParticleSSBO
 	Particle destParticles[];
 };
 
+#define UNSORTED -1
+#define OUT_OF_BOUNDS -2
+#define FULL -3
+int isSorted(vec3 particlePosition, uint particleID)
+{
+	ivec3 particleCell = ivec3(particlePosition);
+
+	if ( any(lessThan(particleCell, ivec3(0) )) || any(greaterThan(particleCell, simulationSize)) )
+		return OUT_OF_BOUNDS;
+
+	particleCell *= ivec3(PARTICLES_PER_CELL, 1, 1);
+	for (int i = 0; i < PARTICLES_PER_CELL; i++)
+	{
+		uint storedParticleID = texelFetch(particleMapSampler, particleCell + ivec3(i, 0, 0), 0).x;
+		if (storedParticleID == NULL_ID)
+			return UNSORTED;
+		else if (storedParticleID == particleID)
+			return i;
+	}
+
+	return FULL;
+}
+
+
+
+/*
 void sampleParticleMap(ivec3 particleCell, out uint particleIDs[PARTICLES_PER_CELL])
 {	
 	uvec4 fetch1 = texelFetch(particleMapSampler1, particleCell, 0);
@@ -77,3 +101,4 @@ int isSorted(vec3 particlePosition, uint particleID)
 
 	return UNSORTED;
 }
+*/

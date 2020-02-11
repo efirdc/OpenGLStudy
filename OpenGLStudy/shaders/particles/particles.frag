@@ -32,6 +32,11 @@ void main()
 		splatSize = 0.02;
 		col = vec3(1.0, 0.0, 0.0);
 	}
+	else if (sorted == FULL)
+	{
+		splatSize = 0.08;
+		col = vec3(1.0, 0.0, 1.0);
+	}
 	else 
 		col = vec3(0.0, 1.0, 0.0);
 

@@ -61,5 +61,6 @@ void APIENTRY glDebugOutput(GLenum source,
 	case GL_DEBUG_SEVERITY_LOW:          std::cout << "Severity: low"; break;
 	case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: notification"; break;
 	} std::cout << std::endl;
+
 	std::cout << std::endl;
 }
