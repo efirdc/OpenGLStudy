@@ -60,12 +60,11 @@ void main()
 			continue;
 
 		neighborCount += 1;
-		float boundary = 0.7;
-		float attraction =  2 *(-deltaLength + boundary);
+		float boundary = 0.95;
+		float attraction =  200 *(-deltaLength + boundary);
 		float repulsion = max(0.0, 100 * (boundary - deltaLength) / deltaLength);
 
-		
-		avoidance += delta / deltaLength * (deltaLength < 0.7 ? repulsion : attraction);
+		avoidance += delta / deltaLength * (deltaLength < boundary ? repulsion : attraction);
 		alignment += sourceParticles[storedParticleID - 1].velocity;
 	}
 
@@ -77,7 +76,7 @@ void main()
 	velocity -= velocity * length(velocity) * dt * 0.2;
 
 	// Gravity
-	velocity += vec3(0, -0.0, 0) * dt;
+	velocity += vec3(0, -5.0, 0) * dt;
 
 	// Apply velocity
 	position += velocity * dt;

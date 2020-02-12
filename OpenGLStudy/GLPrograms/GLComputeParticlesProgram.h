@@ -195,13 +195,14 @@ public:
 				//glBufferData(GL_SHADER_STORAGE_BUFFER, simulationSize.x * simulationSize.y * simulationSize.z * particlesPerCell * sizeof(float), NULL, GL_DYNAMIC_COPY);
 				resetParticles = true;
 				particleMap.setSize(simulationSize * glm::ivec3(particlesPerCell, 1, 1));
+				resetParticles = true;
 			}
 
 			ImGui::SliderFloat("timestep", &timestep, 0.0f, 1.0f);
 			ImGui::SliderFloat("particle size", &particleSize, 0.5f, 10.0f);
 
 			int numParticlesTemp = numParticles;
-			if (ImGui::SliderInt("num particles", &numParticlesTemp, 65536, 16777216))
+			if (ImGui::SliderInt("num particles", &numParticlesTemp, 65536, 1048576))
 			{
 				numParticles = max(numParticlesTemp, 0);
 				glBindBuffer(GL_SHADER_STORAGE_BUFFER, sourceParticleSSBO);
