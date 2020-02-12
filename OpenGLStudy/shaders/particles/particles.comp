@@ -15,26 +15,27 @@ void main()
 
 	if (resetParticles)
 	{
-		position = hash31(particleIndex) * vec3(simulationSize);
+		position = hash31(particleIndex + 252354) * vec3(simulationSize);
 		velocity = vec3(0);
 		destParticles[particleIndex].position = position;
 		destParticles[particleIndex].velocity = velocity;
 		return;
 	}
 
-	//if (isSorted(particle.position, particleID) < 0)
-	//{
-	//	destParticles[particleIndex].velocity = velocity;
-	//	destParticles[particleIndex].
-	//	return;
-	//}
+	if (isSorted(position, particleID) < 0)
+	{
+		destParticles[particleIndex].position = position;
+		destParticles[particleIndex].velocity = velocity;
+		return;
+	}
 		
-
 	float dt = 1.0 / 60.0 * timestep;
 
 	ivec3 particleCell = ivec3(position);
 
-	vec3 externalForce = vec3(0);
+	int neighborCount = 0;
+	vec3 avoidance = vec3(0);
+	vec3 alignment = vec3(0);
 	
 	for (int i = -1; i < 2; i++)
 	for (int j = -1; j < 2; j++)
@@ -48,22 +49,35 @@ void main()
 		if (storedParticleID == particleID)
 			continue;
 
-		vec3 storedParticlePos = sourceParticles[storedParticleID - 1].position;
-		vec3 delta = position - storedParticlePos;
 
+		vec3 storedParticlePos = sourceParticles[storedParticleID - 1].position;
+		if (position == storedParticlePos)
+			storedParticlePos += (hash31(particleIndex + storedParticleID) * 2 - 1) * 0.01;
+		vec3 delta = position - storedParticlePos;
 		float deltaLength = length(delta);
 
-		float repulsion = 50.0 / deltaLength;
-		externalForce += delta / deltaLength * repulsion;
+		if (deltaLength > 1.0)
+			continue;
+
+		neighborCount += 1;
+		float boundary = 0.7;
+		float attraction =  2 *(-deltaLength + boundary);
+		float repulsion = max(0.0, 100 * (boundary - deltaLength) / deltaLength);
+
+		
+		avoidance += delta / deltaLength * (deltaLength < 0.7 ? repulsion : attraction);
+		alignment += sourceParticles[storedParticleID - 1].velocity;
 	}
 
-	velocity += externalForce * dt;
+	velocity += avoidance * dt;
+	if (neighborCount > 0)
+		velocity += alignment / neighborCount * dt * 0.4;
 
 	// Square magnitude drag
-	velocity -= velocity * length(velocity) * dt * 0.1;
+	velocity -= velocity * length(velocity) * dt * 0.2;
 
 	// Gravity
-	velocity += vec3(0, -10.0, 0) * dt;
+	velocity += vec3(0, -0.0, 0) * dt;
 
 	// Apply velocity
 	position += velocity * dt;

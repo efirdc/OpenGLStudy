@@ -111,20 +111,17 @@ public:
 		resetParticleMap.update();
 		resetParticleMap.use();
 		glDispatchCompute(simulationSize.x / 8 * particlesPerCell, simulationSize.y / 8, simulationSize.z / 8);
-		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
-		//for (int i = 0; i < particlesPerCell; i++)
-		//{
-			atomicWriteParticleMap.update();
-			atomicWriteParticleMap.use();
-			glDispatchCompute(numParticles / 512, 1, 1);
-			glMemoryBarrier(GL_ALL_BARRIER_BITS);
-		//}
+		atomicWriteParticleMap.update();
+		atomicWriteParticleMap.use();
+		glDispatchCompute(numParticles / 512, 1, 1);
+		glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 
 		particleUpdate.update();
 		particleUpdate.use();
 		glDispatchCompute(numParticles / 512, 1, 1);
-		glMemoryBarrier(GL_ALL_BARRIER_BITS);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 		// clear stuff
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
