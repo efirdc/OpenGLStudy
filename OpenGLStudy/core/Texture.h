@@ -30,12 +30,19 @@ public:
 		configure();
 	}
 
-	void bind()
+	void bind(int textureUnit = -1)
 	{
-		glActiveTexture(GL_TEXTURE0 + defn.textureUnit);
+		if (textureUnit == -1)
+			textureUnit = defn.textureUnit;
+		glActiveTexture(GL_TEXTURE0 + textureUnit);
 		glBindTexture(defn.target, ID);
 		if (defn.image)
 			glBindImageTexture(defn.textureUnit, ID, 0, GL_TRUE, 0, defn.imageMode, defn.internalFormat);
+	}
+
+	void bindImage(int imageUnit)
+	{
+		glBindImageTexture(imageUnit, ID, 0, GL_TRUE, 0, defn.imageMode, defn.internalFormat);
 	}
 
 	unsigned int dimensions()
@@ -134,9 +141,8 @@ public:
 
 class SlabTexture
 {
-private:
-	Texture source, dest;
 public:
+	Texture source, dest;
 	TextureDefinition defn{};
 
 	SlabTexture(TextureDefinition defn) : defn(defn), source(defn), dest(defn)

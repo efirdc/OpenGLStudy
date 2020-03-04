@@ -15,7 +15,7 @@ void main()
 
 	if (resetParticles)
 	{
-		position = hash31(particleIndex + 252354) * vec3(simulationSize);
+		position = hash31(particleIndex + 2523454) * vec3(simulationSize - 4) + 4;
 		velocity = vec3(0);
 		destParticles[particleIndex].position = position;
 		destParticles[particleIndex].velocity = velocity;
@@ -61,7 +61,7 @@ void main()
 
 		neighborCount += 1;
 		float boundary = 0.95;
-		float attraction =  200 *(-deltaLength + boundary);
+		float attraction =  6 *(-deltaLength + boundary);
 		float repulsion = max(0.0, 100 * (boundary - deltaLength) / deltaLength);
 
 		avoidance += delta / deltaLength * (deltaLength < boundary ? repulsion : attraction);
@@ -76,7 +76,7 @@ void main()
 	velocity -= velocity * length(velocity) * dt * 0.2;
 
 	// Gravity
-	velocity += vec3(0, -5.0, 0) * dt;
+	velocity += vec3(0, -0.1, 0) * dt;
 
 	// Apply velocity
 	position += velocity * dt;

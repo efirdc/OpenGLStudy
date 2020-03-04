@@ -62,6 +62,7 @@ uniform float densityDissipation;
 uniform float vorticityScalar;
 uniform FluidSplat mouseSplat;
 uniform FluidSplat externalSplat;
+uniform float buoyancy;
 
 uniform vec2 screenMousePos;
 uniform vec2 prevScreenMousePos;

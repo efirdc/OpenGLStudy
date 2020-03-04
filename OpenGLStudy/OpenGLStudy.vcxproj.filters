@@ -40,11 +40,11 @@
     <Filter Include="shaders\reaction_diffusion">
       <UniqueIdentifier>{f4161d3a-60fb-4f13-99d0-c59b6f930a33}</UniqueIdentifier>
     </Filter>
-    <Filter Include="shaders\filters">
-      <UniqueIdentifier>{5cbbfed0-afa7-4739-bfe2-36cf44fc2dae}</UniqueIdentifier>
-    </Filter>
     <Filter Include="shaders\particles">
       <UniqueIdentifier>{d597822b-d343-4eed-a0dd-d92931daee75}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shaders\fluid2D">
+      <UniqueIdentifier>{26f00ccf-4cc3-463f-bc54-16208269224c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -330,6 +330,12 @@
     <ClInclude Include="core\Shader.h">
       <Filter>core</Filter>
     </ClInclude>
+    <ClInclude Include="GLPrograms\GLFluid2DProgram.h">
+      <Filter>GLPrograms</Filter>
+    </ClInclude>
+    <ClInclude Include="dependencies\stb\stb_image_write.h">
+      <Filter>dependencies</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="shaders\basicFrag.fs">
@@ -575,6 +581,30 @@
     </None>
     <None Include="shaders\particles\particles_write.comp">
       <Filter>shaders\particles</Filter>
+    </None>
+    <None Include="shaders\fluid2D\advection.comp">
+      <Filter>shaders\fluid2D</Filter>
+    </None>
+    <None Include="shaders\fluid2D\divergence.comp">
+      <Filter>shaders\fluid2D</Filter>
+    </None>
+    <None Include="shaders\fluid2D\pressure.comp">
+      <Filter>shaders\fluid2D</Filter>
+    </None>
+    <None Include="shaders\fluid2D\render.frag">
+      <Filter>shaders\fluid2D</Filter>
+    </None>
+    <None Include="shaders\fluid2D\render.vert">
+      <Filter>shaders\fluid2D</Filter>
+    </None>
+    <None Include="shaders\fluid2D\subtractPressureGradient.comp">
+      <Filter>shaders\fluid2D</Filter>
+    </None>
+    <None Include="shaders\fluid2D\fluid_common.glsl">
+      <Filter>shaders\fluid2D</Filter>
+    </None>
+    <None Include="shaders\raymarch\intersect.glsl">
+      <Filter>shaders\raymarch</Filter>
     </None>
   </ItemGroup>
 </Project>

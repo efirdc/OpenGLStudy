@@ -1,0 +1,26 @@
+#version 440 core
+
+#include "fluid_common.glsl"
+
+layout(local_size_x = LOCAL_SIZE_X, local_size_y = LOCAL_SIZE_Y) in;
+
+void main()
+{
+    vec2 coords = vec2(gl_GlobalInvocationID.xy);
+    ivec2 icoords = ivec2(gl_GlobalInvocationID.xy);
+
+    vec2 leftV = texelFetch(velocitySampler, icoords + ivec2(-1, 0), 0).xy;
+    vec2 rightV = texelFetch(velocitySampler, icoords + ivec2(1, 0), 0).xy;
+    vec2 upV = texelFetch(velocitySampler, icoords + ivec2(0, 1), 0).xy;
+    vec2 downV = texelFetch(velocitySampler, icoords + ivec2(0, -1), 0).xy;
+
+    float divergence = (rightV.x - leftV.x + upV.y - downV.y) * 0.5;
+    vec2 pressure = texelFetch(pressureSampler, icoords, 0).xy;
+    pressure.y = divergence;
+
+    //vec2 velocityTexels[3][3];
+    //texelFetchVelocity9(icoords, velocityTexels);
+    //pressure.y = computeDivergence(velocityTexels);
+
+    imageStore(pressureImage, icoords, vec4(pressure, vec2(0.0)));
+}
