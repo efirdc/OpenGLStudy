@@ -28,6 +28,7 @@ public:
 	Shader divergence;
 	Shader pressure;
 	Shader subtractPressureGradient;
+	Shader gradients;
 	Shader render;
 	
 	unsigned int quadVAO{};
@@ -35,7 +36,9 @@ public:
 	SlabTexture velocityTexture;
 	SlabTexture pressureTexture;
 	SlabTexture densityTexture;
-	
+	Texture gradientsTexture;
+
+	bool pause = false;
 	float timestep = 1.0;
 	int numPressureIterations = 60;
 	float velocityDissipation = 1.0f;
@@ -55,6 +58,10 @@ public:
 	//ImGradient lightGradient;
 	//ColorGradientTexture lightGradientTexture;
 
+	bool velocityVectors;
+	bool densityGradientVectors;
+	bool densityFluxGradientVectors;
+
 	GLFluid2DProgram() :
 		GLProgram(4, 4, true,768, 768, "Fluid 2D", true),
 		simulationSize(screenSize / downSample),
@@ -67,14 +74,19 @@ public:
 					GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 		},
 		densityTexture{
-				{ 2, GL_TEXTURE_2D, glm::ivec3(simulationSize.x, simulationSize.y, 0), GL_R32F, GL_RED, GL_FLOAT,
+				{ 2, GL_TEXTURE_2D, glm::ivec3(simulationSize.x, simulationSize.y, 0), GL_RGBA32F, GL_RED, GL_FLOAT,
+				GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
+		},
+		gradientsTexture{
+				{ 3, GL_TEXTURE_2D, glm::ivec3(simulationSize.x, simulationSize.y, 0), GL_RGBA32F, GL_RED, GL_FLOAT,
 				GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 		},
 		render("shaders/fluid2D/render.vert", "shaders/fluid2D/render.frag"),
 		advection(GL_COMPUTE_SHADER, "shaders/fluid2D/advection.comp"),
 		divergence(GL_COMPUTE_SHADER, "shaders/fluid2D/divergence.comp"),
 		pressure(GL_COMPUTE_SHADER, "shaders/fluid2D/pressure.comp"),
-		subtractPressureGradient(GL_COMPUTE_SHADER, "shaders/fluid2D/subtractPressureGradient.comp")
+		subtractPressureGradient(GL_COMPUTE_SHADER, "shaders/fluid2D/subtractPressureGradient.comp"),
+		gradients(GL_COMPUTE_SHADER, "shaders/fluid2D/gradients.comp")
 	{
 		float quadVertices[] = {
 			// positions   // texCoords
@@ -111,9 +123,11 @@ public:
 		velocityTexture.setSize(size);
 		pressureTexture.setSize(size);
 		densityTexture.setSize(size);
+		gradientsTexture.setSize(size);
 		velocityTexture.clearImage(initialState);
 		pressureTexture.clearImage(initialState);
 		densityTexture.clearImage(initialState);
+		gradientsTexture.clearImage(initialState);
 	}
 
 	void update() override
@@ -151,14 +165,11 @@ public:
 				std::uniform_int_distribution<> dis(1000000, INT_MAX);;
 				std::string fileName = "fluid2D_dataset/snapshot_" + std::to_string(dis(gen)) + ".npy";
 				xt::dump_npy(fileName, captureArray);
-
-				
 			}
 			
 			captureFrame++;
 		}
 		
-
 		auto fluidStep = [this](auto& computeShader)
 		{
 			computeShader.update();
@@ -167,23 +178,29 @@ public:
 			glMemoryBarrier(GL_TEXTURE_FETCH_BARRIER_BIT);
 		};
 
-		fluidStep(advection);
-
-		velocityTexture.swap();
-		densityTexture.swap();
-		//pressureTexture.swap();
-
-		fluidStep(divergence);
-		pressureTexture.swap();
-
-		for (int i = 0; i < numPressureIterations; i++)
+		if (!pause || keyInputs[GLFW_KEY_T].pressed)
 		{
-			fluidStep(pressure);
-			pressureTexture.swap();
-		}
+			fluidStep(advection);
 
-		fluidStep(subtractPressureGradient);
-		velocityTexture.swap();
+			velocityTexture.swap();
+			densityTexture.swap();
+			//pressureTexture.swap();
+
+			fluidStep(gradients);
+
+			fluidStep(divergence);
+			pressureTexture.swap();
+
+			for (int i = 0; i < numPressureIterations; i++)
+			{
+				fluidStep(pressure);
+				pressureTexture.swap();
+			}
+
+			fluidStep(subtractPressureGradient);
+			velocityTexture.swap();
+		}
+		
 
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -194,6 +211,9 @@ public:
 		render.use();
 		render.setUniform("aspect", aspect);
 		render.setUniform("renderMode", 0);
+		render.setUniform("velocityVectors", velocityVectors);
+		render.setUniform("densityGradientVectors", densityGradientVectors);
+		render.setUniform("densityFluxGradientVectors", densityFluxGradientVectors);
 
 		if (keyInputs[GLFW_KEY_1].held)
 			render.setUniform("renderMode", 1);
@@ -201,6 +221,10 @@ public:
 			render.setUniform("renderMode", 2);
 		else if (keyInputs[GLFW_KEY_3].held)
 			render.setUniform("renderMode", 3);
+		else if (keyInputs[GLFW_KEY_4].held)
+			render.setUniform("renderMode", 4);
+		else if (keyInputs[GLFW_KEY_5].held)
+			render.setUniform("renderMode", 5);
 
 		glBindVertexArray(quadVAO);
 		glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -216,6 +240,9 @@ public:
 
 		Shader::bindGlobalUniform("densityImage", &densityTexture.defn.textureUnit);
 		Shader::bindGlobalUniform("densitySampler", &densityTexture.defn.textureUnit);
+
+		Shader::bindGlobalUniform("gradientsImage", &gradientsTexture.defn.textureUnit);
+		Shader::bindGlobalUniform("gradientsSampler", &gradientsTexture.defn.textureUnit);
 
 		Shader::bindGlobalUniform("time", &time);
 		Shader::bindGlobalUniform("deltaTime", &deltaTime);
@@ -246,7 +273,8 @@ public:
 
 		ImGui::Begin("Settings", nullptr, windowFlags);
 		{
-
+			ImGui::Checkbox("pause", &pause);
+			
 			if (ImGui::Button("reset fluid"))
 				resetTextures();
 
@@ -279,6 +307,10 @@ public:
 			ImGui::Text("Mouse pos x: %.3f, y: %.3f", mousePos.x, mousePos.y);
 			glm::vec2 realMousePos = glm::vec2(mousePos.x, screenSize.y - mousePos.y) / glm::vec2(screenSize) * glm::vec2(simulationSize);
 			ImGui::Text("Mouse splat pos %.3f, %.3f", realMousePos.x, realMousePos.y);
+
+			ImGui::Checkbox("velocity vectors", &velocityVectors);
+			ImGui::Checkbox("density gradient vectors", &densityGradientVectors);
+			ImGui::Checkbox("density flux gradient vectors", &densityFluxGradientVectors);
 
 			//lightGradientTexture.Menu("Color Gradient", lightGradient);
 		}

@@ -7,11 +7,13 @@
 
 layout(binding = 0, rgba32f) IMAGE_QUALIFIERS uniform image2D velocityImage;
 layout(binding = 1, rg32f) IMAGE_QUALIFIERS uniform image2D pressureImage;
-layout(binding = 2, r32f) IMAGE_QUALIFIERS uniform image2D densityImage;
+layout(binding = 2, rgba32f) IMAGE_QUALIFIERS uniform image2D densityImage;
+layout(binding = 3, rgba32f) IMAGE_QUALIFIERS uniform image2D gradientsImage;
 
 layout(binding = 0) uniform sampler2D velocitySampler;
 layout(binding = 1) uniform sampler2D pressureSampler;
 layout(binding = 2) uniform sampler2D densitySampler;
+layout(binding = 3) uniform sampler2D gradientsSampler;
 
 uniform float time;
 uniform float deltaTime;
@@ -30,6 +32,16 @@ uniform bool mouseSplatActive;
 uniform bool mouseOnUI;
 uniform bool leftMouseDown;
 uniform bool rightMouseDown;
+
+float densityFlux(vec4 density)
+{
+	return ( density[0] * 2 + density[1] * 1 + density[2] * -1 + density[3] * -2 ) / 6;
+}
+
+float temporalLaplacian(vec4 d)
+{
+	return ( d.x * 1 + d.y * -2 + d.z * 1);
+}
 
 vec2 samplePressure(ivec2 icoords)
 {

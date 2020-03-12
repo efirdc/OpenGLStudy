@@ -1,0 +1,26 @@
+#version 440 core
+
+#include "fluid_common.glsl"
+
+layout(local_size_x = LOCAL_SIZE_X, local_size_y = LOCAL_SIZE_Y) in;
+
+void main()
+{
+    vec2 coords = vec2(gl_GlobalInvocationID.xy);
+    ivec2 icoords = ivec2(gl_GlobalInvocationID.xy);
+
+    vec4 leftDensity = texelFetch(densitySampler, icoords + ivec2(-1, 0), 0);
+    vec4 rightDensity = texelFetch(densitySampler, icoords + ivec2(1, 0), 0);
+    vec4 upDensity = texelFetch(densitySampler, icoords + ivec2(0, 1), 0);
+    vec4 downDensity = texelFetch(densitySampler, icoords + ivec2(0, -1), 0);
+
+    float leftFlux = densityFlux(leftDensity);
+    float rightFlux = densityFlux(rightDensity);
+    float upFlux = densityFlux(upDensity);
+    float downFlux = densityFlux(downDensity);
+
+    vec2 densityGradient = vec2(rightDensity.x - leftDensity.x, upDensity.x - downDensity.x) * 0.5;
+    vec2 fluxDensityGradient = vec2(rightFlux - leftFlux, upFlux - downFlux) * 0.5;
+
+    imageStore(gradientsImage, icoords, vec4(densityGradient, fluxDensityGradient));
+}
