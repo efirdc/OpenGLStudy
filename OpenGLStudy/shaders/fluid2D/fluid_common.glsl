@@ -33,6 +33,14 @@ uniform bool mouseOnUI;
 uniform bool leftMouseDown;
 uniform bool rightMouseDown;
 
+uniform vec2 mixingPos;
+uniform vec2 prevMixingPos;
+uniform bool autoCaptureToggle;
+
+#define CAPTURE_STATE_MIX 0
+#define CAPTURE_STATE_CAPTURE 1
+uniform int captureState;
+
 float densityFlux(vec4 density)
 {
 	return ( density[0] * 2 + density[1] * 1 + density[2] * -1 + density[3] * -2 ) / 6;

@@ -23,20 +23,27 @@ void main()
 
     vec2 realMousePos = vec2(screenMousePos.x, screenSize.y - screenMousePos.y) / vec2(screenSize) * simulationSize;
     vec2 realPrevMousePos = vec2(prevScreenMousePos.x, screenSize.y - prevScreenMousePos.y) / vec2(screenSize) * simulationSize;
+    if (autoCaptureToggle)
+    {
+        realMousePos = mixingPos * simulationSize;
+        realPrevMousePos = prevMixingPos * simulationSize;
+    }
+
     vec2 deltaMouse = realMousePos - realPrevMousePos;
 	vec2 delta = realMousePos - coords;
     
 	float splat = gauss(delta, 50.0);
 
-    if (!mouseOnUI)
+    bool mixing = autoCaptureToggle && (captureState == CAPTURE_STATE_MIX);
+
+    if (!mouseOnUI || mixing)
     {
-        if (leftMouseDown)
+        if (leftMouseDown || mixing)
 		    backVelocity += (deltaMouse == vec2(0.0) ? vec2(0.0) : normalize(deltaMouse)) * splat * 1;
-	    if (rightMouseDown)
+	    if (rightMouseDown || mixing)
 		    backDensity += splat * 0.05;
     }
 	
-
     backVelocity *= velocityDissipation;
     backDensity *= densityDissipation;
 

@@ -62,6 +62,10 @@ public:
 	bool densityGradientVectors;
 	bool densityFluxGradientVectors;
 
+	glm::vec2 mixingPos;
+	glm::vec2 prevMixingPos;
+	bool autoCaptureToggle;
+
 	GLFluid2DProgram() :
 		GLProgram(4, 4, true,768, 768, "Fluid 2D", true),
 		simulationSize(screenSize / downSample),
@@ -115,6 +119,7 @@ public:
 		bindGlobalUniforms();
 
 		keyInputs[GLFW_KEY_S];
+		keyInputs[GLFW_KEY_D];
 	}
 
 	void resetTextures()
@@ -262,7 +267,106 @@ public:
 		Shader::bindGlobalUniform("color1", &color1);
 		Shader::bindGlobalUniform("color2", &color2);
 
+		Shader::bindGlobalUniform("mixingPos", &mixingPos);
+		Shader::bindGlobalUniform("prevMixingPos", &prevMixingPos);
+		Shader::bindGlobalUniform("captureState", (void*)&captureState);
+		Shader::bindGlobalUniform("autoCaptureToggle", &autoCaptureToggle);
+
 		//Shader::bindGlobalUniform("lightGradientSampler", &lightGradientTexture.textureUnit);
+	}
+
+	void startCapture()
+	{
+		captureFrame = 0;
+		captureArray.resize({ numCaptureFrames + 2, (uint)simulationSize.y, (uint)simulationSize.x });
+	}
+
+	float rand()
+	{
+		return (float)std::rand() / (float)RAND_MAX;
+	}
+
+	float randomRange(float low, float high)
+	{
+		return low + rand() * (high - low);
+	}
+
+	vec2 mixerTimeScale;
+	vec2 mixerPosScale;
+	
+
+	enum class CaptureState { mix, capture };
+	CaptureState captureState = CaptureState::mix;
+	float timeAtStateChange;
+	float timeUntilStateChange;
+	void setCaptureState(CaptureState newState, float extraTime = 0.0f)
+	{
+		captureState = newState;
+		timeAtStateChange = time;
+
+		if (captureState == CaptureState::mix)
+		{
+			ranomdizeMixer();
+			timeUntilStateChange = randomRange(0.5f, 2.0f) + extraTime;
+		}
+		else if (captureState == CaptureState::capture)
+		{
+			startCapture();
+			timeUntilStateChange = randomRange(0.25f, 1.0f) + extraTime;
+		}
+			
+	}
+
+	float timeSinceStateChange()
+	{
+		return time - timeAtStateChange;
+	}
+
+	void ranomdizeMixer()
+	{
+		mixerTimeScale.x = randomRange(3.0f, 12.0f);
+		mixerTimeScale.y = randomRange(3.0f, 12.0f);
+		mixerPosScale.x = randomRange(0.25f, 1.2f);
+		mixerPosScale.y = randomRange(0.25f, 1.2f);
+	}
+	
+	void autoCapture()
+	{
+		if (captureState == CaptureState::mix)
+		{
+			if (rand() < 0.005f)
+				ranomdizeMixer();
+			prevMixingPos = mixingPos;
+			mixingPos.x = glm::cos(time * mixerTimeScale.x) * mixerPosScale.x;
+			mixingPos.y = glm::sin(time * mixerTimeScale.y) * mixerPosScale.y;
+			mixingPos = mixingPos * 0.5f + 0.5f;
+			
+			if (timeSinceStateChange() > timeUntilStateChange)
+				setCaptureState(CaptureState::capture);
+		}
+		
+		else if (captureState == CaptureState::capture)
+		{
+			if (capturing())
+				return;
+			
+			if (timeSinceStateChange() > timeUntilStateChange)
+			{
+				if (rand() < 0.25f)
+					setCaptureState(CaptureState::capture, randomRange(1.0f, 2.0f));
+				else
+				{
+					setCaptureState(CaptureState::mix);
+					if (rand() < 0.5f)
+						resetTextures();
+				}
+			}
+		}
+	}
+
+	bool capturing()
+	{
+		return captureFrame != numCaptureFrames;
 	}
 
 	void menu()
@@ -273,16 +377,18 @@ public:
 
 		ImGui::Begin("Settings", nullptr, windowFlags);
 		{
+			if (ImGui::Checkbox("auto capture", &autoCaptureToggle))
+				setCaptureState(CaptureState::mix);
+			if (autoCaptureToggle)
+				autoCapture();
+			
 			ImGui::Checkbox("pause", &pause);
 			
-			if (ImGui::Button("reset fluid"))
+			if ((ImGui::Button("reset fluid") || keyInputs[GLFW_KEY_D].pressed) && !capturing())
 				resetTextures();
 
 			if (ImGui::Button("take snapshot") || keyInputs[GLFW_KEY_S].pressed)
-			{
-				captureFrame = 0;
-				captureArray.resize({ numCaptureFrames + 2, (uint)simulationSize.y, (uint)simulationSize.x });
-			}
+				startCapture();
 			
 			ImGui::SliderFloat("timestep", &timestep, 0.0f, 1.0f);
 			ImGui::SliderInt("num pressure iterations", &numPressureIterations, 1, 100);
@@ -311,6 +417,7 @@ public:
 			ImGui::Checkbox("velocity vectors", &velocityVectors);
 			ImGui::Checkbox("density gradient vectors", &densityGradientVectors);
 			ImGui::Checkbox("density flux gradient vectors", &densityFluxGradientVectors);
+
 
 			//lightGradientTexture.Menu("Color Gradient", lightGradient);
 		}

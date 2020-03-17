@@ -218,6 +218,15 @@ void main()
 		gradientSample = powLength(gradientSample, 0.2) * 4;
 		color = quiverPlot(gradientSample, hsb2rgb(vec3(0.8, 1.0, 1.0)), color);
 	}
+
+	if (autoCaptureToggle && captureState == CAPTURE_STATE_MIX)
+	{
+		vec2 deltaMixingPos = UV - mixingPos;
+		if (length(deltaMixingPos) < 0.01)
+		{
+			color = vec3(1.0, 0.0, 0.0);
+		}
+	}
 		
 	FragColor = vec4(color, 1.0);
 }
