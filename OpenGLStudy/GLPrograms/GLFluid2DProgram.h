@@ -307,7 +307,7 @@ public:
 		if (captureState == CaptureState::mix)
 		{
 			ranomdizeMixer();
-			timeUntilStateChange = randomRange(0.5f, 2.0f) + extraTime;
+			timeUntilStateChange = randomRange(1.75f, 3.0f) + extraTime;
 		}
 		else if (captureState == CaptureState::capture)
 		{
@@ -352,12 +352,12 @@ public:
 			
 			if (timeSinceStateChange() > timeUntilStateChange)
 			{
-				if (rand() < 0.25f)
-					setCaptureState(CaptureState::capture, randomRange(1.0f, 2.0f));
+				if (rand() < 0.05f)
+					setCaptureState(CaptureState::capture, randomRange(1.0f, 1.2f));
 				else
 				{
 					setCaptureState(CaptureState::mix);
-					if (rand() < 0.5f)
+					if (rand() < 0.1f)
 						resetTextures();
 				}
 			}
