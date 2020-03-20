@@ -47,6 +47,7 @@ void main()
 
 	center.xyz = backFluid.xyz;
 	center.xyz *= velocityDissipation;
+	center.y += buoyancy * density.x;
 	vec4 pressure = texelFetch(pressureSampler, icoords, 0);
 
 	// External forces
@@ -66,17 +67,21 @@ void main()
 		vec3 l1 = prevMouseSplatPos + fluidSize * 0.5;
 		vec3 l2 = mouseSplatPos + fluidSize * 0.5;
 		float splat;
+		vec3 velocityDir;
 		if (l1 == l2)
 		{
 			delta = coords - l1;
 			splat = gauss(delta, mouseSplat.radius);
+			velocityDir = normalize(delta);
 		}
 		else
+		{
 			splat = lineSplat(coords, l1, l2, mouseSplat.radius, delta);
-		vec3 deltaNorm = normalize(delta);
+			velocityDir = normalize(l2 - l1);
+		}
 		float lmd = leftMouseDown ? 1.0 : 0.0;
 		float rmd = rightMouseDown ? 1.0 : 0.0;
-		center.xyz += deltaNorm * splat * mouseSplat.velocity * lmd;
+		center.xyz += velocityDir * splat * mouseSplat.velocity * lmd;
 		pressure.r += splat * mouseSplat.pressure * lmd;
 		density += splat * mouseSplat.density * rmd;
 	}

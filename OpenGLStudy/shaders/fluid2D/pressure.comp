@@ -1,0 +1,22 @@
+#version 440 core
+
+#include "fluid_common.glsl"
+
+layout(local_size_x = LOCAL_SIZE_X, local_size_y = LOCAL_SIZE_Y) in;
+
+void main()
+{
+    vec2 coords = vec2(gl_GlobalInvocationID.xy);
+    ivec2 icoords = ivec2(gl_GlobalInvocationID.xy);
+
+    vec2 center = samplePressure(icoords);
+    vec2 left = samplePressure(icoords + ivec2(-1, 0));
+    vec2 right = samplePressure(icoords + ivec2(1, 0));
+    vec2 up = samplePressure(icoords + ivec2(0, 1));
+    vec2 down = samplePressure(icoords + ivec2(0, -1));
+
+    float divergence = center.y;
+    float pressure = (left.x + right.x + up.x + down.x - divergence) * 0.25;
+
+    imageStore(pressureImage, icoords, vec4(pressure, divergence, vec2(0.0)));
+}

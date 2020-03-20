@@ -93,7 +93,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -105,8 +105,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>
-      </LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <AdditionalDependencies>opengl32.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
@@ -120,7 +119,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -136,7 +135,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard>stdcpp14</LanguageStandard>
     </ClCompile>
     <Link>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
@@ -226,8 +225,10 @@
     <ClInclude Include="dependencies\nlohmann\json.hpp" />
     <ClInclude Include="dependencies\Shadinclude\Shadinclude.hpp" />
     <ClInclude Include="dependencies\stb\stb_image.h" />
+    <ClInclude Include="dependencies\stb\stb_image_write.h" />
     <ClInclude Include="GLPrograms\GLComputeParticlesProgram.h" />
     <ClInclude Include="GLPrograms\GLFeedbackProgram.h" />
+    <ClInclude Include="GLPrograms\GLFluid2DProgram.h" />
     <ClInclude Include="GLPrograms\GLPlotProgram.h" />
     <ClInclude Include="GLPrograms\GLReactionDiffusion3DProgram.h" />
     <ClInclude Include="GLPrograms\GLReactionDiffusionProgram.h" />
@@ -261,6 +262,13 @@
     <None Include="shaders\compute\vorticity.comp" />
     <None Include="shaders\cubeParticle.fs" />
     <None Include="shaders\cubeParticle.vs" />
+    <None Include="shaders\fluid2D\advection.comp" />
+    <None Include="shaders\fluid2D\divergence.comp" />
+    <None Include="shaders\fluid2D\fluid_common.glsl" />
+    <None Include="shaders\fluid2D\pressure.comp" />
+    <None Include="shaders\fluid2D\render.frag" />
+    <None Include="shaders\fluid2D\render.vert" />
+    <None Include="shaders\fluid2D\subtractPressureGradient.comp" />
     <None Include="shaders\fluid\advection.fs" />
     <None Include="shaders\fluid\audioSpiral.fs" />
     <None Include="shaders\fluid\curl.fs" />
@@ -304,6 +312,7 @@
     <None Include="shaders\particles\particles_sort.comp" />
     <None Include="shaders\particles\particles_write.comp" />
     <None Include="shaders\raymarch\feedback.frag" />
+    <None Include="shaders\raymarch\intersect.glsl" />
     <None Include="shaders\raymarch\light.glsl" />
     <None Include="shaders\raymarch\material.glsl" />
     <None Include="shaders\raymarch\plot_raymarch.frag" />

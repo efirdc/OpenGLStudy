@@ -1,0 +1,37 @@
+#version 440 core
+
+#include "fluid_common.glsl"
+
+layout(local_size_x = LOCAL_SIZE_X, local_size_y = LOCAL_SIZE_Y) in;
+
+void main()
+{
+    vec2 coords = vec2(gl_GlobalInvocationID.xy);
+    ivec2 icoords = ivec2(gl_GlobalInvocationID.xy);
+
+    
+    float leftPressure = samplePressure(icoords + ivec2(-1, 0)).x;
+    float rightPressure = samplePressure(icoords + ivec2(1, 0)).x;
+    float upPressure = samplePressure(icoords + ivec2(0, 1)).x;
+    float downPressure = samplePressure(icoords + ivec2(0, -1)).x;
+
+    vec2 pressureGradient = vec2(rightPressure - leftPressure, upPressure - downPressure) * 0.5;
+    
+
+    /* stupid experiment
+    float pressureTexels[3][3];
+    texelFetchPressure9(icoords, pressureTexels);
+    vec2 pressureGradient = computeGradient(pressureTexels);
+    pressureGradient = vec2(pressureTexels[2][1] - pressureTexels[0][1], pressureTexels[1][2] - pressureTexels[1][0]) ;
+    pressureGradient += vec2(
+        pressureTexels[2][2] + pressureTexels[2][0] - pressureTexels[0][2] - pressureTexels[0][0],
+        pressureTexels[2][2] + pressureTexels[0][2] - pressureTexels[0][2] - pressureTexels[0][0]
+    ) * 0.2901;
+    pressureGradient *= 0.1;
+    */
+
+    vec2 velocity = texelFetch(velocitySampler, icoords, 0).xy;
+    velocity -= pressureGradient;
+
+    imageStore(velocityImage, icoords, vec4(velocity, pressureGradient));
+}

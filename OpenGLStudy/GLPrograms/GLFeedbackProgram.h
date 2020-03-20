@@ -43,6 +43,10 @@ using json = nlohmann::json;
 
 #include "utilities.h"
 
+#include "xtensor/xarray.hpp"
+#include "xtensor/xnpy.hpp"
+#include <random>
+
 #include <boost/serialization/version.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/archive/text_iarchive.hpp>
@@ -129,7 +133,7 @@ public:
 	DomainShiftFilter domainShiftFilter;
 	PeakFilter peakFilter;
 	AverageFilter averageFilter;
-	 
+
 	void update()
 	{
 		static int newSamples = 0;
@@ -254,15 +258,52 @@ public:
 	}
 };
 
+class PhysicalMaterial
+{
+public:
+	glm::vec3 albedo;
+	float roughness;
+	float metallic;
+	float ao;
+	
+	void bindGlobalUniforms(std::string uniformName)
+	{
+		Shader::bindGlobalUniform(uniformName + ".albedo", &albedo);
+		Shader::bindGlobalUniform(uniformName + ".metallic", &metallic);
+		Shader::bindGlobalUniform(uniformName + ".roughness", &roughness);
+		Shader::bindGlobalUniform(uniformName + ".ao", &ao);
+	}
+
+	void Menu(const char * name)
+	{
+		if (ImGui::TreeNode(name))
+		{
+			const int flags = ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR;
+			ImGui::ColorEdit3("albedo", (float*)&albedo, flags);
+			ImGui::SliderFloat("metallic", &metallic, 0.0f, 1.0f);
+			ImGui::SliderFloat("roughness", &roughness, 0.0f, 1.0f);
+			ImGui::SliderFloat("ao", &ao, 0.0f, 1.0f);
+			ImGui::TreePop();
+		}
+	}
+	
+	friend class boost::serialization::access;
+	template<class Archive>
+	void serialize(Archive& ar, const unsigned int version)
+	{
+		ar& albedo& roughness& metallic& ao;
+	}
+};
+
 class GLFeedbackProgram : public GLProgram {
 public:
 	struct FluidSplat {
 		float radius, velocity, pressure, density;
 		glm::quat rotation{ 1.0f, 0.0f, 0.0f, 0.0f };
 		glm::vec3 euler = eulerAngles(rotation);
-		glm::mat3 rotationMatrix{rotation};
-		
-		void bindGlobalUniforms(std::string uniformName) 
+		glm::mat3 rotationMatrix{ rotation };
+
+		void bindGlobalUniforms(std::string uniformName)
 		{
 			Shader::bindGlobalUniform(uniformName + ".radius", &radius);
 			Shader::bindGlobalUniform(uniformName + ".velocity", &velocity);
@@ -270,7 +311,7 @@ public:
 			Shader::bindGlobalUniform(uniformName + ".density", &density);
 			Shader::bindGlobalUniform(uniformName + ".rotation", &rotationMatrix);
 		}
-		void Menu(const char * name)
+		void Menu(const char* name)
 		{
 			if (ImGui::TreeNode(name))
 			{
@@ -282,13 +323,13 @@ public:
 					rotation = glm::quat(glm::radians(euler));
 					rotationMatrix = glm::mat3(rotation);
 				}
-				
+
 				if (ImGui::gizmo3D("velocity rotation", rotation, 100, imguiGizmo::modeDirPlane))
 				{
 					euler = eulerAngles(rotation);
 					rotationMatrix = glm::mat3(rotation);
 				}
-					
+
 				ImGui::SliderFloat("pressure add scalar", &pressure, 0.00f, 100.0f);
 				ImGui::SliderFloat("density add scalar", &density, 0.0f, 15.0f);
 				ImGui::TreePop();
@@ -296,11 +337,11 @@ public:
 		}
 		friend class boost::serialization::access;
 		template<class Archive>
-		void serialize(Archive & ar, const unsigned int version)
+		void serialize(Archive& ar, const unsigned int version)
 		{
 			if (version > 0)
-				ar & rotation;
-			ar & radius & velocity & pressure & density;
+				ar& rotation;
+			ar& radius& velocity& pressure& density;
 			rotationMatrix = glm::mat3(rotation);
 		}
 	};
@@ -329,7 +370,7 @@ public:
 		FluidSplat mouseFluidSplat = { 25.0f, 0.75f, 1.0f, 0.4f };
 		FluidSplat externalFluidSplat = { 8.0f, 30.0f, 1.0f, 0.1f };
 		ImGradient fluidGradient;
-		
+
 		glm::vec3 backgroundColor{ 0.0f };
 		float rayStepSize = 1.0f;
 		float shadowStepSize = 4.0f;
@@ -338,10 +379,10 @@ public:
 		float directionalLightExtinction = 20.0f;
 		float ambientLightExtinction = 12.0f;
 
-		glm::vec3 scattering{6.25f, 12.5f, 25.0f};
-		glm::vec3 absorption{0.75f, 0.5f, 0.0f};
-		glm::vec3 directionalLightLuminance{1.0f, 1.0f, 1.0f};
-		glm::vec3 directionalLightDirection{-1.0, -1.0, -1.0};
+		glm::vec3 scattering{ 6.25f, 12.5f, 25.0f };
+		glm::vec3 absorption{ 0.75f, 0.5f, 0.0f };
+		glm::vec3 directionalLightLuminance{ 1.0f, 1.0f, 1.0f };
+		glm::vec3 directionalLightDirection{ -1.0, -1.0, -1.0 };
 
 		int phaseMode = 1;
 		int mieMode = 1;
@@ -359,27 +400,40 @@ public:
 
 		int velocityBoundaryMode = 1;
 		int pressureBoundaryMode = 1;
-		
+
+		PhysicalMaterial planeMaterial;
+
+		float buoyancy = 0.0;
+
+		float azimuth = 90.0f;
+		float elevation = 45.0f;
+
 		friend class boost::serialization::access;
 		template<class Archive>
 		void serialize(Archive& ar, const unsigned int version)
 		{
+			if (version > 6)
+				ar& azimuth& elevation;
+			if (version > 5)
+				ar& buoyancy;
+			if (version > 4)
+				ar& planeMaterial;
 			if (version > 3)
 				ar& velocityBoundaryMode& pressureBoundaryMode;
 			if (version > 2)
 				ar& directionalLightDirection& multiScatteringOctaves& octaveExtinctionDecay& octaveScatteringDecay
 				& octavePhaseDecay& audioTexture;
 			if (version > 1)
-				ar & scattering & absorption & directionalLightLuminance & phaseMode & mieMode & mieMultiLobe
-					& mieG1 & mieG2 & mieLobeMix;
+				ar& scattering& absorption& directionalLightLuminance& phaseMode& mieMode& mieMultiLobe
+				& mieG1& mieG2& mieLobeMix;
 			if (version > 0)
-				ar & gridSize & backgroundColor & rayStepSize & shadowStepSize & maxShadowingLength
-					& maxDensity & directionalLightExtinction & ambientLightExtinction;
-			ar & numPressureIterations & velocityDissipation & densityDissipation & vorticityEnabled
-				& vorticityScalar & timeScale & mouseFluidSplat & externalFluidSplat & fluidGradient;
+				ar& gridSize& backgroundColor& rayStepSize& shadowStepSize& maxShadowingLength
+				& maxDensity& directionalLightExtinction& ambientLightExtinction;
+			ar& numPressureIterations& velocityDissipation& densityDissipation& vorticityEnabled
+				& vorticityScalar& timeScale& mouseFluidSplat& externalFluidSplat& fluidGradient;
 		}
 	} settings;
-	
+
 	View view;
 	Shader raymarch;
 	Shader compute;
@@ -421,14 +475,21 @@ public:
 		{ 5, GL_TEXTURE_3D, settings.gridSize, GL_RGBA32F, GL_RGBA, GL_FLOAT,
 			GL_LINEAR, GL_CLAMP_TO_BORDER, true, GL_WRITE_ONLY, {0.0, 0.0, 0.0, 0.0}}
 	};
-	
+
+	Texture combinedTexture, sceneTexture, luminanceTexture, transmittanceTexture;
+
+	xt::xarray<float> captureArray{ xt::xarray<float>::shape_type{1, 1, 1} };
+
 	unsigned int quadVAO{};
+
+	unsigned int captureFBO{};
 
 	#define MAX_SCATTERING_OCTAVES 8
 	ScatteringData scatteringData[MAX_SCATTERING_OCTAVES];
 
 	glm::vec3 mouseSplatPos, prevMouseSplatPos;
 	bool mouseSplatActive;
+	float mouseDepth = 0.0f;
 	
 	GLFeedbackProgram() :
 		GLProgram(4, 4, true, 1600, 900, "Fluid sim", true),
@@ -441,10 +502,13 @@ public:
 		divergence(GL_COMPUTE_SHADER, "shaders/compute/divergence.comp"),
 		pressure(GL_COMPUTE_SHADER, "shaders/compute/pressure.comp"),
 		subtractPressureGradient(GL_COMPUTE_SHADER, "shaders/compute/subtractPressureGradient.comp"),
-		presetMenu(settings, "fluidSettings.txt")
+		presetMenu(settings, "fluidSettings.txt"),
+		combinedTexture{ {8, GL_TEXTURE_2D, glm::ivec3(screenSize, 0), GL_RGBA32F, GL_RGBA, GL_FLOAT} },
+		sceneTexture{ {9, GL_TEXTURE_2D, glm::ivec3( screenSize, 0), GL_RGBA32F, GL_RGBA, GL_FLOAT} },
+		luminanceTexture{ {10, GL_TEXTURE_2D, glm::ivec3(screenSize, 0), GL_R32F, GL_RED, GL_FLOAT} },
+		transmittanceTexture{ {11, GL_TEXTURE_2D, glm::ivec3(screenSize, 0), GL_R32F, GL_RED, GL_FLOAT} }
 		//fluidGradientTexture(4, settings.fluidGradient)
 	{
-		settings.directionalLightDirection = glm::normalize(settings.directionalLightDirection);
 		float quadVertices[] = {
 			// positions   // texCoords
 			-1.0f,  1.0f,  0.0f, 1.0f,
@@ -466,6 +530,23 @@ public:
 		glEnableVertexAttribArray(0);
 		glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 		glEnableVertexAttribArray(1);
+
+		glGenFramebuffers(1, &captureFBO);
+		glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+
+		combinedTexture.bind();
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, combinedTexture.ID, 0);
+		transmittanceTexture.bind();
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, transmittanceTexture.ID, 0);
+		luminanceTexture.bind();
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, luminanceTexture.ID, 0);
+		sceneTexture.bind();
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, sceneTexture.ID, 0);
+		
+		GLuint attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+		
+		glDrawBuffers(4, attachments);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 		
 		initializeScatteringData();
 		
@@ -473,6 +554,11 @@ public:
 		updateVelocityBoundary();
 		updatePressureBoundary();
 		
+		keyInputs[GLFW_KEY_T];
+		keyInputs[GLFW_KEY_L];
+		keyInputs[GLFW_KEY_C];
+
+		glDisable(GL_BLEND);
 	}
 
 	void updateVelocityBoundary()
@@ -553,6 +639,7 @@ public:
 		
 		vec3 boxCenter = vec3(0.0f);
 		vec3 planeNorm = normalize(vec3(boxCenter - Eye));
+		boxCenter += planeNorm * sin(time) * mouseDepth;
 		
 		float intersectDistance = 0.0f;
 		bool intersection = intersectPlane(planeNorm, boxCenter, Eye, mouseRayDir, intersectDistance);
@@ -563,6 +650,23 @@ public:
 	void update() override
 	{
 		menu();
+
+		std::random_device rd;
+		std::mt19937 gen(rd());
+
+		float phi = glm::radians(90.0f - settings.elevation);
+		float theta = glm::radians(settings.azimuth);
+		settings.directionalLightDirection = -glm::vec3(
+			glm::cos(phi) * glm::cos(theta),
+			glm::sin(phi),
+			glm::cos(phi) * glm::sin(theta)
+		);
+
+		if (mouseInputs[GLFW_MOUSE_BUTTON_1].pressed)
+		{
+			std::uniform_real_distribution<> dis(-30.0f, 30.0f);
+			mouseDepth = dis(gen);
+		}
 		
 		auto fluidStep = [](auto& computeShader, glm::ivec3& gridSize)
 		{
@@ -600,6 +704,7 @@ public:
 
 		fluidStep(shadowMap, settings.gridSize);
 
+			
 		// clear stuff
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -609,6 +714,91 @@ public:
 		const float aspect = screenSize.y != 0.0f ? (float)screenSize.x / (float)screenSize.y : 1.0f;
 		glm::mat4 projection = glm::perspective(glm::radians(75.0f), aspect, 0.1f, 100.0f);
 		updateMouseSplat(aspect);
+
+		if (keyInputs[GLFW_KEY_V].pressed)
+		{
+			std::uniform_real_distribution<> azimuth_dis(0.0f, 360.0f);
+			std::uniform_real_distribution<> elevation_dis(0.0f, 90.0f);
+			settings.azimuth = azimuth_dis(gen);
+			settings.elevation = elevation_dis(gen);
+		}
+
+		if (keyInputs[GLFW_KEY_C].pressed)
+		{
+			
+			
+			glBindFramebuffer(GL_FRAMEBUFFER, captureFBO);
+			glViewport(0, 0, screenSize.x, screenSize.y);
+			combinedTexture.bind();
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, combinedTexture.ID, 0);
+			transmittanceTexture.bind();
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, transmittanceTexture.ID, 0);
+			luminanceTexture.bind();
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT2, GL_TEXTURE_2D, luminanceTexture.ID, 0);
+			sceneTexture.bind();
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT3, GL_TEXTURE_2D, sceneTexture.ID, 0);
+			GLuint attachments[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 };
+			glDrawBuffers(4, attachments);
+			
+			if (glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE)
+				std::cout << "capture framebuffer complete" << std::endl;
+			else
+				std::cout << "capture framebuffer incomplete" << std::endl;
+
+			
+			
+			raymarch.update();
+			raymarch.use();
+			raymarch.setUniform("aspect", aspect);
+			raymarch.setUniform("rayStepSize", 0.1f);
+			raymarch.setUniform("shadowStepSize", 0.1f);
+
+			glBindVertexArray(quadVAO);
+			glDrawArrays(GL_TRIANGLES, 0, 6);
+
+			captureArray.resize({ 5, (uint)screenSize.y, (uint)screenSize.x });
+			int size = screenSize.x * screenSize.y;
+			std::vector<float> transmittanceCaptureBuffer(size);
+			std::vector<float> luminanceCaptureBuffer(size);
+			std::vector<glm::vec4> sceneCaptureBuffer(size);
+			
+			glReadBuffer(GL_COLOR_ATTACHMENT1);
+			glReadPixels(0, 0, screenSize.x, screenSize.y, transmittanceTexture.defn.format, transmittanceTexture.defn.type, transmittanceCaptureBuffer.data());
+			glReadBuffer(GL_COLOR_ATTACHMENT2);
+			glReadPixels(0, 0, screenSize.x, screenSize.y, luminanceTexture.defn.format, luminanceTexture.defn.type, luminanceCaptureBuffer.data());
+			glReadBuffer(GL_COLOR_ATTACHMENT3);
+			glReadPixels(0, 0, screenSize.x, screenSize.y, sceneTexture.defn.format, sceneTexture.defn.type, sceneCaptureBuffer.data());
+			
+			/*
+			sceneTexture.bind();
+			glGetTexImage(GL_TEXTURE_2D, 0, sceneTexture.defn.format, sceneTexture.defn.type, sceneCaptureBuffer.data());
+			luminanceTexture.bind();
+			glGetTexImage(GL_TEXTURE_2D, 0, luminanceTexture.defn.format, luminanceTexture.defn.type, luminanceCaptureBuffer.data());
+			transmittanceTexture.bind();
+			glGetTexImage(GL_TEXTURE_2D, 0, transmittanceTexture.defn.format, transmittanceTexture.defn.type, transmittanceCaptureBuffer.data());
+			*/
+			
+			/*
+			glGetTextureImage(sceneTexture.ID, 0, sceneTexture.defn.format, sceneTexture.defn.type, size * sizeof(glm::vec4), sceneCaptureBuffer.data());
+			glGetTextureImage(transmittanceTexture.ID, 0, transmittanceTexture.defn.format, transmittanceTexture.defn.type, size * sizeof(float), transmittanceCaptureBuffer.data());
+			glGetTextureImage(luminanceTexture.ID, 0, luminanceTexture.defn.format, luminanceTexture.defn.type, size * sizeof(float), luminanceCaptureBuffer.data());
+			*/
+			for (int j = 0; j < screenSize.y; j++)
+			for (int i = 0; i < screenSize.x; i++)
+			{
+				captureArray(0, j, i) = transmittanceCaptureBuffer[j * screenSize.x + i];
+				captureArray(1, j, i) = luminanceCaptureBuffer[j * screenSize.x + i];
+				captureArray(2, j, i) = sceneCaptureBuffer[j * screenSize.x + i].x;
+				captureArray(3, j, i) = sceneCaptureBuffer[j * screenSize.x + i].y;
+				captureArray(4, j, i) = sceneCaptureBuffer[j * screenSize.x + i].z;
+			}
+			
+			std::uniform_int_distribution<> dis(1000000, INT_MAX);
+			std::string fileName = "fluid3D_captures/capture_" + std::to_string(dis(gen)) + ".npy";
+			xt::dump_npy(fileName, captureArray);
+
+			glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		}
 
 		raymarch.update();
 		raymarch.use();
@@ -679,6 +869,19 @@ public:
 		Shader::bindGlobalUniform("multiScatteringOctaves", &settings.multiScatteringOctaves);
 		for (int i = 0; i < MAX_SCATTERING_OCTAVES; i++)
 			scatteringData[i].bindGlobalUniforms("scatteringData[" + std::to_string(i) + "]");
+
+		settings.planeMaterial.bindGlobalUniforms("planeMaterial");
+		Shader::bindGlobalUniform("showLuminance", &keyInputs[GLFW_KEY_L].held);
+		Shader::bindGlobalUniform("showTransmittance", &keyInputs[GLFW_KEY_T].held);
+		Shader::bindGlobalUniform("captureSmoke", &keyInputs[GLFW_KEY_C].pressed);
+		
+		Shader::bindGlobalUniform("buoyancy", &settings.buoyancy);
+
+		Shader::bindGlobalUniform("sceneImage", &sceneTexture.defn.textureUnit);
+		Shader::bindGlobalUniform("transmittanceImage", &transmittanceTexture.defn.textureUnit);
+		Shader::bindGlobalUniform("luminanceImage", &luminanceTexture.defn.textureUnit);
+
+		Shader::bindGlobalUniform("screenSize", &screenSize);
 	}
 
 	template <typename Tex>
@@ -756,6 +959,7 @@ public:
 				{
 					settings.gridSize = gridSizeTemp;
 					resizeFluidTextures();
+					initializeScatteringData();
 				}
 				ImGui::SliderInt("pressure iterations", &settings.numPressureIterations, 1, 200);
 				ImGui::SliderFloat("timeScale", &settings.timeScale, 0.01f, 5.0f);
@@ -763,6 +967,7 @@ public:
 				ImGui::SliderFloat("density dissipation", &settings.densityDissipation, 0.9f, 1.0f);
 				ImGui::Checkbox("vorticity enabled", &settings.vorticityEnabled);
 				ImGui::SliderFloat("vorticity", &settings.vorticityScalar, 0.0f, 1.0f);
+				ImGui::SliderFloat("buoyancy", &settings.buoyancy, 0.0, 5.0);
 
 				const char* velocityBoundaryModes[] = { "zero everywhere", "negative mirror" };
 				if (ImGui::Combo("velocity boundary mode", &settings.velocityBoundaryMode, velocityBoundaryModes, IM_ARRAYSIZE(velocityBoundaryModes)))
@@ -813,8 +1018,9 @@ public:
 				}
 				
 				ImGui::ColorEdit3("directional light luminance", (float*)&settings.directionalLightLuminance, flags);
-				ImGui::gizmo3D("light dir", settings.directionalLightDirection);
-				settings.directionalLightDirection = glm::normalize(settings.directionalLightDirection);
+
+				ImGui::SliderFloat("directional light azimuth", &settings.azimuth, 0.0f, 360.0f);
+				ImGui::SliderFloat("directional light elevation", &settings.elevation, 0.0f, 90.0f);
 
 				const char* phaseModes[] = { "Isotropic", "Rayleigh", "Mie" };
 				ImGui::Combo("phase mode", &settings.phaseMode, phaseModes, IM_ARRAYSIZE(phaseModes));
@@ -843,6 +1049,8 @@ public:
 						ImGui::SliderFloat("mie lobe mix", &settings.mieLobeMix, 0.0, 1.0);
 					}
 				}
+
+				settings.planeMaterial.Menu("plane material");
 				ImGui::TreePop();
 			}
 
@@ -889,7 +1097,7 @@ public:
 	}
 };
 
-BOOST_CLASS_VERSION(GLFeedbackProgram::Settings, 4)
+BOOST_CLASS_VERSION(GLFeedbackProgram::Settings, 7)
 BOOST_CLASS_VERSION(GLFeedbackProgram::FluidSplat, 1)
 
 

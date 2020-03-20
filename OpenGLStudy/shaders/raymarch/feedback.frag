@@ -1,6 +1,9 @@
 #version 440
 
-out vec4 FragColor;
+layout (location = 0) out vec4 FragColor;
+layout (location = 1) out float Transmittance;
+layout (location = 2) out float Luminance;
+layout (location = 3) out vec4 SceneColor;
 
 in vec2 UV;
 in vec3 FragPos;
@@ -9,6 +12,7 @@ in vec3 Eye;
 #include "material.glsl"
 #include "sdf.glsl"
 #include "light.glsl"
+#include "intersect.glsl"
 #include "../noise/hash.glsl"
 #include "../compute/fluidCommon.glsl"
 
@@ -47,6 +51,8 @@ struct ScatteringData
 uniform ScatteringData scatteringData[MAX_SCATTERING_OCTAVES];
 uniform int multiScatteringOctaves;
 
+uniform bool showLuminance;
+uniform bool showTransmittance;
 
 uniform DirectionalLight dirLight;
 
@@ -54,16 +60,11 @@ uniform BlinnPhongMaterial material1 = BlinnPhongMaterial(vec3(0.26, 0.95, 0.39)
 uniform BlinnPhongMaterial material2 = BlinnPhongMaterial(vec3(0.4, 0.24, 0.16), 0.3);
 uniform BlinnPhongMaterial material3 = BlinnPhongMaterial(vec3(0.01, 0.2, 0.5), 1.5);
 
-vec2 intersectBox(vec3 rayOrigin, vec3 rayDir, vec3 boxMin, vec3 boxMax) 
-{
-  vec3 tMin = (boxMin - rayOrigin) / rayDir;
-  vec3 tMax = (boxMax - rayOrigin) / rayDir;
-  vec3 t1 = min(tMin, tMax);
-  vec3 t2 = max(tMin, tMax);
-  float tNear = max(max(t1.x, t1.y), t1.z);
-  float tFar = min(min(t2.x, t2.y), t2.z);
-  return vec2(tNear, tFar);
-}
+uniform PhysicalMaterial planeMaterial;
+
+
+uniform bool captureSmoke;
+uniform ivec2 screenSize;
 
 vec3 lighting(vec3 rayPos, vec3 rayDir, vec3 norm, BlinnPhongMaterial material, float steps, float depth)
 {
@@ -163,6 +164,7 @@ void marchStep(
 }
 
 
+
 void main()
 {
 	//FragColor = texture(densitySampler, vec3(UV, 0.5));
@@ -172,13 +174,31 @@ void main()
 	vec3 boxMin = vec3(-fluidSize) * 0.5;
 	vec2 boxIntersections = intersectBox(Eye, rayDir, boxMin + 0.5, boxMax - 0.5);
 
+	
+
+	vec3 planeNorm = vec3(0, 1, 0);
+	float planeIntersection = intersectPlane(Eye, rayDir, vec4(planeNorm, -(boxMin.y + 0.5)) );
+
+	vec3 sceneColor = vec3(0.0);
+	if (planeIntersection > 0)
+	{
+		PhysicalMaterial newPlaneMaterial = planeMaterial;
+		vec2 planePos = (Eye + planeIntersection * rayDir).xz / 16;
+		vec2 pattern = mod(floor(planePos), 2.0);
+		float checker = abs(pattern.x - pattern.y);
+		newPlaneMaterial.albedo += checker * 0.03;
+		sceneColor = physicalDirectionalLighting(dirLight, -planeNorm, rayDir, newPlaneMaterial);
+	}
+		
+	else
+		sceneColor = backgroundColor;
+	
 	vec3 scatteredLuminance = vec3(0.0);
 	vec3 transmittance[MAX_SCATTERING_OCTAVES] = vec3[MAX_SCATTERING_OCTAVES]
 	(
 		vec3(1), vec3(1), vec3(1), vec3(1),
 		vec3(1), vec3(1), vec3(1), vec3(1)
 	);
-
 	if (boxIntersections.y > boxIntersections.x)
 	{
 		// Snap step size to view alligned planes
@@ -202,8 +222,18 @@ void main()
 		float lastStepSize = boxIntersections.y - depth;
 		marchStep(boxIntersections.y, lastStepSize, rayDir, scatteredLuminance, transmittance, boxMin, boxMax);
     }
-	vec3 color = transmittance[0] * backgroundColor + scatteredLuminance;
-	FragColor = vec4(pow(color, vec3(1/2.2)), 1.0);
+	vec3 color = transmittance[0] * sceneColor + scatteredLuminance;
+
+	if (showLuminance)
+		FragColor = vec4(scatteredLuminance, 1.0);
+	else if (showTransmittance)
+		FragColor = vec4(transmittance[0], 1.0);
+	else 
+		FragColor = vec4(pow(color, vec3(1/2.2)), 1.0);
+
+	Transmittance = transmittance[0].r;
+	Luminance = scatteredLuminance.r;
+	SceneColor = vec4(sceneColor, 1.0);
 
 	//vec3 color = texture(cloudColorCurve, clamp(directionalLightEnergy.r,0.0, 1.0)).xyz + ambientLightEnergy.xyz;
 	//FragColor = vec4(mix(color, backgroundColor, clamp(transmittence.r, 0.0, 1.0)), 1.0);

@@ -1,0 +1,54 @@
+#version 440 core
+
+#include "fluid_common.glsl"
+
+layout(local_size_x = LOCAL_SIZE_X, local_size_y = LOCAL_SIZE_Y) in;
+
+float gauss(vec2 p, float r)
+{
+  return exp(-dot(p, p) / r);
+}
+
+void main()
+{
+    vec2 coords = vec2(gl_GlobalInvocationID.xy);
+    ivec2 icoords = ivec2(gl_GlobalInvocationID.xy);
+
+    vec2 velocity = texelFetch(velocitySampler, icoords, 0).xy;
+    vec4 density = texelFetch(densitySampler, icoords, 0);
+    vec2 backCoords = (coords + 0.5) - velocity * timestep;
+
+    vec2 backVelocity = texture(velocitySampler, backCoords / vec2(simulationSize)).xy;
+    float backDensity = texture(densitySampler, backCoords / vec2(simulationSize)).x;
+
+    vec2 realMousePos = vec2(screenMousePos.x, screenSize.y - screenMousePos.y) / vec2(screenSize) * simulationSize;
+    vec2 realPrevMousePos = vec2(prevScreenMousePos.x, screenSize.y - prevScreenMousePos.y) / vec2(screenSize) * simulationSize;
+    if (autoCaptureToggle)
+    {
+        realMousePos = mixingPos * simulationSize;
+        realPrevMousePos = prevMixingPos * simulationSize;
+    }
+
+    vec2 deltaMouse = realMousePos - realPrevMousePos;
+	vec2 delta = realMousePos - coords;
+    
+	float splat = gauss(delta, 50.0);
+
+    bool mixing = autoCaptureToggle && (captureState == CAPTURE_STATE_MIX);
+
+    if (!mouseOnUI || mixing)
+    {
+        if (leftMouseDown || mixing)
+		    backVelocity += (deltaMouse == vec2(0.0) ? vec2(0.0) : normalize(deltaMouse)) * splat * 1;
+	    if (rightMouseDown || mixing)
+		    backDensity += splat * 0.05;
+    }
+	
+    backVelocity *= velocityDissipation;
+    backDensity *= densityDissipation;
+
+    density = vec4(backDensity, density.xyz);
+
+    imageStore(velocityImage, icoords, vec4(backVelocity, vec2(0.0)));
+    imageStore(densityImage, icoords, density);
+}
