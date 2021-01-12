@@ -8,6 +8,7 @@ Videos:
 
 [![Video 4](https://i.imgur.com/Do3uVzd.png)](https://streamable.com/sp58w)
 
+Videos below are unfortunately lost after the host deleted them (never use streamable).
 [![Video 1](https://i.imgur.com/3YTtKpq.png)](https://streamable.com/h47mp)
 
 [![Video 2](https://i.imgur.com/kKemRzX.png)](https://streamable.com/xaxff)
